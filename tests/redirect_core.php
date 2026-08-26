@@ -21,6 +21,18 @@ $valid=[['source'=>'/a/','target'=>'/b/','active'=>true],['source'=>'/b/','targe
 rt(rejects(fn()=>redirectValidateGraph([['source'=>'/a/','target'=>'/b/','active'=>true],['source'=>'/b/','target'=>'/a/','active'=>true]])),'redirect cycle accepted');
 $a=redirectRow(['source'=>'/a/','target'=>'/b/','status'=>301,'preserveQuery'=>true,'active'=>true,'managedBy'=>'manual','note'=>'x']);$b=$a;$b['target']='/c/';$b['revisionHash']=redirectRevisionHash($b);rt($a['revisionHash']!==$b['revisionHash'],'redirect revision hash did not change');
 
+$tmp=sys_get_temp_dir().'/aincms-redirect-'.bin2hex(random_bytes(5));
+rt(mkdir($tmp.'/occupied',0775,true),'could not create redirect collision fixture');
+file_put_contents($tmp.'/occupied/index.html','fixture');
+mkdir($tmp.'/empty',0775,true);
+file_put_contents($tmp.'/file.html','fixture');
+rt(redirectSourceCollidesWithPublicFile($tmp,'/occupied'),'directory route without trailing slash was not treated as occupied');
+rt(redirectSourceCollidesWithPublicFile($tmp,'/occupied/'),'directory route with trailing slash was not treated as occupied');
+rt(redirectSourceCollidesWithPublicFile($tmp,'/empty/'),'empty directory route was not treated as occupied');
+rt(redirectSourceCollidesWithPublicFile($tmp,'/file.html'),'public file route was not treated as occupied');
+rt(!redirectSourceCollidesWithPublicFile($tmp,'/missing/'),'missing route was incorrectly treated as occupied');
+unlink($tmp.'/occupied/index.html');unlink($tmp.'/file.html');rmdir($tmp.'/occupied');rmdir($tmp.'/empty');rmdir($tmp);
+
 $sql=migration78TableSql();rt(str_contains($sql,'CREATE TABLE IF NOT EXISTS redirect_records'),'migration omits redirect table');rt(str_contains($sql,'managed_by'),'migration omits redirect provenance class');
 $router=(string)file_get_contents(dirname(__DIR__).'/__redirect.php');rt(!str_contains($router,'db(')&&!str_contains($router,'PDO'),'anonymous redirect runtime depends on database');rt(str_contains($router,'preserveQuery'),'redirect runtime lost query preservation');
 

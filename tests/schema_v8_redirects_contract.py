@@ -12,7 +12,16 @@ def need(path,*tokens):
 schema=need('database/schema.sql','schema v8','VALUES (1, 8)','CREATE TABLE IF NOT EXISTS redirect_records','managed_by VARCHAR(32)','uq_redirect_records_source')
 migration=need('database/migrations/7-to-8.php','migration78Apply','schema v7','--apply','UPDATE app_meta SET schema_version=8','GET_LOCK')
 assert 'bootstrapInstall(' not in migration, 'migration must not route through bootstrap repair'
-redirects=need('api/redirects.php','function redirectRequireSchema(): void { dbRequireSchemaVersion(8); }','redirectNormalizeSource','redirectNormalizeTarget','redirectValidateGraph','redirectRevisionHash','redirectSaveRecord','redirectDeleteRecord','redirectPostPreflight','redirectUpsertPostSlug','redirectProject','system_aliases','redirectAcquireGraphLock','GET_LOCK','RELEASE_LOCK')
+redirects=need(
+    'api/redirects.php',
+    'function redirectRequireSchema(): void { dbRequireSchemaVersion(8); }',
+    'redirectNormalizeSource','redirectNormalizeTarget','redirectValidateGraph','redirectRevisionHash',
+    'redirectSaveRecord','redirectDeleteRecord','redirectPostPreflight','redirectUpsertPostSlug','redirectProject',
+    'system_aliases','redirectAcquireGraphLock','GET_LOCK','RELEASE_LOCK',
+    'Conflicting configured system redirect authorities',
+    'is_dir($requestTarget)',
+    'public file or directory',
+)
 for token in ['reserved application path','ambiguous path separator','dot segments','cycle detected','changed since it was opened','redirect graph lock']:
     assert token.lower() in redirects.lower(), f'redirect safety missing {token}'
 assert redirects.index('redirectAcquireGraphLock($pdo)') < redirects.index('redirectValidateGraph(redirectHypothetical($candidate))'), 'manual redirect graph is validated before acquiring the graph lock'

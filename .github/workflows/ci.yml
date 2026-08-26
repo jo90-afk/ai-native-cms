@@ -3,7 +3,12 @@ name: validate
 on:
   pull_request:
   push:
-    branches: [main]
+    branches:
+      - main
+      - 'feat/**'
+      - 'fix/**'
+      - 'plan/**'
+  workflow_dispatch:
 
 permissions:
   contents: read

@@ -92,8 +92,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
         run: |
-          gh release view "$TAG" --json tagName,isPrerelease,targetCommitish,assets --jq '
-            (.tagName == env.TAG) and
-            (.isPrerelease == true) and
-            ([.assets[].name] | sort) == (["ai-native-cms-0.1.0-rc.3.manifest.json","ai-native-cms-0.1.0-rc.3.sha256","ai-native-cms-0.1.0-rc.3.zip"] | sort)
-          ' | grep -qx true
+          gh release view "$TAG" --json tagName,isPrerelease,assets > /tmp/published-release.json
+          python3 - "$TAG" <<'PY'
+          import json,sys
+          release=json.load(open('/tmp/published-release.json',encoding='utf-8'))
+          assert release.get('tagName')==sys.argv[1]
+          assert release.get('isPrerelease') is True
+          names=sorted(asset['name'] for asset in release.get('assets',[]))
+          expected=sorted([
+              'ai-native-cms-0.1.0-rc.3.manifest.json',
+              'ai-native-cms-0.1.0-rc.3.sha256',
+              'ai-native-cms-0.1.0-rc.3.zip',
+          ])
+          assert names==expected,(names,expected)
+          PY

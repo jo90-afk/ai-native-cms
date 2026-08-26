@@ -25,7 +25,7 @@ function compositionList(): array {
     foreach($rows as $row){$record=compositionRecord((string)$row['page_path']);if($record)$out[]=$record;}
     return $out;
 }
-function compositionParentMap(): array {$out=[];foreach(compositionList() as $record)$out[(string)$record['path']=$record['parentPath'];return $out;}
+function compositionParentMap(): array {$out=[];foreach(compositionList() as $record)$out[(string)$record['path']]=$record['parentPath'];return $out;}
 function compositionValidateParent(string $root,string $path,?string $parentPath): ?string {
     $parentPath=$parentPath!==null?trim($parentPath):null;if($parentPath==='')$parentPath=null;if($parentPath===null)return null;$managed=cmsManagedPages($root);
     if(!isset($managed[$parentPath])||$parentPath===$path)throw new RuntimeException('Choose a valid parent page or Site root.');
@@ -52,7 +52,7 @@ function compositionShellHtml(string $root,string $path,?string $shellPath=null)
 function compositionTargetCanonical(string $path): string {$base=rtrim((string)siteConfigValue('site','base_url',''),'/');return $path==='index.html'?$base.'/':$base.'/'.ltrim($path,'/');}
 function compositionRetargetShell(string $html,string $path,string $title): string {
     $title=trim($title);if($title!==''){$safe=htmlspecialchars($title,ENT_QUOTES|ENT_HTML5,'UTF-8');$html=preg_match('/<title>.*?<\/title>/is',$html)?(preg_replace('/<title>.*?<\/title>/is','<title>'.$safe.'</title>',$html,1)??$html):$html;}
-    $canonical=compositionTargetCanonical($path);$escaped=htmlspecialchars($canonical,ENT_QUOTES|ENT_HTML5,'UTF-8');
+    $canonical=compositionTargetCanonical($path);
     $html=preg_replace_callback('/<link\b(?=[^>]*\brel=["\']canonical["\'])[^>]*>/is',fn($m)=>composerSetTagAttribute($m[0],'href',$canonical),$html,1)??$html;
     $html=preg_replace_callback('/<meta\b(?=[^>]*\bproperty=["\']og:url["\'])[^>]*>/is',fn($m)=>composerSetTagAttribute($m[0],'content',$canonical),$html,1)??$html;
     return $html;

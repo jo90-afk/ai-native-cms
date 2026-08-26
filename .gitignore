@@ -1,0 +1,13 @@
+.DS_Store
+Thumbs.db
+.env
+.env.*
+!.env.example
+*.ini
+*.log
+*.sqlite
+*.sqlite3
+.lattice/state.db
+runtime/
+uploads/
+public/uploads/

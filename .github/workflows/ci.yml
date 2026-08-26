@@ -1,0 +1,22 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  foundation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Public-release contract
+        run: python3 tests/public_release_contract.py
+      - name: PHP syntax
+        run: |
+          find api config database -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+      - name: Python syntax
+        run: python3 -m py_compile tests/public_release_contract.py

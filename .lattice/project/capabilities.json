@@ -1,0 +1,18 @@
+{
+  "project_id": "ai-native-cms-001",
+  "application_platforms": ["web", "php", "mysql", "cli"],
+  "cross_platform_strategy": "Server-rendered administration and deterministic static public projection; no framework-specific client runtime required.",
+  "delivery_constraints": [
+    "shared-hosting compatible",
+    "static-first anonymous reads",
+    "no credentials in repository",
+    "public-release sanitization required"
+  ],
+  "quality_focus": [
+    "security boundaries",
+    "canonical state",
+    "reversibility",
+    "deterministic projection",
+    "upstream compatibility"
+  ]
+}

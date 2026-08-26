@@ -16,7 +16,7 @@ This is the bounded frontier for moving production-proven CMS behavior into a re
 | CMS authentication + page editor UI | `api/cms-auth.php`, `cms/` | core | extracted | UI consumes guarded APIs; no second write model or third-party active runtime |
 | Posts/drafts/revisions/publishing | `api/post-store.php`, `api/post-renderer.php`, `api/cms-writing.php`, `cms/writing.php` | core | extracted | MySQL canonical; optimistic hashes; bounded Markdown; static projection; adopter owns article template; published slug history uses redirect authority |
 | SEO controls | `api/seo.php`, `api/cms-seo.php`, `cms/seo.php` | core | extracted | Canonical overrides reapply after projection; canonicals stay on configured public origin; discovery adapters consume final SEO state |
-| Canonical redirects | `api/redirects.php`, `api/cms-redirects.php`, `cms/redirects.php` | core | extracted | SQL authority; same-site bounded paths/statuses; optimistic record revisions; global graph serialization; collision/conflict/cycle rejection; configured system aliases read-only |
+| Canonical redirects | `api/redirects.php`, `api/cms-redirects.php`, `cms/redirects.php` | core | extracted | SQL authority; same-site bounded paths/statuses; optimistic record revisions; global graph serialization; file/directory collision, duplicate authority, and cycle rejection; configured system aliases read-only |
 | Static redirect runtime | `__redirect.php`, `__redirect-map.php` | core projection | extracted | Generated deterministic map; anonymous routing is database-free; unknown paths 404; query/status semantics stay in projected runtime |
 | Reusable block templates/composer | `api/composer.php`, `api/composition-store.php`, `api/cms-composer.php`, `cms/composer.php` | core | extracted | Structural HTML stays repository-owned; canonical composition stores template identities + typed values; generated pages consume but do not author templates |
 | Media library | `api/media.php`, `api/cms-media.php`, `cms/media.php` | core | extracted | Canonical metadata + adopter-owned bytes; configured public roots; validated raster uploads only |
@@ -26,7 +26,7 @@ This is the bounded frontier for moving production-proven CMS behavior into a re
 | Portable database bootstrap | `database/bootstrap-core.php`, `database/bootstrap.php` | core | extracted | CLI-only schema + first owner; derive schema contract from `schema.sql`; no adopter content seed; no owner overwrite; no implicit migration |
 | Production readiness | `api/readiness.php`, `api/cms-readiness.php`, `database/readiness.php`, `cms/readiness.php` | core + adapter checks | extracted | Read-only actionable report; no mutation or secret/grant-content disclosure; host-specific checks enter only through trusted repository-owned adapters |
 | Browser credential-writing setup | deployment adapter | adapter | excluded from core | Core bootstrap does not write database credentials or expose a provider-specific setup surface |
-| Redirect interception contract | `docs/DEPLOYMENT-ADAPTERS.md` | deployment adapter contract | extracted | Serve real files/dirs first; unresolved requests use static redirect projection; generated map is not a public asset; host layer does not become CMS authority |
+| Redirect interception contract | `docs/DEPLOYMENT-ADAPTERS.md` | deployment adapter contract | extracted | Serve real files/dirs first; unresolved requests use static redirect projection; generated map is not a public asset; canonical authority refuses routes that the adapter would serve before fallback |
 | Apache public transport reference | `adapters/apache/public.htaccess.example` | reference adapter | extracted | Conservative versionless-asset caching, HTML revalidation, DEFLATE, unresolved redirect fallback; merge deliberately with adopter host/security rules |
 | Apache private/preview reference | `adapters/apache/private.htaccess.example` | reference adapter | extracted | Same redirect/compression behavior with global `no-store, private`; no public max-age leakage |
 | Other server/CDN adapters | `adapters/<target>/` | optional adapters | later | nginx/Caddy/CDN/edge implementations may follow the same contract; no platform is required by core |
@@ -38,12 +38,14 @@ This is the bounded frontier for moving production-proven CMS behavior into a re
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## Extraction status after M-010
+## Extraction status after M-010 and final parity hardening
 
-The reusable core extraction now includes the production-proven schema-v8 redirect/projection hardening and a portable explicit 7→8 migration. The schema-v8 `0.1.0-rc.2` source candidate includes the database-free redirect runtime and optional reference deployment adapters while retaining the same private/unlicensed distribution boundary.
+The reusable core extraction includes the production-proven schema-v8 redirect/projection hardening, explicit 7→8 migration, database-free redirect runtime, and optional reference deployment adapters while retaining the private/unlicensed distribution boundary.
 
-Cumulative run #76 passed M-001 through M-010 on verification commit `7f141f06390af75ad8fb47ba6d613cfa106d1372`. Its private rc.2 artifact was directly inspected: exact source provenance, checksum, embedded/external manifest equality, schema 8, migration/runtime/adapter inclusion, and exclusion/residue boundaries all passed.
+PR #12 merged the M-010/reference-adapter line at `97d72a74491f66726b3c9a28da313d3753c89646` after cumulative run #82 and direct rc.2 artifact inspection. PR #13 then merged directory-aware collision and duplicate configured-system conflict hardening at `7043eeee47bf4b0112957e7e3a6e564c5da1d020`; cumulative run #88 and its rc.2 artifact also passed direct inspection.
 
-The remaining extraction question is a **fresh production proving-ground parity check**, not another assumed core milestone. Compare current production `main` against the recorded PR #49/#50 parity point and classify intervening work as core / adapter / site-only. A material reusable core delta reopens extraction; adapter/site-only work does not automatically block release.
+A fresh production proving-ground parity check on **2026-08-26** found `judeoneill.com` `main` still exactly at PR #50 merge `113068842a808ed00268892dc6a2ffa51c27ffa6`. No newer source work exists to classify, and the remaining directory-aware behavior within PR #49 was explicitly reconciled by PR #13. There is no unresolved reusable **core** delta at the recorded parity point.
 
-If no reusable core delta remains after that check, the project returns to the Principal release gate. Repository visibility, license selection, tag/GitHub Release creation, package publication, production deployment, credentials, and production adoption remain explicit separate decisions.
+The extraction frontier is therefore closed for the current candidate and the project has returned to the **Principal release gate**. Any future production release containing a material reusable core capability reopens parity work automatically before publication.
+
+Repository visibility, license selection, tag/GitHub Release creation, package publication, production deployment, credentials, and production adoption remain explicit separate decisions.

@@ -19,12 +19,19 @@ jobs:
         run: python3 tests/content_authority_contract.py
       - name: Rebuild and CMS UI contract
         run: python3 tests/rebuild_ui_contract.py
+      - name: Publishing and SEO contract
+        run: python3 tests/publishing_seo_contract.py
       - name: Content primitive behavior
         run: php tests/content_core.php
+      - name: Publishing and SEO behavior
+        run: php tests/publishing_core.php
       - name: PHP syntax
         run: |
           find api cms config database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: JavaScript syntax
-        run: node --check cms/cms.js
+        run: |
+          node --check cms/cms.js
+          node --check cms/writing.js
+          node --check cms/seo.js
       - name: Python syntax
-        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py
+        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py

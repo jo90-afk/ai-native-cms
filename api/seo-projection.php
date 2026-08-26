@@ -48,3 +48,8 @@ function seoProjectionPublicHtmlFiles(string $root): array {return presentationP
 function seoProjectionRelativePath(string $root,string $full): string {
     $base=rtrim(str_replace('\\','/',realpath($root)?:$root),'/');$normalized=str_replace('\\','/',$full);return ltrim(substr($normalized,strlen($base)),'/');
 }
+function seoProjectAllPublicPages(string $root): array {
+    $processed=0;$changed=0;$overrides=0;
+    foreach(seoProjectionPublicHtmlFiles($root) as $full){$path=seoProjectionRelativePath($root,$full);if($path==='')continue;$html=(string)file_get_contents($full);$next=$html;$override=seoReadOverride($path);$inherit=true;if($override){$next=seoApplyToHtml($next,$override);$inherit=(string)($override['controls']['socialMode']??'inherit')!=='custom';$overrides++;}$next=seoProjectEnhancements($path,$next,$inherit);if($next!==$html){cmsAtomicWrite($full,$next);$changed++;}$processed++;}
+    return ['processed'=>$processed,'changed'=>$changed,'overrides'=>$overrides];
+}

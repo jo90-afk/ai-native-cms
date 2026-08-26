@@ -25,13 +25,12 @@ Routine reversible implementation, refactoring, tests, documentation, repository
 - Repository-authored pages and canonical CMS-created pages are distinct source classes; generated pages may consume templates but cannot become Git/template authority.
 - Media bytes remain adopter-owned files while canonical metadata/references may live in SQL.
 - Navigation, branding, publishing, and SEO are canonical authored state, not incidental generated-file edits.
-- Branding core controls only adopter-declared bounded design tokens and identity text.
 - Database bootstrap owns structure and the first persisted owner only. It never seeds adopter content, replaces existing owner credentials, or silently migrates older schemas.
 - Canonical repository content initialization is an explicit reconciliation step after bootstrap.
 - Readiness is observational and may not initialize, migrate, publish, mail, deploy, invoke shell commands, or expose secret/grant values.
 - Host/provider behavior enters only through bounded adopter/deployment adapters.
-- Internal candidate generation is not publication. Candidate metadata must keep public distribution and license selection false until explicit Principal decisions change that boundary.
-- A review candidate must be reproducible for a fixed source revision and must identify the reviewed source head, not a synthetic CI merge commit.
+- Internal candidate generation is not publication. Candidate metadata keeps public distribution and license selection false until explicit Principal decisions change that boundary.
+- A review candidate must be reproducible for a fixed source revision and identify the reviewed source head, not a synthetic CI merge commit.
 - Public-release artifacts contain no personal content, credentials, private repository/account identifiers, adopter-local configuration, or runtime/governance state.
 - Technical readiness, repository merge, or a green release-candidate artifact do not imply public visibility, licensing, tagging, publication, deployment, or adoption.
 
@@ -56,51 +55,46 @@ Merged at `0d7747819bf7f611e3615771c7f30e907d2136af`; added repository-owned tem
 Merged at `4c875ae847e7a9a7871ddfab710c49c193f37a7b`; added trusted-shell page creation, validated parent hierarchy, canonical navigation/branding, and deterministic site-wide projection.
 
 ### M-007 — Portable bootstrap and readiness preserve authority boundaries
-Merged via PR #7 at `993b3f0a89e6e062a165a6d4ee55a3ce50bac261` after cumulative validation passed on the final head. The merged slice includes CLI-only schema/first-owner bootstrap, foreign/partial/current-version repair classification, explicit canonical repository import, read-only core/adapter readiness, and a first-party Readiness workspace across CMS navigation.
+Merged via PR #7 at `993b3f0a89e6e062a165a6d4ee55a3ce50bac261`; added CLI-only schema/first-owner bootstrap, foreign/partial/current-version repair classification, explicit canonical repository import, read-only core/adapter readiness, and a first-party Readiness workspace across CMS navigation.
 
-## Active objective
+### M-008 — A release candidate can be produced reproducibly without crossing the public-release boundary
 
-**OBJ-008 — Prepare a reproducible review candidate without making release decisions implicitly.**
+Accepted technically after cumulative run #54 passed every M-001–M-008 contract and behavior test, PHP/JavaScript/Python syntax, deterministic candidate build, and private artifact upload on reviewed head `a5ec63491ae03943f894700f389a2009174cf3d8`.
 
-Release engineering should make the source candidate inspectable, reproducible, attributable to an exact reviewed commit, and free of adopter/private/runtime residue. It must also make installation, backup, migration boundaries, and rollback explicit while keeping every public-release decision separate.
+The accepted release-engineering design includes:
 
-## Active milestone
+1. `release.identity`: `VERSION` and `release/release.json` define internal candidate `0.1.0-rc.1`, schema 7, runtime requirements, and explicit `public:false` / `licenseSelected:false` state.
+2. `release.reproducibility`: `tools/build_release.py` emits a deterministic source ZIP, embedded/external per-file manifest, and whole-ZIP SHA256; CI tests two builds from the same source ref for byte equality.
+3. `release.contents`: the candidate includes reusable runtime/config-example/schema/docs material while excluding `.git`, `.github`, `.lattice`, tests, release tooling, generated `dist`, runtime/uploads, adopter-local `config/site.php`, populated INI files, symlinks, and known secret/adopter markers.
+4. `release.provenance`: PR CI passes `${{ github.event.pull_request.head.sha || github.sha }}` to the builder so manifests record the reviewed branch head rather than the synthetic PR merge SHA; this was added after direct inspection exposed the original provenance defect.
+5. `release.license-boundary`: CI opens the built archive and rejects any `LICENSE*` entry while `licenseSelected:false`.
+6. `release.installation`: `docs/INSTALLATION.md` defines fresh bootstrap -> explicit canonical import -> readiness, backup/restore testing, future migration requirements, and paired code/database rollback.
+7. `release.private-review`: CI uploads the candidate only as a seven-day private workflow artifact; it does not tag, create a GitHub Release, publish a package, expose a public download, or deploy.
+8. `release.adversarial-review`: the run #54 artifact was downloaded and inspected directly. Its manifest `sourceRevision` exactly equals `a5ec63491ae03943f894700f389a2009174cf3d8`; the emitted ZIP SHA256 matches recomputation; embedded and external manifests are identical; it contains 62 product files plus the embedded manifest; excluded paths are absent; no `LICENSE*` entry exists; only example/placeholder external origins were found; distribution remains private and unlicensed.
+9. `release.migration-boundary`: because this is the first candidate, no prior public schema exists. A versioned migration layer becomes mandatory when a future released schema changes; bootstrap remains prohibited from substituting for migration.
 
-**M-008 — A release candidate can be produced reproducibly without crossing the public-release boundary.**
+The final post-acceptance documentation head still requires one cumulative validation run before PR #8 may merge.
 
-Readiness conditions:
+## Adversarial review disposition
 
-1. `release.identity`: `VERSION` and `release/release.json` define one internal candidate identity and schema/runtime contract; metadata explicitly keeps `public:false` and `licenseSelected:false`.
-2. `release.reproducibility`: `tools/build_release.py` produces a deterministic source ZIP, embedded/external manifest, and whole-ZIP SHA256; two builds from the same source ref are byte-for-byte identical.
-3. `release.contents`: the source candidate contains reusable runtime/config-example/schema/docs material while excluding `.git`, `.github`, `.lattice`, tests, release tooling, generated `dist`, runtime/uploads, adopter-local `config/site.php`, populated INI files, symlinks, and known secret/adopter markers.
-4. `release.provenance`: CI candidate manifests record the reviewed PR head (or exact main push SHA), never GitHub’s synthetic PR merge SHA.
-5. `release.license-boundary`: no `LICENSE*` file may enter the candidate while `licenseSelected:false`; candidate generation cannot choose licensing by accident.
-6. `release.installation`: documentation covers fresh schema/owner bootstrap, separate canonical import, readiness, backup/restore testing, the absence of a prior-public-schema migration obligation for the first candidate, future explicit migration requirements, and paired code/database rollback.
-7. `release.private-review`: CI may upload the candidate only as a short-lived private workflow artifact for inspection; it must not create a tag, GitHub Release, public package, public download, or deployment.
-8. `release.adversarial-review`: inspect the actual CI-built archive and manifest, not only the builder code, for checksum agreement, source provenance, included/excluded files, license state, adopter/private residue, and suspicious external URLs.
-9. `m008.verification`: cumulative M-001–M-008 contracts, behavior tests, PHP/JavaScript/Python syntax, candidate build, and private artifact upload pass on the final PR head.
+No unresolved **core candidate** defect remains after the provenance correction. The following are deliberately outside M-008 rather than release blockers:
 
-## Current M-008 evidence
+- browser credential-writing setup — deployment adapter / additional credential surface;
+- host repository updater and deployment automation — deployment adapters;
+- newsletter and adopter-specific content/layout integrations — optional extensions;
+- future schema migrations — required when a future released schema actually changes, not for this first candidate;
+- repository visibility, license selection, release/tag creation, public package publication, production deployment/adoption — explicit Principal decisions.
 
-- PR #8 is open as a draft on `feat/release-candidate` against the exact M-007 merge baseline.
-- Internal candidate identity is `0.1.0-rc.1`, schema 7.
-- Cumulative CI run #49 passed the initial M-008 implementation and produced a private candidate artifact.
-- Direct archive inspection found correct exclusions, matching ZIP checksum, identical embedded/external manifests, no license file, and no known adopter/host residue, but also found a real provenance defect: the manifest recorded GitHub’s synthetic PR merge SHA.
-- That defect was corrected by making CI pass `${{ github.event.pull_request.head.sha || github.sha }}` to the builder and locking the expression in the release contract.
-- Cumulative run #51 passed on hardened head `60413166dc3ce8933f8d14821d06d168a2882711`.
-- The run #51 private artifact was downloaded and directly inspected: manifest `sourceRevision` exactly equals `60413166dc3ce8933f8d14821d06d168a2882711`; external and embedded manifests are identical; the emitted SHA256 matches the candidate ZIP; the archive has 62 product files plus the embedded manifest; excluded paths are absent; no `LICENSE*` entry exists; distribution remains `public:false`, `licenseSelected:false`.
-- Documentation and product-map alignment after that artifact inspection are now being finalized. The exact final head must receive one more cumulative run before PR #8 can be accepted.
+## Active gate — Principal release decision
 
-## Adversarial review conclusion so far
+After PR #8 merges, ordinary delegated extraction/release-preparation work is exhausted. Further action crosses at least one recorded Principal boundary.
 
-No unresolved **core candidate** defect has been identified after correcting provenance. The following are deliberately outside M-008 rather than release blockers:
+The Principal must explicitly decide any next release action, including separately as appropriate:
 
-- **Future schema migrations:** `0.1.0-rc.1` is the first candidate, so there is no prior public schema to migrate. A versioned migration layer becomes mandatory when a future released schema changes; bootstrap remains prohibited from filling that role.
-- **Browser credential-writing setup:** excluded from core because it broadens credential-handling attack surface and tends to embed provider assumptions. CLI/env/private-INI setup is the portable baseline.
-- **Host repository updater/deployment automation:** deployment adapter, not CMS authority.
-- **Newsletter and adopter-specific content/layout integrations:** optional extensions.
-- **License, repository visibility, release/tag creation, public package publication, production deployment/adoption:** explicit Principal decisions.
+- whether the repository may become public;
+- which license, if any, governs distribution;
+- whether `0.1.0-rc.1` should remain an internal candidate or be replaced by another release identity;
+- whether to create a Git tag/GitHub Release or publish any package/download;
+- whether and where to deploy/adopt the core in production.
 
-## Release boundary
-
-A successful M-008 merge may establish that an internal candidate is reproducible and reviewable. It does **not** authorize making the repository public, selecting a license, creating a tag/release, publishing the package, deploying to production, or adopting it into an existing site.
+Until those decisions are made, the correct steady state is a private repository with a reproducible internal candidate and no public distribution.

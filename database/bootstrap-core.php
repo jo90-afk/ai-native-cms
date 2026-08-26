@@ -39,6 +39,9 @@ function bootstrapClassifyState(array $existing,array $required,int $version,int
     $status='partial';if(!$existing)$status='empty';elseif(!$missing&&$version>=$expected&&$owners>0)$status='ready';elseif(!$known&&$unknown)$status='foreign';
     return ['status'=>$status,'schemaVersion'=>$version,'expectedSchemaVersion'=>$expected,'ownerCount'=>$owners,'requiredCount'=>count($required),'existingRequiredCount'=>count($known),'missing'=>$missing,'unknown'=>$unknown];
 }
+function bootstrapRepairable(array $state): bool {
+    return ($state['status']??'')==='partial'&&(int)($state['existingRequiredCount']??0)>0&&(int)($state['schemaVersion']??0)>=(int)($state['expectedSchemaVersion']??1);
+}
 function bootstrapExistingTables(PDO $pdo): array {
     $rows=$pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);$out=array_values(array_map('strval',$rows?:[]));sort($out,SORT_STRING);return $out;
 }
@@ -62,14 +65,19 @@ function bootstrapInstallOwner(PDO $pdo): bool {
     $stmt=$pdo->prepare("INSERT INTO cms_users (username,password_hash,display_name,email,role,session_version,created_at,updated_at) VALUES (?,?,?,'','Owner',1,UTC_TIMESTAMP(),UTC_TIMESTAMP())");$stmt->execute([$owner['username'],$owner['passwordHash'],$owner['displayName']]);$id=(int)$pdo->lastInsertId();
     if($id>0){$audit=$pdo->prepare("INSERT INTO cms_activity (user_id,event_type,message,context_json,created_at) VALUES (?,'bootstrap','Initialized CMS database owner','{}',UTC_TIMESTAMP())");$audit->execute([$id]);}return true;
 }
+function bootstrapAssertInstallable(array $state,bool $allowRepair): void {
+    if(($state['status']??'')==='foreign')throw new RuntimeException('The configured database is non-empty and does not look like AI Native CMS. Use a dedicated database.');
+    if(($state['status']??'')==='partial'){
+        if(!$allowRepair)throw new RuntimeException('A partial AI Native CMS installation exists. Inspect it before authorizing repair.');
+        if(!bootstrapRepairable($state))throw new RuntimeException('Automatic repair is limited to incomplete installs already stamped with the current schema version. Older schemas require an explicit migration.');
+    }
+}
 function bootstrapInstall(string $root,bool $allowRepair=false): array {
     if(!dbConfigured())throw new RuntimeException('Database credentials are not configured.');if(!extension_loaded('pdo_mysql'))throw new RuntimeException('PHP PDO MySQL support (pdo_mysql) is required.');$pdo=db();$state=bootstrapState($pdo,$root);
-    if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];
-    if($state['status']==='foreign')throw new RuntimeException('The configured database is non-empty and does not look like AI Native CMS. Use a dedicated database.');
-    if($state['status']==='partial'&&!$allowRepair)throw new RuntimeException('A partial AI Native CMS installation exists. Inspect it, then rerun with --repair only if completing it is intended.');
+    if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];bootstrapAssertInstallable($state,$allowRepair);
     $lockName='aincms-bootstrap-'.substr(hash('sha256',(string)dbConfig()['name']),0,24);$lock=$pdo->prepare('SELECT GET_LOCK(?,5)');$lock->execute([$lockName]);if((int)$lock->fetchColumn()!==1)throw new RuntimeException('Could not acquire the database bootstrap lock.');
     try{
-        $state=bootstrapState($pdo,$root);if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];if($state['status']==='foreign')throw new RuntimeException('The configured database is non-empty and does not look like AI Native CMS. Use a dedicated database.');if($state['status']==='partial'&&!$allowRepair)throw new RuntimeException('A partial AI Native CMS installation exists. Repair was not authorized.');
+        $state=bootstrapState($pdo,$root);if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];bootstrapAssertInstallable($state,$allowRepair);
         $statements=bootstrapRunSchema($pdo,$root);$ownerCreated=bootstrapInstallOwner($pdo);$final=bootstrapState($pdo,$root);if($final['status']!=='ready')throw new RuntimeException('Database bootstrap did not reach a ready schema-and-owner state.');
         return ['changed'=>true,'schemaStatements'=>$statements,'ownerCreated'=>$ownerCreated,'state'=>$final,'message'=>'Database schema and owner initialized. Run database/reconcile.php to initialize canonical repository content.'];
     }finally{try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}catch(Throwable $ignored){}}

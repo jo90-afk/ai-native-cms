@@ -10,87 +10,93 @@ The reference implementation proved this model on a static-first PHP/MySQL site.
 
 ### 1. Site adapter
 
-`config/site.php` describes the adopter’s public structure: site identity, editable pages, canonical structured documents, generated roots, and projection outputs. A site may add adapter code for custom content types, but core modules must not require a particular site’s page names, project taxonomy, or theme.
+`config/site.php` describes adopter-owned public structure: site identity, editable repository pages/documents, generated roots, writing/media paths, navigation defaults, branding tokens, read-only redirect aliases, readiness adapters, and deterministic projection hooks. Core modules must not require a particular site taxonomy, theme, content ledger, host, or web server.
 
-`cms.editable_pages` names HTML surfaces whose `data-cms-id` leaves are editable. `cms.documents` optionally registers structured authored files that should participate in the same canonical SQL and repository-reconciliation model.
+Repository pages are the portable Git/source class. Canonical CMS-created pages may consume repository templates but do not become repository-source or template authority.
 
 ### 2. Guarded runtime
 
 `api/database.php` and `api/runtime.php` own secret loading, database transport, HTTPS/origin checks, sessions, authentication, CSRF, request limits, rate limits, and audit records.
 
-Human UI and agent-facing operations share these boundaries. An agent does not gain a second write path.
+Human UI and agent-facing operations share these boundaries. Canonical mutation endpoints fail closed when the installed schema is older than the code contract. An agent does not gain a second write path.
 
-### 3. Canonical content model
+### 3. Canonical state
 
-MySQL stores accepted authored state:
+Schema v8 stores accepted authored state in MySQL:
 
-- `page_blocks` for editable page leaves;
-- `content_documents` for full page sources and structured authored documents;
+- `page_blocks` and `content_documents` for page/document authority and repository lineage;
 - `posts` and `post_revisions` for long-form publishing;
-- `page_block_templates` and `page_compositions` for reusable composed pages;
-- `site_navigation`, `site_branding`, `media_library`, and `seo_overrides` for site-wide authored metadata;
-- `page_revisions`, `cms_activity`, `content_change_log`, and `content_update_sets` for history and provenance.
+- `page_block_templates` and `page_compositions` for typed structural composition;
+- `media_library`, `site_navigation`, `site_branding`, and `seo_overrides` for reusable site-wide state;
+- `redirect_records` for canonical manual and post-history redirects;
+- `page_revisions`, `cms_activity`, `content_change_log`, and `content_update_sets` for revision/provenance history.
 
-`api/content-core.php` contains site-neutral filesystem, block extraction, sanitization, optimistic-revision, and atomic-write primitives. `api/content-authority.php` owns canonical block/document commits and projection. `api/cms-pages.php` is the first guarded human/agent-compatible mutation endpoint using that authority.
+Repository-owned `redirects.system_aliases` are a separate read-only compatibility source. They may participate in projection, but browser/API mutations cannot rewrite them.
 
-Repository source remains useful as a portable seed, code-reviewed proposal, and database-free test fixture. It does not silently outrank a newer accepted database value.
+`api/content-core.php` contains site-neutral filesystem, sanitization, revision, and atomic-write primitives. Canonical object modules own validation/persistence; `/api/cms-*` endpoints expose the same guarded model to human and agent callers.
 
-### 4. Reconciliation
+### 4. Repository-source boundary and reconciliation
 
-`api/content-sync.php` implements three-way repository reconciliation. For content that tracks source lineage, the runtime retains both the accepted content hash and the last effective source hash.
+Repository source is a portable seed, code-reviewed proposal, and database-free fixture. It never silently outranks newer accepted SQL.
 
-When a repository candidate changes:
+`api/content-sync.php` implements three-way reconciliation using both canonical hashes and the last effective source hashes. A changed repository candidate advances SQL only when canonical state still matches the previous effective source; divergent accepted SQL is preserved and source lineage advances instead. Immutable compare-and-swap update sets express deliberate supersession.
 
-1. if canonical SQL still equals the prior effective repository source, the new repository candidate advances SQL;
-2. if canonical SQL has diverged, the SQL value is preserved and only source lineage advances;
-3. every applied or preserved transition is recorded in `content_change_log`.
+Repository reconciliation is intentionally **not a browser action**. `database/reconcile.php` is CLI/deployment-adapter-only and requires the current schema before importing or reconciling source candidates. Browser page editing cannot bootstrap repository source into authority and no CMS endpoint performs schema migration opportunistically.
 
-This is deliberately not last-write-wins.
+### 5. Schema evolution
 
-Deliberate supersession uses immutable, compare-and-swap update sets under `database/content-updates/`. An update names the predecessor it expects so it cannot erase an unexpected newer value. A standing update set may also normalize a lagging repository candidate until the adopter’s checked-in source catches up.
+`database/bootstrap.php` is a fresh/current-version initializer. `--repair` only completes interrupted installs already stamped with the current schema; it never upgrades an older schema.
 
-### 5. Projection
+Version transitions use explicit migration files. Schema 7 → 8 is implemented by `database/migrations/7-to-8.php`, which validates the source version, acquires a database migration lock, creates redirect authority idempotently, and advances `app_meta.schema_version` only after required structure exists. Rollback means restoring the paired pre-migration database backup and code revision, not trying to reverse accepted canonical writes piecemeal.
 
-Authenticated writes resolve into canonical state first. Deterministic projectors then materialize public HTML and configured structured documents. `php database/reconcile.php <source-ref>` currently performs the portable core sequence:
+### 6. Redirect authority and anonymous routing
 
-1. bootstrap canonical page/document state when needed;
-2. reconcile repository candidates;
-3. apply immutable update sets;
-4. project configured documents;
-5. project configured pages with canonical block overlays.
+`api/redirects.php` owns canonical redirect semantics. Source/target paths are same-site and bounded; reserved application paths, control characters, ambiguous encoded separators, dot segments, self-resolution, unsafe status codes, conflicting authorities, public-file collisions, and graph cycles are rejected.
 
-Additional projectors for posts, discovery, navigation, composed pages, feeds, and other derived outputs attach after this authority layer; they must not become alternate authored-state stores.
+Manual records carry optimistic revision hashes. Published post slug changes are preflighted against the redirect graph and persist their old route as post-managed history; manually governed ownership is not silently taken over. Safe post-managed chains can collapse to the newest target.
 
-Anonymous requests do not depend on MySQL. A static host or CDN can serve the public projection while the CMS remains a private authoring plane.
+`redirectProject()` merges active canonical SQL records with configured read-only system aliases and emits deterministic `__redirect-map.php`. `__redirect.php` consumes only that map. Anonymous redirects therefore remain static-first and never query MySQL.
+
+Routing unresolved web requests into `__redirect.php` is a deployment concern. Apache/Nginx/CDN/host-specific interception belongs in adapters; the core owns the map/runtime semantics, not one server configuration.
+
+### 7. Projection and finalization
+
+Canonical content is projected first; site-wide derived state converges through one explicit finalization boundary so one projector cannot silently erase another projector's output until the next rebuild.
+
+`api/content-rebuild.php` preserves bounded adopter hooks and defines this order:
+
+1. repository documents/pages and canonical compositions;
+2. published posts;
+3. `after_pages` adopter hooks;
+4. canonical SEO projection;
+5. `after_seo` adopter hooks for sitemap/discovery/feed work that must consume final SEO state;
+6. canonical navigation;
+7. canonical branding;
+8. deterministic redirect map;
+9. `finalize` adopter hooks.
+
+The public core does not impose one sitemap/discovery implementation, but it guarantees an `after_seo` phase so those adapters can honor noindex/canonical decisions instead of racing SEO.
+
+Anonymous public delivery remains database-free. A static host or CDN may serve public files while the private authoring plane uses MySQL.
 
 ## Core versus adopter code
 
 The extraction intentionally preserves the reference implementation’s top-level paths:
 
-- `api/` — reusable runtime and mutation/read APIs;
+- `api/` — reusable runtime and canonical operations;
 - `cms/` — reusable administration UI;
-- `database/` — schema, migrations, bootstrap, reconciliation, rebuild;
-- `tests/` — product contracts and security regression;
-- `config/` — adopter-owned public structure.
+- `database/` — schema, migrations, bootstrap, reconciliation;
+- `tests/` — product/security/regression contracts;
+- `config/` — adopter-owned public structure and bounded adapter registry.
 
-The path compatibility is strategic. General work developed first inside an adopter repository can be upstreamed with small diffs if the adopter keeps site behavior behind the configuration boundary.
+This path compatibility lets general work developed first inside an adopter repository move upstream as reviewable diffs while personal/site-specific state remains behind configuration or adapters.
 
 ## AI-native operation contract
 
-AI-native does not mean that an LLM owns content state. It means automation can reason about and mutate explicit durable objects under the same rules as a human operator.
-
-A mature operation surface should therefore:
-
-1. identify a typed target rather than a screen coordinate;
-2. include the target’s expected revision/hash when replacing state;
-3. identify the origin and origin reference;
-4. validate authorization and consequences before mutation;
-5. write canonical state and durable provenance atomically where practical;
-6. return the new identity/revision and the required projection work;
-7. remain replay-safe or explicitly reject stale replays.
+AI-native does not mean an LLM owns truth. Automation mutates explicit durable objects under the same constraints as a human operator. A mature operation therefore identifies a typed target, supplies an expected revision when replacing state, records provenance, validates authority/consequences, writes canonical state atomically where practical, returns the resulting revision/projection work, and rejects stale replay.
 
 Browser automation is an adapter of last resort, not the CMS architecture.
 
 ## Deployment boundary
 
-The core must be deployable on ordinary PHP/MySQL hosting and must not encode credentials, a hosting vendor, or a particular Git provider. Deployment adapters may automate repository-to-host synchronization, but publication remains an explicit operator decision.
+The core must remain deployable on ordinary PHP/MySQL hosting without encoding credentials, a host vendor, Git provider, or server implementation. Deployment adapters may perform repository synchronization, unresolved-route interception, cache/compression policy, or other transport work. Repository visibility, licensing, publication, and production deployment remain explicit operator decisions.

@@ -32,8 +32,8 @@ function brandingState(): array {
 function brandingClass(string $key,string $fallback): string {$classes=siteConfigValue('branding','identity_classes',[]);$value=is_array($classes)?trim((string)($classes[$key]??$fallback)):$fallback;return preg_match('/^[A-Za-z_][A-Za-z0-9_-]{0,80}$/',$value)?$value:$fallback;}
 function brandingApplyIdentity(string $html,array $settings): string {
     $mark=htmlspecialchars((string)$settings['identity']['mark'],ENT_QUOTES|ENT_HTML5,'UTF-8');$name=htmlspecialchars((string)$settings['identity']['name'],ENT_QUOTES|ENT_HTML5,'UTF-8');$markClass=preg_quote(brandingClass('mark','brand-mark'),'/');$nameClass=preg_quote(brandingClass('name','brand-name'),'/');
-    $html=preg_replace('/(<[^>]+class=["\'][^"\']*\b'.$markClass.'\b[^"\']*["\'][^>]*>).*?(<\/[^>]+>)/is','$1'.$mark.'$2',$html)??$html;
-    return preg_replace('/(<[^>]+class=["\'][^"\']*\b'.$nameClass.'\b[^"\']*["\'][^>]*>).*?(<\/[^>]+>)/is','$1'.$name.'$2',$html)??$html;
+    $html=preg_replace_callback('/(<[^>]+class=["\'][^"\']*\b'.$markClass.'\b[^"\']*["\'][^>]*>).*?(<\/[^>]+>)/is',fn($m)=>$m[1].$mark.$m[2],$html)??$html;
+    return preg_replace_callback('/(<[^>]+class=["\'][^"\']*\b'.$nameClass.'\b[^"\']*["\'][^>]*>).*?(<\/[^>]+>)/is',fn($m)=>$m[1].$name.$m[2],$html)??$html;
 }
 function brandingCss(array $settings): string {
     $definitions=brandingDefinitions();if(!$definitions)return '';$lines=['/* AINCMS BRAND OVERRIDES START */',':root{'];

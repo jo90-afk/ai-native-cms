@@ -18,7 +18,7 @@ BANNED_TEXT = {
 
 TEXT_SUFFIXES = {
     ".php", ".py", ".js", ".mjs", ".json", ".md", ".sql", ".yml", ".yaml",
-    ".css", ".html", ".txt", ".ini", ".sh",
+    ".css", ".html", ".txt", ".ini", ".sh", ".example",
 }
 
 # Operational Lattice state is project governance, not release product code.

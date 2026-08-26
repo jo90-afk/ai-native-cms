@@ -6,9 +6,24 @@ The core design is deliberately conservative: MySQL owns accepted authored state
 
 ## Why “AI native”
 
-The product is being shaped so an AI agent can operate the same durable model as a human editor instead of automating browser clicks or editing generated HTML blindly. Changes should be expressed against typed content objects, carry provenance, preserve revision history, respect compare-and-swap guards, and rebuild deterministic public output.
+The product is shaped so an AI agent can operate the same durable model as a human editor instead of automating browser clicks or editing generated HTML blindly. Changes are expressed against typed content objects, carry provenance, preserve revision history, respect compare-and-swap guards, and rebuild deterministic public output.
 
-That work is incremental. This branch establishes the extraction boundary and the first reusable runtime slice; it does not yet claim feature parity with the reference CMS.
+An AI agent does not receive a privileged second authority system. The same authentication, expected-revision, canonical-state, provenance, and projection contracts apply regardless of caller.
+
+## Current usable slice
+
+The repository now contains a working site-neutral core for configured static pages and structured documents:
+
+- hardened PHP/MySQL owner authentication and request boundaries;
+- schema-v7 canonical content, revisions, provenance, and future composition/media/navigation/SEO state;
+- canonical editable page blocks plus full page-source documents;
+- authenticated page editing with optimistic hashes and bounded rich-text sanitization;
+- three-way repository reconciliation that preserves newer CMS edits;
+- immutable compare-and-swap release update sets;
+- deterministic static projection and bounded adopter rebuild hooks;
+- a first-party `/cms/` login and page-editing UI with no frontend framework or third-party active runtime dependency.
+
+Writing/publishing, SEO, composer/templates, media, navigation, branding, new-page hierarchy, bootstrap UI, and production readiness are still being extracted.
 
 ## Product boundary
 
@@ -26,12 +41,12 @@ Reusable core:
 Adopter-owned state:
 
 - site copy and content seeds;
-- page registry and labels;
+- page/document registry and labels;
 - theme assets and visual identity;
 - site-specific templates and project integrations;
 - deployment credentials and host-specific secrets.
 
-Optional extensions are kept outside the core when they are not general CMS concerns.
+Optional extensions remain outside the core when they are not general CMS concerns.
 
 ## Compatibility strategy
 
@@ -39,25 +54,50 @@ The repository intentionally keeps the reference implementation’s `api/`, `cms
 
 See `docs/ARCHITECTURE.md` and `docs/UPSTREAMING.md`.
 
-## Current foundation
+## Minimal setup for the current slice
 
-The first extraction milestone includes:
-
-- a genericized database/runtime security layer derived from the production implementation;
-- the site-neutral schema for canonical content, revisions, composition, navigation, branding, media, SEO, provenance, and publishing;
-- an example site configuration replacing hard-coded editable-page lists;
-- a public-release CI contract that rejects known personal-site identifiers and secrets from product code;
-- a Lattice project capsule describing the mandate and readiness conditions.
-
-## Requirements
+Requirements:
 
 - PHP 8.1+
 - PDO MySQL (`pdo_mysql`)
 - MySQL 5.7+ or MySQL 8.x using `utf8mb4`
 - Python 3.10+ for repository validation
 
-No framework, Node runtime, or database connection is required for anonymous public reads.
+Node is used only for repository-side JavaScript syntax validation; it is not a production runtime dependency.
+
+1. Copy `config/site.example.php` to `config/site.php` and define the site name, public origin, editable HTML pages, and any canonical structured documents. Site configuration contains public structure, not credentials.
+2. Create a MySQL database and import `database/schema.sql`.
+3. Put private settings in environment variables or an INI file outside the public root. `database/private-config.example.ini` lists the supported `AINCMS_*` keys. At minimum configure the database, public origin, CMS bootstrap username/password hash, and rate-limit secret.
+4. Ensure every configured editable page already exists and mark editable text leaves with stable `data-cms-id` values, for example `<h1 data-cms-id="hero.title">Title</h1>`.
+5. Initialize/reconcile canonical state from the repository:
+
+```bash
+php database/reconcile.php initial-import
+```
+
+6. Serve the repository with PHP and open `/cms/` directly. The CMS intentionally does not require or add a public-site navigation link.
+
+The first successful bootstrap login persists the owner identity into MySQL. Subsequent page saves write canonical SQL, preserve a page revision, and deterministically re-project the static page.
+
+## Repository reconciliation
+
+`php database/reconcile.php <source-ref>` performs this portable sequence:
+
+1. bootstrap configured page/document state if needed;
+2. compare incoming repository candidates with both canonical hashes and prior effective source hashes;
+3. accept ordinary source changes only when canonical SQL still matches the prior source;
+4. preserve divergent/newer canonical SQL and record the incoming source lineage;
+5. apply immutable explicit update sets from `database/content-updates/`;
+6. rebuild configured documents/pages and adopter projector hooks.
+
+This prevents a Git pull from silently undoing an accepted CMS edit.
+
+## Rebuild hooks
+
+Adopters may register trusted repository-owned projectors in `config/site.php` under `projection.hooks`. Hooks run only at bounded phases (`before_documents`, `after_documents`, `before_pages`, `after_pages`, `finalize`), their scripts must resolve inside the repository root, and the callable is named explicitly.
+
+Hooks are for deterministic presentation/integration work. They must not become alternate stores of authored truth.
 
 ## Development status
 
-Pre-release extraction. The repository is private while the production implementation is being separated from adopter-specific content and configuration. Making the repository public is an explicit release boundary, not an automatic outcome of merging development work.
+Pre-release extraction. The repository remains private while additional production-proven modules are separated from adopter-specific behavior. Making the repository public, choosing a license, tagging a release, and adopting this core into a production site are explicit release boundaries rather than automatic outcomes of development merges.

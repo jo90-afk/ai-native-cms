@@ -6,15 +6,16 @@ require_once __DIR__.'/navigation.php';
 secureJsonHeaders();requireCmsAuth(true);$root=dirname(__DIR__);$method=(string)($_SERVER['REQUEST_METHOD']??'GET');
 try{
     if($method==='GET'){
-        $path=trim((string)($_GET['path']??''));$pages=[];foreach(cmsManagedPages($root) as $p=>$label){$record=compositionRecord($p);$pages[]=['path'=>$p,'label'=>$label,'composed'=>$record!==null,'parentPath'=>$record['parentPath']??null,'dynamic'=>!isset(cmsConfiguredPages($root)[$p])];}
+        $path=trim((string)($_GET['path']??''));$pages=[];$configured=cmsConfiguredPages($root);
+        foreach(cmsManagedPages($root) as $p=>$label){$record=compositionRecord($p);$pages[]=['path'=>$p,'label'=>$label,'composed'=>$record!==null,'parentPath'=>$record['parentPath']??null,'dynamic'=>!isset($configured[$p])];}
         $response=['ok'=>true,'pages'=>$pages,'templates'=>composerTemplates(),'media'=>mediaItems($root)];if($path!=='')$response['page']=compositionPayload($root,$path);runtimeJson($response);
     }
     if($method!=='POST')runtimeJson(['ok'=>false,'error'=>'Method not allowed.'],405);
     requireSameOrigin(true);requireCmsCsrf();enforceRateLimit('cms-composer',90,3600,$root);$payload=readJsonBody(1000000);$action=(string)($payload['action']??'save');
     if($action==='refresh'){$templates=composerRefreshTemplates($root);$media=mediaRefreshLibrary($root);cmsAudit('composer','Refreshed template and media catalogs',['templates'=>$templates['templates'],'media'=>$media['assets']],$root);runtimeJson(['ok'=>true,'templates'=>composerTemplates(),'media'=>mediaItems($root)]);}
     if($action==='save'){
-        $path=trim((string)($payload['path']??''));$items=$payload['items']??null;$expected=trim((string)($payload['expectedHash']??''));if(!is_array($items))runtimeJson(['ok'=>false,'error'=>'Composition blocks are required.'],422);
-        $metadata=['label'=>(string)($payload['label']??''),'title'=>(string)($payload['title']??''),'shellPath'=>(string)($payload['shellPath']??''),'parentPath'=>array_key_exists('parentPath',$payload)?($payload['parentPath']!==null?(string)$payload['parentPath']:null):null];
+        $path=trim((string)($payload['path']??''));$items=$payload['items']??null;$expected=trim((string)($payload['expectedHash']??''));if(!is_array($items))runtimeJson(['ok'=>false,'error'=>'Composition blocks are required.'],422);$metadata=[];
+        foreach(['label','title','shellPath','parentPath'] as $key)if(array_key_exists($key,$payload))$metadata[$key]=$payload[$key]!==null?(string)$payload[$key]:null;
         $saved=compositionSave($root,$path,$items,$expected,$metadata);navigationProject($root);runtimeJson(['ok'=>true,'page'=>compositionPayload($root,$path),'composition'=>$saved]);
     }
     if($action==='create'){

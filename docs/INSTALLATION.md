@@ -1,8 +1,8 @@
-# Installation, upgrade, backup, and rollback
+# Installation, onboarding, upgrade, backup, and rollback
 
-This document describes portable AI Native CMS installation and database-state handling. It deliberately does not prescribe a hosting provider, repository updater, web-server control panel, or production deployment mechanism.
+This document describes the portable AI Native CMS installation path and database-state handling. It deliberately does not prescribe a hosting provider, repository updater, control panel, or production deployment mechanism.
 
-The current internal release candidate is `0.1.0-rc.2` with schema version 8.
+The current internal release candidate is `0.1.0-rc.3` with schema version 8.
 
 ## Runtime requirements
 
@@ -16,29 +16,64 @@ Production CMS access requires HTTPS. A non-local MySQL connection requires veri
 
 ## Fresh installation
 
-1. Copy `config/site.example.php` to `config/site.php` and configure adopter-owned public structure. Redirect `system_aliases`, if any, are repository-owned read-only compatibility routes; manual and post-history redirects live in MySQL.
-2. Configure private `AINCMS_*` values through environment variables or an INI file outside the public root. Do not commit populated credentials.
-3. For a dedicated empty database run:
+### 1. Name the public site
+
+The release candidate ships a usable neutral Home/About/Writing starter. Create the adopter-owned **public, non-secret** site configuration with the CLI initializer:
+
+```bash
+php setup/site.php --name="My Site" --url=https://example.com --owner="Site Owner"
+```
+
+This writes `config/site.php` from the shipped example. It does not ask for, read, or write database credentials or other secrets. It refuses to overwrite an existing `config/site.php` unless `--force` is explicitly supplied.
+
+You may instead copy and edit `config/site.example.php` manually. Keep credentials out of either file.
+
+### 2. Configure private runtime secrets
+
+Configure the required `AINCMS_*` values through environment variables or an INI file outside the public root. Do not commit populated credentials. See `database/private-config.example.ini` for names and `SECURITY.md` for placement rules.
+
+### 3. Bootstrap a dedicated empty database
 
 ```bash
 php database/bootstrap.php
 ```
 
-Bootstrap is CLI-only and idempotent. It derives the current schema/table set from `database/schema.sql`, installs structure plus the first owner, and never seeds adopter content. `--repair` is limited to incomplete installs already stamped with the current schema. It is not a migration engine.
+Bootstrap is CLI-only and idempotent. It derives the current schema/table set from `database/schema.sql`, installs structure plus the first persisted owner, and never seeds adopter content. `--repair` is limited to incomplete installs already stamped with the current schema. It is not a migration engine.
 
-4. Initialize canonical repository content separately:
+### 4. Initialize canonical repository content
 
 ```bash
 php database/reconcile.php initial-import
 ```
 
-5. Run the read-only readiness report:
+Repository pages are proposals until this explicit reconciliation step establishes their canonical SQL lineage. Browser onboarding does not promote Git/source files into canonical authority.
+
+### 5. Sign in and build the site
+
+Open `/cms/` over HTTPS. An incomplete installation lands in `/cms/onboarding.php`, a resumable state-derived workspace rather than a one-time completion flag.
+
+Onboarding guides the adopter through:
+
+- public repository identity/configuration;
+- starter-site presence;
+- database/owner bootstrap state;
+- canonical content initialization;
+- starter page copy and additional page composition;
+- branding and navigation;
+- optional first writing publication;
+- final readiness evidence.
+
+Each action hands off to the existing guarded editor or CLI boundary that owns that state. The onboarding layer is observational; it does not create a parallel state model, write credentials, migrate schema, or deploy.
+
+### 6. Run readiness
 
 ```bash
 php database/readiness.php
 ```
 
-6. Open `/cms/` over HTTPS, verify persisted-owner login, and remove the bootstrap password hash from private configuration when practical.
+Resolve blocking failures before production use. Once foundational onboarding/readiness state is satisfied, ordinary sign-in goes directly to the Pages workspace; Onboarding remains available for later review.
+
+When practical, remove the bootstrap password hash from private configuration after persisted-owner login has been verified.
 
 ## Back up before changing an existing database
 
@@ -48,7 +83,7 @@ Record with the backup: source application version, `app_meta.schema_version`, t
 
 ## Schema 7 → 8 upgrade
 
-`0.1.0-rc.1` used schema 7. `0.1.0-rc.2` uses schema 8 and adds canonical redirect authority. Do **not** use `database/bootstrap.php --repair` for this transition.
+`0.1.0-rc.1` used schema 7. rc.2 and rc.3 use schema 8 and canonical redirect authority. Do **not** use `database/bootstrap.php --repair` for this transition.
 
 After taking and restore-testing the backup, inspect the migration without applying it:
 
@@ -56,7 +91,7 @@ After taking and restore-testing the backup, inspect the migration without apply
 php database/migrations/7-to-8.php
 ```
 
-The command reports the current state and requires the explicit apply flag. Apply only to a database whose schema version is exactly 7:
+Apply only to a database whose schema version is exactly 7:
 
 ```bash
 php database/migrations/7-to-8.php --apply
@@ -75,7 +110,15 @@ Reconciliation remains a CLI/deployment boundary. Browser CMS pages cannot impor
 
 ## Redirect runtime
 
-Canonical manual and post-history redirect records are projected to `__redirect-map.php`. `__redirect.php` consumes only that generated map; it never opens MySQL. A deployment must explicitly route unresolved public paths to that runtime (or implement equivalent behavior in another server adapter). The portable core does not assume Apache, Nginx, a CDN, or a particular hosting provider.
+Canonical manual and post-history redirect records are projected to `__redirect-map.php`. `__redirect.php` consumes only that generated map; it never opens MySQL. A deployment must explicitly route unresolved public paths to that runtime or implement equivalent behavior in another server adapter. The portable core does not assume Apache, Nginx, a CDN, or a particular hosting provider.
+
+## Repository and hosting workflow
+
+See `docs/REPOSITORY-OPERATIONS.md` for the supported operating model: Git branches/PRs for repository-owned structure and code, canonical MySQL state for authored content, deterministic generated outputs, SSH pull-to-host or reviewed-artifact deployment patterns, provider checks, backup, and rollback.
+
+## LLM-assisted iteration
+
+See `AGENTS.md` and `docs/LLM-COLLABORATION.md` before allowing an LLM to modify a site repository. The agent must work through the same repository/canonical/projection/host boundaries rather than treating conversation history or generated HTML as authority.
 
 ## Future migration policy
 
@@ -107,4 +150,4 @@ For a failed fresh installation with no accepted content, discard the dedicated 
 
 This repository does not choose how an adopter deploys files or intercepts unresolved routes. FTP/SFTP, SSH/Git checkout, CI deployment, control-panel upload, containers, web-server rewrite policy, and provider-specific repository updaters are deployment adapters outside portable core.
 
-A successful release-candidate build or readiness report is evidence about the candidate, not authorization to deploy or publish it.
+A successful internal release-candidate build or readiness report is evidence about the candidate, not authorization to publish or deploy it.

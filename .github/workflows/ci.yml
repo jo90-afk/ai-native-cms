@@ -15,8 +15,12 @@ jobs:
       - uses: actions/checkout@v4
       - name: Public-release contract
         run: python3 tests/public_release_contract.py
+      - name: Content-authority contract
+        run: python3 tests/content_authority_contract.py
+      - name: Content primitive behavior
+        run: php tests/content_core.php
       - name: PHP syntax
         run: |
-          find api config database -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+          find api config database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
       - name: Python syntax
-        run: python3 -m py_compile tests/public_release_contract.py
+        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py

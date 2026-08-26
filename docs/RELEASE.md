@@ -24,11 +24,13 @@ Sorted file order, fixed ZIP metadata, deterministic compression, and exact sour
 
 ## Candidate contents
 
-The source candidate includes reusable runtime/product code, `README.md`, `SECURITY.md`, release metadata, `api/`, `cms/`, generic config examples, schema/bootstrap/migrations/reconciliation/readiness, root redirect runtime/map seed, and `docs/`.
+The source candidate includes reusable runtime/product code, `README.md`, `SECURITY.md`, release metadata, `api/`, `cms/`, generic config examples, schema/bootstrap/migrations/reconciliation/readiness, root redirect runtime/map seed, portable `docs/`, and optional deployment adapter examples under `adapters/`.
 
 It excludes `.git/`, `.github/`, `.lattice/`, tests, release tooling, generated `dist/`, runtime/upload state, adopter-local `config/site.php`, populated INI files, symlinks, credentials, and known reference-adopter residue.
 
 Schema-v8 candidates must include `api/redirects.php`, `api/cms-redirects.php`, `cms/redirects.php`, `database/migrations/7-to-8.php`, `__redirect.php`, and `__redirect-map.php`.
+
+M-010 adds reference deployment adapters, not automatic deployment. The candidate includes `adapters/apache/public.htaccess.example`, `adapters/apache/private.htaccess.example`, and `docs/DEPLOYMENT-ADAPTERS.md` so an adopter can implement unresolved-path redirect interception and conservative caching/compression without making Apache a core runtime assumption.
 
 ## Manifest
 
@@ -36,15 +38,17 @@ The embedded/external `RELEASE-MANIFEST.json` records product/version/channel, e
 
 ## Verification
 
-CI must pass the cumulative M-001–M-009 gate on the exact candidate head. For the review artifact verify at minimum:
+CI must pass the cumulative M-001–M-010 gate on the exact candidate head. For the review artifact verify at minimum:
 
 1. CI is green on the exact reviewed head;
 2. ZIP SHA256 matches the emitted checksum;
 3. embedded and external manifests are identical and record that head;
 4. schema version is 8 and the explicit 7→8 migration plus redirect runtime are packaged;
-5. no adopter/local configuration, private residue, or `LICENSE*` entry exists;
-6. `docs/INSTALLATION.md` accurately covers fresh install, explicit 7→8 migration, readiness, source reconciliation, backup, and paired rollback;
-7. `SECURITY.md` still describes secret/request/static-routing boundaries.
+5. Apache reference deployment adapters are packaged but no host-specific credentials/provider assumptions are embedded;
+6. no adopter/local configuration, private residue, or `LICENSE*` entry exists;
+7. `docs/INSTALLATION.md` accurately covers fresh install, explicit 7→8 migration, readiness, source reconciliation, backup, and paired rollback;
+8. `docs/DEPLOYMENT-ADAPTERS.md` accurately separates portable CMS authority from host interception/cache/compression behavior;
+9. `SECURITY.md` still describes secret/request/static-routing boundaries.
 
 The CI artifact remains short-lived and private. It is evidence for review, not publication.
 

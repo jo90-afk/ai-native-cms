@@ -22,7 +22,15 @@ def main() -> None:
     workflow=(ROOT/'.github/workflows/ci.yml').read_text(encoding='utf-8')
     if 'github.event.pull_request.head.sha || github.sha' not in workflow: fail('CI release artifact does not record reviewed source revision')
     builder=load_builder();candidates=[path.relative_to(ROOT).as_posix() for path in builder.candidate_files()]
-    required={'README.md','SECURITY.md','VERSION','release/release.json','api/runtime.php','api/redirects.php','api/cms-redirects.php','cms/pages.php','cms/redirects.php','cms/redirects.js','config/site.example.php','database/schema.sql','database/bootstrap.php','database/migrations/7-to-8.php','database/private-config.example.ini','__redirect.php','__redirect-map.php','docs/ARCHITECTURE.md','docs/INSTALLATION.md','docs/RELEASE.md'}
+    required={
+        'README.md','SECURITY.md','VERSION','release/release.json',
+        'api/runtime.php','api/redirects.php','api/cms-redirects.php',
+        'cms/pages.php','cms/redirects.php','cms/redirects.js','config/site.example.php',
+        'database/schema.sql','database/bootstrap.php','database/migrations/7-to-8.php','database/private-config.example.ini',
+        '__redirect.php','__redirect-map.php',
+        'adapters/apache/public.htaccess.example','adapters/apache/private.htaccess.example',
+        'docs/ARCHITECTURE.md','docs/INSTALLATION.md','docs/RELEASE.md','docs/DEPLOYMENT-ADAPTERS.md',
+    }
     missing=sorted(required.difference(candidates))
     if missing: fail('release candidate is missing required files: '+', '.join(missing))
     forbidden_prefixes=('.git/','.github/','.lattice/','tests/','tools/','dist/','runtime/','uploads/')
@@ -41,12 +49,15 @@ def main() -> None:
             if any(name.startswith(root+prefix) for prefix in forbidden_prefixes for name in names): fail('candidate ZIP contains an excluded operational path')
             if root+'config/site.php' in names: fail('candidate ZIP contains adopter-local config/site.php')
             if any(name.rsplit('/',1)[-1].lower().startswith('license') for name in names): fail('candidate contains a license even though licenseSelected is false')
-            for path in ['api/redirects.php','database/migrations/7-to-8.php','__redirect.php','__redirect-map.php']:
+            for path in [
+                'api/redirects.php','database/migrations/7-to-8.php','__redirect.php','__redirect-map.php',
+                'adapters/apache/public.htaccess.example','adapters/apache/private.htaccess.example','docs/DEPLOYMENT-ADAPTERS.md',
+            ]:
                 if root+path not in names: fail('schema-v8 candidate omitted '+path)
     installation=(ROOT/'docs/INSTALLATION.md').read_text(encoding='utf-8');release_doc=(ROOT/'docs/RELEASE.md').read_text(encoding='utf-8')
     for needle in ['database/bootstrap.php','database/migrations/7-to-8.php --apply','database/reconcile.php initial-import','database/readiness.php','backup','rollback','migration']:
         if needle.lower() not in installation.lower(): fail('installation/upgrade documentation is missing: '+needle)
-    for needle in ['internal release candidate','not a public release','license','tag','tools/build_release.py','sha256']:
+    for needle in ['internal release candidate','not a public release','license','tag','tools/build_release.py','sha256','deployment adapter']:
         if needle.lower() not in release_doc.lower(): fail('release-boundary documentation is missing: '+needle)
     print('PASS: reproducible internal schema-v8 release candidate contract')
 

@@ -13,10 +13,10 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_SUFFIXES = {
     ".php", ".py", ".js", ".mjs", ".json", ".md", ".sql", ".yml", ".yaml",
-    ".css", ".html", ".txt", ".ini", ".sh", "",
+    ".css", ".html", ".txt", ".ini", ".sh", ".example", "",
 }
-TOP_LEVEL_FILES = {"README.md", "SECURITY.md", "VERSION"}
-INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs"}
+TOP_LEVEL_FILES = {"README.md", "SECURITY.md", "VERSION", "__redirect.php", "__redirect-map.php"}
+INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters"}
 EXCLUDED_PARTS = {".git", ".github", ".lattice", "tests", "tools", "dist", "runtime", "uploads", "__pycache__"}
 EXCLUDED_FILES = {"config/site.php"}
 ALLOWED_INI = {"database/private-config.example.ini"}

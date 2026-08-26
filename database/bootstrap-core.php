@@ -34,6 +34,11 @@ function bootstrapSqlStatements(string $sql): array {
     }
     $stmt=trim($buf);if($stmt!=='')$out[]=$stmt;return $out;
 }
+function bootstrapClassifyState(array $existing,array $required,int $version,int $expected,int $owners): array {
+    $existing=array_values(array_unique(array_map('strval',$existing)));$required=array_values(array_unique(array_map('strval',$required)));sort($existing,SORT_STRING);sort($required,SORT_STRING);$known=array_values(array_intersect($required,$existing));$missing=array_values(array_diff($required,$existing));$unknown=array_values(array_diff($existing,$required));
+    $status='partial';if(!$existing)$status='empty';elseif(!$missing&&$version>=$expected&&$owners>0)$status='ready';elseif(!$known&&$unknown)$status='foreign';
+    return ['status'=>$status,'schemaVersion'=>$version,'expectedSchemaVersion'=>$expected,'ownerCount'=>$owners,'requiredCount'=>count($required),'existingRequiredCount'=>count($known),'missing'=>$missing,'unknown'=>$unknown];
+}
 function bootstrapExistingTables(PDO $pdo): array {
     $rows=$pdo->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);$out=array_values(array_map('strval',$rows?:[]));sort($out,SORT_STRING);return $out;
 }
@@ -44,9 +49,7 @@ function bootstrapSchemaVersionInDatabase(PDO $pdo,array $existing): int {
     if(!in_array('app_meta',$existing,true))return 0;try{return (int)$pdo->query('SELECT schema_version FROM app_meta WHERE id=1')->fetchColumn();}catch(Throwable $e){return 0;}
 }
 function bootstrapState(PDO $pdo,string $root): array {
-    $existing=bootstrapExistingTables($pdo);$required=bootstrapRequiredTables($root);$known=array_values(array_intersect($required,$existing));$missing=array_values(array_diff($required,$existing));$unknown=array_values(array_diff($existing,$required));$version=bootstrapSchemaVersionInDatabase($pdo,$existing);$expected=bootstrapSchemaVersion($root);$owners=bootstrapOwnerCount($pdo,$existing);
-    $status='partial';if(!$existing)$status='empty';elseif(!$missing&&$version>=$expected&&$owners>0)$status='ready';elseif(!$known&&$unknown)$status='foreign';
-    return ['status'=>$status,'schemaVersion'=>$version,'expectedSchemaVersion'=>$expected,'ownerCount'=>$owners,'requiredCount'=>count($required),'existingRequiredCount'=>count($known),'missing'=>$missing,'unknown'=>$unknown];
+    $existing=bootstrapExistingTables($pdo);return bootstrapClassifyState($existing,bootstrapRequiredTables($root),bootstrapSchemaVersionInDatabase($pdo,$existing),bootstrapSchemaVersion($root),bootstrapOwnerCount($pdo,$existing));
 }
 function bootstrapRunSchema(PDO $pdo,string $root): int {$count=0;foreach(bootstrapSqlStatements(bootstrapSchemaSql($root)) as $stmt){$pdo->exec($stmt);$count++;}return $count;}
 function bootstrapConfiguredOwner(): array {

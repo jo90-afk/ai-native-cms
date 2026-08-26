@@ -1,15 +1,9 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/runtime.php';
+require_once __DIR__.'/slug.php';
 
 /** Canonical long-form post persistence and revision history. */
-
-function cleanSlug(string $slug): string {
-    $slug=strtolower(trim($slug));
-    $slug=preg_replace('/[^a-z0-9-]+/','-',$slug)??'';
-    $slug=preg_replace('/-+/','-',$slug)??'';
-    return trim($slug,'-');
-}
 
 function postFromRow(array $row): array {
     $post=[

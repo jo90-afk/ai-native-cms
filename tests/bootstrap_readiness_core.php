@@ -12,9 +12,10 @@ $sql="-- comment\nCREATE TABLE x (v VARCHAR(20));\nINSERT INTO x VALUES ('a;b');
 
 $empty=bootstrapClassifyState([],['a','b'],0,7,0);t($empty['status']==='empty','empty database misclassified');
 $foreign=bootstrapClassifyState(['other'],['a','b'],0,7,0);t($foreign['status']==='foreign','foreign database misclassified');
-$partial=bootstrapClassifyState(['a'],['a','b'],6,7,0);t($partial['status']==='partial','partial database misclassified');
-$noOwner=bootstrapClassifyState(['a','b'],['a','b'],7,7,0);t($noOwner['status']==='partial','schema without owner should remain partial');
-$ready=bootstrapClassifyState(['a','b','extension_table'],['a','b'],7,7,1);t($ready['status']==='ready','ready database with extension table misclassified');
+$partial=bootstrapClassifyState(['a'],['a','b'],6,7,0);t($partial['status']==='partial','partial database misclassified');t(!bootstrapRepairable($partial),'older partial schema was incorrectly repairable');
+$currentPartial=bootstrapClassifyState(['a'],['a','b'],7,7,0);t(bootstrapRepairable($currentPartial),'current-schema interrupted install should be repairable');
+$noOwner=bootstrapClassifyState(['a','b'],['a','b'],7,7,0);t($noOwner['status']==='partial','schema without owner should remain partial');t(bootstrapRepairable($noOwner),'current schema missing only owner should be repairable');
+$ready=bootstrapClassifyState(['a','b','extension_table'],['a','b'],7,7,1);t($ready['status']==='ready','ready database with extension table misclassified');t(!bootstrapRepairable($ready),'ready database should not enter repair path');
 
 t(readinessSafeRelativePath('assets/uploads/image.png')==='assets/uploads/image.png','safe relative path rejected');
 t(readinessSafeRelativePath('../secret')===null,'path traversal accepted');

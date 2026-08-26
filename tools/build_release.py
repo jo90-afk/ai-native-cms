@@ -62,13 +62,26 @@ def load_release_metadata() -> dict:
         fail("schema version could not be derived from database/schema.sql")
     if int(data.get("schemaVersion", -1)) != int(match.group(1)):
         fail("release metadata schemaVersion does not match database/schema.sql")
-    if data.get("channel") != "internal-release-candidate":
-        fail("release metadata must remain an internal release candidate")
+
+    channel = data.get("channel")
+    allowed_channels = {"internal-release-candidate", "public-release-candidate"}
+    if channel not in allowed_channels:
+        fail("release metadata channel is unsupported")
     distribution = data.get("distribution")
-    if not isinstance(distribution, dict) or distribution.get("public") is not False:
-        fail("release metadata crossed the public-distribution boundary")
+    if not isinstance(distribution, dict):
+        fail("release distribution metadata is missing")
+    public = channel == "public-release-candidate"
+    if distribution.get("public") is not public:
+        fail("release channel and public-distribution state disagree")
     if distribution.get("licenseSelected") is not True:
         fail("release metadata must record the selected source-available license")
+    if public:
+        expected_tag = f"v{version}"
+        if distribution.get("tagRequired") is not True or distribution.get("tag") != expected_tag:
+            fail("public release candidate must require its exact version tag")
+    elif distribution.get("tagRequired") not in (False, None):
+        fail("internal release candidate may not require a public tag")
+
     license_meta = distribution.get("license")
     if not isinstance(license_meta, dict):
         fail("selected license metadata is missing")
@@ -179,7 +192,8 @@ def manifest(metadata: dict, revision: str, records: list[dict]) -> dict:
         "packageRoot": metadata["packageRoot"],
         "validation": {
             "candidatePolicy": "release/release.json + tools/build_release.py",
-            "publicReleaseBoundaryPreserved": True,
+            "distributionContractValidated": True,
+            "publicReleaseAuthorized": bool(metadata["distribution"]["public"]),
         },
         "files": records,
     }
@@ -241,7 +255,7 @@ def build(output_dir: Path, explicit_source_ref: str | None = None) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Build a deterministic internal AI Native CMS release candidate.")
+    parser = argparse.ArgumentParser(description="Build a deterministic AI Native CMS release candidate.")
     parser.add_argument("--output-dir", default="dist", help="Directory for candidate artifacts (default: dist)")
     parser.add_argument("--source-ref", default=None, help="Source revision recorded in the manifest")
     args = parser.parse_args()

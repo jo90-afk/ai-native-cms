@@ -80,7 +80,7 @@ def main() -> None:
         "cmsSafePublicFile",
         "cmsSanitizeRichHtml",
         "cmsReplaceEditableBlock",
-        "javascript",
+        "['http','https','mailto','tel']",
         "data-cms-id",
     ], "content safety primitives")
 

@@ -15,7 +15,10 @@ TEXT_SUFFIXES = {
     ".php", ".py", ".js", ".mjs", ".json", ".md", ".sql", ".yml", ".yaml",
     ".css", ".html", ".txt", ".ini", ".sh", ".example", "",
 }
-TOP_LEVEL_FILES = {"README.md", "SECURITY.md", "VERSION", "__redirect.php", "__redirect-map.php"}
+TOP_LEVEL_FILES = {
+    "README.md", "SECURITY.md", "VERSION", "LICENSE", "LICENSE-APACHE-2.0.txt", "NOTICE",
+    "__redirect.php", "__redirect-map.php",
+}
 INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters"}
 EXCLUDED_PARTS = {".git", ".github", ".lattice", "tests", "tools", "dist", "runtime", "uploads", "__pycache__"}
 EXCLUDED_FILES = {"config/site.php"}
@@ -62,8 +65,23 @@ def load_release_metadata() -> dict:
     if data.get("channel") != "internal-release-candidate":
         fail("release metadata must remain an internal release candidate")
     distribution = data.get("distribution")
-    if not isinstance(distribution, dict) or distribution.get("public") is not False or distribution.get("licenseSelected") is not False:
-        fail("release metadata crossed the public/license decision boundary")
+    if not isinstance(distribution, dict) or distribution.get("public") is not False:
+        fail("release metadata crossed the public-distribution boundary")
+    if distribution.get("licenseSelected") is not True:
+        fail("release metadata must record the selected source-available license")
+    license_meta = distribution.get("license")
+    if not isinstance(license_meta, dict):
+        fail("selected license metadata is missing")
+    expected = {
+        "base": "Apache-2.0",
+        "condition": "Commons Clause License Condition v1.0",
+        "sourceAvailable": True,
+        "osiApproved": False,
+        "attributionRequired": True,
+    }
+    for key, value in expected.items():
+        if license_meta.get(key) != value:
+            fail(f"release license metadata disagrees on {key}")
     return data
 
 

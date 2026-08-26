@@ -99,6 +99,10 @@ def main() -> None:
         "contentRebuildRunHooks($hooks,'after_pages'",
     ], "site-wide rebuild")
 
+    for path in ["cms/pages.php", "cms/composer.php", "cms/media.php", "cms/navigation.php", "cms/branding.php", "cms/writing.php", "cms/seo.php"]:
+        source = text(path)
+        require(source, ["/cms/navigation.php", "/cms/branding.php"], f"{path} site-wide control navigation")
+
     for path in ["cms/composer.js", "cms/navigation.js", "cms/branding.js"]:
         source = text(path)
         if "innerHTML" in source:

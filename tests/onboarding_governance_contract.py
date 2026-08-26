@@ -162,7 +162,7 @@ def main() -> None:
         "Bug fix",
         "Schema / migration work",
         "Release work",
-        "Conversation",
+        "conversation history",
     ], "LLM collaboration guide")
     require(agents, [
         "Source-of-truth order",

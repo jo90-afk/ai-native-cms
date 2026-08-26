@@ -1,18 +1,29 @@
-# Release-candidate process
+# Release process
 
-AI Native CMS `0.1.0-rc.3` is an **internal release candidate**, not a public release. Schema version is **8**. A candidate is a reproducible review artifact: it does not make the repository public, create a Git tag or GitHub Release, publish a package, authorize deployment, or adopt the core into production.
+AI Native CMS `0.1.0-rc.3` is the first **public release candidate**, schema version 8. Its required Git tag is `v0.1.0-rc.3`.
 
-## Candidate identity
+The release is source-available under **Apache License 2.0 subject to Commons Clause License Condition v1.0**. It is not OSI-approved open source. Use, modification, derivative works, attribution-preserving redistribution, and commercial use are permitted subject to the Commons Clause restriction on selling the CMS itself or a product/service whose value derives entirely or substantially from the CMS functionality.
 
-`VERSION` defines the candidate version. `release/release.json` defines product/channel/schema/runtime metadata, license selection, and explicit distribution-boundary flags. `tools/build_release.py` refuses mismatched version/schema/license metadata or a candidate whose metadata crosses the private-public boundary.
+The binding files are `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE`.
 
-## License
+## Release identity
 
-AI Native CMS uses **Apache License 2.0 subject to the Commons Clause License Condition v1.0**. This is a **source-available** license, not an OSI-approved open-source license. It permits use, modification, derivative works, and commercial use while withholding the right to sell AI Native CMS itself, or a product/service whose value derives entirely or substantially from AI Native CMS functionality. Attribution and license notices must be preserved according to the terms.
+`VERSION` defines the release-candidate version. `release/release.json` defines product/channel/schema/runtime metadata, license state, public-distribution authorization, and the required version tag.
 
-The candidate includes `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE`. The practical-intent summary in `LICENSE` is explanatory; the binding terms are Apache 2.0 plus the Commons Clause condition.
+For rc.3 the contract is:
+
+- version: `0.1.0-rc.3`;
+- channel: `public-release-candidate`;
+- schema: 8;
+- public distribution: authorized;
+- tag required: `v0.1.0-rc.3`;
+- license selected: Apache 2.0 + Commons Clause v1.0.
+
+`tools/build_release.py` refuses a mismatch between `VERSION`, schema, channel, public-distribution state, tag, or license metadata.
 
 ## Deterministic build
+
+Build from an exact Git revision:
 
 ```bash
 python3 tools/build_release.py --source-ref <git-sha>
@@ -20,82 +31,83 @@ python3 tools/build_release.py --source-ref <git-sha>
 
 The builder emits:
 
-- `ai-native-cms-0.1.0-rc.3.zip`
-- `ai-native-cms-0.1.0-rc.3.manifest.json`
-- `ai-native-cms-0.1.0-rc.3.sha256`
+- `dist/ai-native-cms-0.1.0-rc.3.zip`
+- `dist/ai-native-cms-0.1.0-rc.3.manifest.json`
+- `dist/ai-native-cms-0.1.0-rc.3.sha256`
 
 Sorted file order, fixed ZIP metadata, deterministic compression, and exact source-ref provenance make repeated builds byte-for-byte comparable.
 
-The manifest records product/version/channel, exact source revision, schema version, runtime requirements, license/distribution flags, package root, and per-file byte length/SHA256. The outer checksum hashes the complete ZIP.
+## Public package contents
 
-## Candidate contents and exclusions
+The package contains the reusable CMS/runtime, starter Home/About/Writing site, onboarding, public site initializer, canonical schema/bootstrap/migration/reconciliation/readiness tools, SEO audit/projection support, redirect runtime, deployment-adapter examples, operator documentation, `AGENTS.md`, license/NOTICE files, and release metadata.
 
-The candidate includes reusable runtime/product code, starter public site, `README.md`, `AGENTS.md`, `SECURITY.md`, license/NOTICE files, release metadata, `api/`, `cms/`, generic configuration examples, schema/bootstrap/migrations/reconciliation/readiness, SEO audit/projection support, redirect runtime/map seed, portable docs, and optional deployment adapter examples.
+It excludes `.git/`, `.github/`, `.lattice/`, tests, release tooling, generated `dist/`, runtime/upload state, adopter-local `config/site.php`, populated INI files, symlinks, credentials, and known proving-ground/adopter residue.
 
-It excludes `.git/`, `.github/`, `.lattice/`, tests, release tooling, generated `dist/`, runtime/upload state, adopter-local `config/site.php`, populated INI files, symlinks, credentials, and known adopter-specific residue.
+Schema-v8 packages include the explicit `database/migrations/7-to-8.php` migration and the generated-map redirect runtime (`__redirect.php` / `__redirect-map.php`). Reference deployment adapters remain examples, not automatic deployment or CMS authority. See `docs/DEPLOYMENT-ADAPTERS.md`.
 
-Schema-v8 candidates include the explicit 7→8 migration plus canonical/static redirect machinery. Reference deployment adapters remain examples, not automatic deployment behavior.
+## Manifest and checksum
 
-## Release verification gate
+The embedded/external `RELEASE-MANIFEST.json` records product/version/channel, exact source revision, schema version, runtime requirements, public/license/tag distribution flags, package root, and per-file byte length/SHA256. The outer `.sha256` hashes the complete ZIP.
 
-Every reviewed candidate head must pass the cumulative product gate and the clean release rehearsal.
+## Required verification
 
-The cumulative gate covers all historical structural contracts, executable PHP behavior, PHP/JavaScript/Python syntax, deterministic candidate build, and private artifact upload.
+Before creating or replacing the GitHub prerelease:
 
-The clean rehearsal is implemented by `.github/workflows/release-rehearsal.yml` and `tests/release_rehearsal.sh`. It runs from the **packaged candidate**, not a preconfigured source checkout, against a clean MySQL 8 service and proves:
+1. cumulative CI is green on the exact reviewed head;
+2. the clean packaged-candidate rehearsal is green on the exact reviewed head;
+3. two candidate builds are byte-identical;
+4. ZIP SHA256 matches the emitted checksum;
+5. embedded and external manifests are identical and record the exact source revision;
+6. schema is 8 and the explicit migration + redirect runtime are packaged;
+7. `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE` are packaged;
+8. starter/onboarding, repository operations, LLM collaboration, and deployment adapter docs are packaged;
+9. no adopter-local configuration, personal residue, private repository identifiers, or secret material exists in the package;
+10. repository-visible governance files are reviewed for public suitability;
+11. a fresh production proving-ground parity check shows no unresolved reusable core delta.
 
-1. two builds from the same exact source revision are byte-identical;
-2. package provenance, version/schema, license/NOTICE, exclusions, residue rules, and `public:false` remain correct;
-3. `setup/site.php` creates only public non-secret adopter configuration;
-4. shipped bootstrap creates schema 8 plus a persisted owner, then explicit reconciliation initializes canonical repository content;
-5. readiness reaches zero blocking failures;
-6. authenticated HTTP login and state-derived onboarding work from the clean candidate;
-7. the starter site is complete without hand-authoring initial HTML;
-8. a representative agent-owned repository structural/design change and small feature can be isolated on a Git branch and validated without crossing canonical-state boundaries;
-9. a representative canonical content change uses the content-authority store with expected-hash protection and deterministic projection;
-10. canonical redirect state projects a database-free anonymous routing map/runtime;
-11. paired filesystem + database backup/restore removes rehearsal mutations and returns the installation to green readiness.
+M-014 completed the clean release rehearsal from the packaged rc.3 candidate with a fresh MySQL 8 database, authenticated onboarding, canonical content/redirect mutation, deterministic projection, governed agent/repository change, and paired filesystem/database restore.
 
-This rehearsal is a release assurance test, not a deployment or publication action.
+## GitHub publication
 
-## M-014 evidence
+`.github/workflows/publish-release.yml` is the authorized rc.3 publisher. On the publication merge to `main` it:
 
-The first complete M-014 implementation head `43a981e4d995294c48f4022fc724bb2c48392da4` passed:
+1. resolves and validates the public release metadata;
+2. runs the public/release-candidate contracts;
+3. builds artifacts from the exact `main` SHA;
+4. attempts to set repository visibility to public using the workflow token;
+5. creates or verifies tag `v0.1.0-rc.3`;
+6. creates the GitHub prerelease or refreshes its assets;
+7. verifies the ZIP, manifest, and SHA256 are the release assets.
 
-- clean-candidate push run `33006245237`;
-- cumulative PR validation run **#189** (`33006335119`);
-- PR-triggered clean-candidate run `33006335107`.
+GitHub's normal workflow token may not have repository-administration permission. If the visibility step cannot change a private repository, the tag and prerelease can still be created privately; an owner must then change repository visibility to **Public** in GitHub settings. The release becomes visible with the repository.
 
-The rehearsal produced two identical `0.1.0-rc.3` candidates containing 96 packaged files. The candidate ZIP SHA256 was `bf5aca65a8339db1bc153dad120ebc5caa9ccf9bc05825eb7a6bc9b611ab3c9b`. Before and after paired restore, readiness reported 18 pass, 2 expected nonblocking warnings, and 0 blocking failures. Authenticated onboarding reported all five required steps complete and all six starter files present.
+The publisher is idempotent for the same tag/SHA and refuses to silently repoint an existing release tag to a different commit.
 
-These values identify rehearsal evidence for the implementation head. The final documentation head must independently pass the cumulative and rehearsal workflows before merge.
+## Installation and upgrades
 
-## Proving-ground parity gate
+Fresh install path:
 
-Immediately before release-gate merge and again before any publication decision, compare the production proving ground with the recorded parity point. A material reusable **core** delta reopens delegated extraction. Governance/evidence-only, host-only, or adopter-specific changes do not automatically block release.
+```bash
+php setup/site.php --name="My Site" --url=https://example.com --owner="Site Owner"
+php database/bootstrap.php
+php database/reconcile.php initial-import
+php database/readiness.php
+```
 
-The post-rehearsal proving-ground check found only a governance/evidence-only update after the reusable SEO parity merge; no newer reusable CMS-core delta was present at that check.
+Then sign in at `/cms/` and use the state-derived Onboarding workspace.
 
-## Pre-release engineering blockers
+An existing schema-7 installation must back up and test restore, then use:
 
-M-011 through M-014 now have technical evidence:
+```bash
+php database/migrations/7-to-8.php --apply
+```
 
-- friendly onboarding and coherent starter site;
-- understandable/reversible repository-to-host operations;
-- governed LLM-assisted design/content/feature iteration;
-- clean empty-site candidate rehearsal with deterministic build, real database bootstrap, authenticated onboarding, canonical content mutation, redirect transport boundary, and paired rollback.
+`database/bootstrap.php --repair` is not a migration path.
 
-After the final M-014 documentation head is green and merged, the project is at the **Principal publication gate**.
+See `docs/INSTALLATION.md` for onboarding, backup, migration, readiness, and paired rollback; `docs/REPOSITORY-OPERATIONS.md` for GitHub-to-host operation; and `docs/LLM-COLLABORATION.md` for governed iterative work with an LLM.
 
-## Public-distribution boundary
+## Prerelease status
 
-The selected license does not authorize publication. `release/release.json` remains `public:false`.
+`0.1.0-rc.3` is intentionally a prerelease. It is ready for public evaluation and site builds, but adopters should keep tested backups and review migrations/deployment changes before production use.
 
-The following remain separate Principal decisions:
-
-1. changing repository visibility;
-2. creating a public tag/GitHub Release;
-3. publishing a package/download;
-4. deploying or adopting the core in production.
-
-Until one or more of those actions is explicitly authorized, `0.1.0-rc.3` remains a private internal release candidate.
+Future release candidates must repeat the production proving-ground parity gate. Material reusable core changes reopen extraction; site-only or governance-only changes do not.

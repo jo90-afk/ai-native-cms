@@ -57,7 +57,10 @@ function compositionSyncCanonicalBlocks(string $path,string $structural): int {
 }
 
 function compositionProjectPage(string $root,string $path): array {
-    $record=compositionRecord($path);if(!$record)throw new RuntimeException('Page has no canonical composition.');$structural=compositionStructuralHtml($root,$path,(array)$record['blocks']);$html=contentAuthorityOverlayBlocks($structural,$path);$target=cmsSafePublicFile($root,$path);if($target===null)throw new RuntimeException('Composed page target is unavailable.');cmsAtomicWrite($target,$html);return ['path'=>$path,'hash'=>hash('sha256',$html),'blocks'=>count((array)$record['blocks'])];
+    $record=compositionRecord($path);if(!$record)throw new RuntimeException('Page has no canonical composition.');
+    $structural=compositionStructuralHtml($root,$path,(array)$record['blocks']);$leaves=compositionSyncCanonicalBlocks($path,$structural);$html=contentAuthorityOverlayBlocks($structural,$path);
+    $target=cmsSafePublicFile($root,$path);if($target===null)throw new RuntimeException('Composed page target is unavailable.');cmsAtomicWrite($target,$html);
+    return ['path'=>$path,'hash'=>hash('sha256',$html),'blocks'=>count((array)$record['blocks']),'editableBlocks'=>$leaves];
 }
 function compositionProjectAll(string $root): array {$items=[];foreach(compositionList() as $record)$items[]=compositionProjectPage($root,(string)$record['path']);return ['pages'=>count($items),'items'=>$items];}
 function projectCmsPage(string $root,string $path): void {if(compositionExists($path))compositionProjectPage($root,$path);else contentAuthorityProjectPage($root,$path);}

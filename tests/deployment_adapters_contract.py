@@ -79,6 +79,8 @@ def main() -> None:
 
     if 'INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters"}' not in builder:
         fail("release builder does not include deployment adapters")
+    if '".example"' not in builder:
+        fail("release builder does not scan example deployment configs as text")
 
     print("PASS: deployment adapter contract")
 

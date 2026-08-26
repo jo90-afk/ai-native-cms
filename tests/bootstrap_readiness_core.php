@@ -1,0 +1,26 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__).'/database/bootstrap-core.php';
+require_once dirname(__DIR__).'/api/readiness.php';
+
+function t(bool $condition,string $message): void {if(!$condition){fwrite(STDERR,"FAIL: $message\n");exit(1);}}
+$root=dirname(__DIR__);
+
+t(bootstrapSchemaVersion($root)===7,'schema version was not derived from schema.sql');
+$required=bootstrapRequiredTables($root);foreach(['app_meta','cms_users','page_blocks','page_compositions','site_navigation','site_branding','posts'] as $table)t(in_array($table,$required,true),'required table missing from schema discovery: '.$table);
+$sql="-- comment\nCREATE TABLE x (v VARCHAR(20));\nINSERT INTO x VALUES ('a;b'); # tail\n/* block; */ INSERT INTO x VALUES (\"c;d\");";$statements=bootstrapSqlStatements($sql);t(count($statements)===3,'SQL splitter mishandled comments or quoted semicolons');t(str_contains($statements[1],"'a;b'"),'SQL splitter changed quoted content');
+
+$empty=bootstrapClassifyState([],['a','b'],0,7,0);t($empty['status']==='empty','empty database misclassified');
+$foreign=bootstrapClassifyState(['other'],['a','b'],0,7,0);t($foreign['status']==='foreign','foreign database misclassified');
+$partial=bootstrapClassifyState(['a'],['a','b'],6,7,0);t($partial['status']==='partial','partial database misclassified');
+$noOwner=bootstrapClassifyState(['a','b'],['a','b'],7,7,0);t($noOwner['status']==='partial','schema without owner should remain partial');
+$ready=bootstrapClassifyState(['a','b','extension_table'],['a','b'],7,7,1);t($ready['status']==='ready','ready database with extension table misclassified');
+
+t(readinessSafeRelativePath('assets/uploads/image.png')==='assets/uploads/image.png','safe relative path rejected');
+t(readinessSafeRelativePath('../secret')===null,'path traversal accepted');
+t(readinessSafeRelativePath('/absolute')===null,'absolute path accepted');
+t(readinessSafeRelativePath('a//b')===null,'empty path segment accepted');
+$check=readinessCheck('x','Example','nonsense','message');t($check['status']==='fail','invalid readiness status was not fail-closed');
+$core=readinessCoreChecks($root);t(count($core)>=5,'portable readiness core returned too few checks');foreach($core as $row){t(isset($row['id'],$row['status'],$row['message'],$row['blocking'],$row['scope']),'readiness check shape is incomplete');t(!array_key_exists('password',$row),'readiness check exposed a password field');}
+
+fwrite(STDOUT,"PASS: bootstrap and readiness primitives\n");

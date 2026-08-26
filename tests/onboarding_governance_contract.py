@@ -108,7 +108,12 @@ def main() -> None:
         if forbidden in onboarding:
             fail(f"onboarding state model became mutating: {forbidden}")
     require(onboarding_api, ["requireCmsAuth(true)", "$method!=='GET'", "onboardingState($root)"], "read-only authenticated onboarding API")
-    require(onboarding_ui, ["/cms/onboarding.js", "Build your site without losing the source of truth", "How this CMS stays governable"], "onboarding workspace")
+    require(onboarding_ui, [
+        "/cms/onboarding.js",
+        "Start with a working site. Make it specific.",
+        "Structure lives in Git. Accepted content lives in the CMS.",
+        "Keep iterating without losing the source of truth.",
+    ], "onboarding workspace")
     require(onboarding_js, ["/api/cms-onboarding.php", "replaceChildren", "progress"], "onboarding browser client")
     if ".innerHTML" in onboarding_js or "insertAdjacentHTML" in onboarding_js or "document.write" in onboarding_js:
         fail("onboarding browser client introduced an HTML injection rendering path")

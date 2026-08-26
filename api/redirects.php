@@ -6,6 +6,21 @@ require_once __DIR__.'/presentation-core.php';
 /** Canonical redirect authority. SQL owns records; anonymous routing consumes only the generated map. */
 
 function redirectRequireSchema(): void { dbRequireSchemaVersion(8); }
+function redirectGraphLockName(): string {
+    $cfg=dbConfig();
+    return 'aincms-redirect-graph-'.substr(hash('sha256',(string)($cfg['name']??'')),0,24);
+}
+function redirectAcquireGraphLock(PDO $pdo,int $timeout=10): string {
+    $name=redirectGraphLockName();
+    $stmt=$pdo->prepare('SELECT GET_LOCK(?,?)');
+    $stmt->execute([$name,max(1,min(30,$timeout))]);
+    if((int)$stmt->fetchColumn()!==1)throw new RuntimeException('Could not acquire the redirect graph lock.');
+    return $name;
+}
+function redirectReleaseGraphLock(PDO $pdo,string $name): void {
+    if($name==='')return;
+    try{$stmt=$pdo->prepare('SELECT RELEASE_LOCK(?)');$stmt->execute([$name]);}catch(Throwable $ignored){}
+}
 function redirectAllowedStatus(int $status): int {
     if(!in_array($status,[301,302,307,308],true))throw new RuntimeException('Redirect status must be 301, 302, 307, or 308.');
     return $status;
@@ -79,8 +94,19 @@ function redirectSaveRecord(string $root,array $input,string $expectedHash=''): 
     redirectRequireSchema();$id=max(0,(int)($input['id']??0));$source=redirectNormalizeSource((string)($input['source']??''));$target=redirectNormalizeTarget((string)($input['target']??''),$source);$status=redirectAllowedStatus((int)($input['status']??301));$preserve=!array_key_exists('preserveQuery',$input)||(bool)$input['preserveQuery'];$active=!array_key_exists('active',$input)||(bool)$input['active'];$note=substr(trim((string)($input['note']??'')),0,1000);
     foreach(redirectSystemRecords() as $system)if($system['source']===$source)throw new RuntimeException('This redirect source is managed by a read-only system alias.');
     if($active&&redirectSourceCollidesWithPublicFile($root,$source))throw new RuntimeException('Redirect source currently resolves to a public file. Remove or move that page before activating this redirect.');
-    $candidate=['id'=>$id,'source'=>$source,'target'=>$target,'status'=>$status,'preserveQuery'=>$preserve,'active'=>$active,'managedBy'=>'manual','note'=>$note];redirectValidateGraph(redirectHypothetical($candidate));$pdo=db();$pdo->beginTransaction();
-    try{$current=null;if($id>0){$stmt=$pdo->prepare('SELECT id,source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_at,updated_at FROM redirect_records WHERE id=? FOR UPDATE');$stmt->execute([$id]);$raw=$stmt->fetch();if(!is_array($raw))throw new RuntimeException('Redirect record no longer exists.');$current=redirectRow($raw,false);if($expectedHash===''||!hash_equals($expectedHash,$current['revisionHash']))throw new RuntimeException('Redirect changed since it was opened. Refresh before saving.');if($current['managedBy']!=='manual')throw new RuntimeException('Only manually governed redirects are editable here.');$stmt=$pdo->prepare("UPDATE redirect_records SET source_path=?,target_path=?,status_code=?,preserve_query=?,is_active=?,note=?,updated_by=NULLIF(?,0),updated_at=UTC_TIMESTAMP() WHERE id=?");$stmt->execute([$source,$target,$status,$preserve?1:0,$active?1:0,$note,(int)($_SESSION['cms_user_id']??0),$id]);}else{$stmt=$pdo->prepare("INSERT INTO redirect_records (source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_by,updated_by,created_at,updated_at) VALUES (?,?,?,?,?,'manual',?,NULLIF(?,0),NULLIF(?,0),UTC_TIMESTAMP(),UTC_TIMESTAMP())");$uid=(int)($_SESSION['cms_user_id']??0);$stmt->execute([$source,$target,$status,$preserve?1:0,$active?1:0,$note,$uid,$uid]);$id=(int)$pdo->lastInsertId();}$pdo->commit();}catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    $candidate=['id'=>$id,'source'=>$source,'target'=>$target,'status'=>$status,'preserveQuery'=>$preserve,'active'=>$active,'managedBy'=>'manual','note'=>$note];$pdo=db();$lock=redirectAcquireGraphLock($pdo);
+    try{
+        redirectValidateGraph(redirectHypothetical($candidate));$pdo->beginTransaction();
+        try{
+            $current=null;
+            if($id>0){
+                $stmt=$pdo->prepare('SELECT id,source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_at,updated_at FROM redirect_records WHERE id=? FOR UPDATE');$stmt->execute([$id]);$raw=$stmt->fetch();if(!is_array($raw))throw new RuntimeException('Redirect record no longer exists.');$current=redirectRow($raw,false);if($expectedHash===''||!hash_equals($expectedHash,$current['revisionHash']))throw new RuntimeException('Redirect changed since it was opened. Refresh before saving.');if($current['managedBy']!=='manual')throw new RuntimeException('Only manually governed redirects are editable here.');$stmt=$pdo->prepare("UPDATE redirect_records SET source_path=?,target_path=?,status_code=?,preserve_query=?,is_active=?,note=?,updated_by=NULLIF(?,0),updated_at=UTC_TIMESTAMP() WHERE id=?");$stmt->execute([$source,$target,$status,$preserve?1:0,$active?1:0,$note,(int)($_SESSION['cms_user_id']??0),$id]);
+            }else{
+                $stmt=$pdo->prepare("INSERT INTO redirect_records (source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_by,updated_by,created_at,updated_at) VALUES (?,?,?,?,?,'manual',?,NULLIF(?,0),NULLIF(?,0),UTC_TIMESTAMP(),UTC_TIMESTAMP())");$uid=(int)($_SESSION['cms_user_id']??0);$stmt->execute([$source,$target,$status,$preserve?1:0,$active?1:0,$note,$uid,$uid]);$id=(int)$pdo->lastInsertId();
+            }
+            $pdo->commit();
+        }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    }finally{redirectReleaseGraphLock($pdo,$lock);}
     $stmt=db()->prepare('SELECT id,source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_at,updated_at FROM redirect_records WHERE id=?');$stmt->execute([$id]);$row=$stmt->fetch();if(!is_array($row))throw new RuntimeException('Saved redirect could not be reloaded.');return redirectRow($row,false);
 }
 function redirectDeleteRecord(int $id,string $expectedHash): void {
@@ -89,7 +115,22 @@ function redirectPostPreflight(string $root,string $source,string $target): void
     redirectRequireSchema();$source=redirectNormalizeSource($source);$target=redirectNormalizeTarget($target,$source);foreach(redirectSystemRecords() as $system)if($system['source']===$source)throw new RuntimeException('A system-managed redirect already owns the former post URL.');$existing=redirectFindBySource($source);if($existing&&$existing['managedBy']==='manual'&&!hash_equals($existing['target'],$target))throw new RuntimeException('A manually governed redirect already owns the former post URL.');$candidate=$existing??['id'=>0,'source'=>$source,'target'=>$target,'status'=>301,'preserveQuery'=>true,'active'=>true,'managedBy'=>'post','note'=>'Published post slug history.'];$candidate['target']=$target;$candidate['active']=true;redirectValidateGraph(redirectHypothetical($candidate));
 }
 function redirectUpsertPostSlug(string $source,string $target): array {
-    $source=redirectNormalizeSource($source);$target=redirectNormalizeTarget($target,$source);$pdo=db();$pdo->beginTransaction();try{$existing=redirectFindBySource($source,true);$uid=(int)($_SESSION['cms_user_id']??0);if($existing&&$existing['managedBy']==='manual'){if(!hash_equals($existing['target'],$target))throw new RuntimeException('A manually governed redirect already owns the former post URL.');$pdo->commit();return $existing;}if($existing){$stmt=$pdo->prepare("UPDATE redirect_records SET target_path=?,status_code=301,preserve_query=1,is_active=1,managed_by='post',note='Published post slug history.',updated_by=NULLIF(?,0),updated_at=UTC_TIMESTAMP() WHERE id=?");$stmt->execute([$target,$uid,$existing['id']]);$id=(int)$existing['id'];}else{$stmt=$pdo->prepare("INSERT INTO redirect_records (source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_by,updated_by,created_at,updated_at) VALUES (?,?,301,1,1,'post','Published post slug history.',NULLIF(?,0),NULLIF(?,0),UTC_TIMESTAMP(),UTC_TIMESTAMP())");$stmt->execute([$source,$target,$uid,$uid]);$id=(int)$pdo->lastInsertId();}$collapse=$pdo->prepare("UPDATE redirect_records SET target_path=?,updated_at=UTC_TIMESTAMP() WHERE managed_by='post' AND target_path=? AND source_path<>?");$collapse->execute([$target,$source,$source]);$pdo->commit();}catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}$stmt=db()->prepare('SELECT id,source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_at,updated_at FROM redirect_records WHERE id=?');$stmt->execute([$id]);$row=$stmt->fetch();if(!is_array($row))throw new RuntimeException('Post redirect could not be reloaded.');return redirectRow($row,false);
+    redirectRequireSchema();$source=redirectNormalizeSource($source);$target=redirectNormalizeTarget($target,$source);$pdo=db();$lock=redirectAcquireGraphLock($pdo);
+    try{
+        foreach(redirectSystemRecords() as $system)if($system['source']===$source)throw new RuntimeException('A system-managed redirect already owns the former post URL.');
+        $existing=redirectFindBySource($source);if($existing&&$existing['managedBy']==='manual'&&!hash_equals($existing['target'],$target))throw new RuntimeException('A manually governed redirect already owns the former post URL.');
+        $candidate=$existing??['id'=>0,'source'=>$source,'target'=>$target,'status'=>301,'preserveQuery'=>true,'active'=>true,'managedBy'=>'post','note'=>'Published post slug history.'];$candidate['target']=$target;$candidate['active']=true;redirectValidateGraph(redirectHypothetical($candidate));
+        if($existing&&$existing['managedBy']==='manual')return $existing;
+        $pdo->beginTransaction();
+        try{
+            $existing=redirectFindBySource($source,true);$uid=(int)($_SESSION['cms_user_id']??0);
+            if($existing&&$existing['managedBy']==='manual'){if(!hash_equals($existing['target'],$target))throw new RuntimeException('A manually governed redirect already owns the former post URL.');$pdo->commit();return $existing;}
+            if($existing){$stmt=$pdo->prepare("UPDATE redirect_records SET target_path=?,status_code=301,preserve_query=1,is_active=1,managed_by='post',note='Published post slug history.',updated_by=NULLIF(?,0),updated_at=UTC_TIMESTAMP() WHERE id=?");$stmt->execute([$target,$uid,$existing['id']]);$id=(int)$existing['id'];}
+            else{$stmt=$pdo->prepare("INSERT INTO redirect_records (source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_by,updated_by,created_at,updated_at) VALUES (?,?,301,1,1,'post','Published post slug history.',NULLIF(?,0),NULLIF(?,0),UTC_TIMESTAMP(),UTC_TIMESTAMP())");$stmt->execute([$source,$target,$uid,$uid]);$id=(int)$pdo->lastInsertId();}
+            $collapse=$pdo->prepare("UPDATE redirect_records SET target_path=?,updated_at=UTC_TIMESTAMP() WHERE managed_by='post' AND target_path=? AND source_path<>?");$collapse->execute([$target,$source,$source]);$pdo->commit();
+        }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();throw $e;}
+    }finally{redirectReleaseGraphLock($pdo,$lock);}
+    $stmt=db()->prepare('SELECT id,source_path,target_path,status_code,preserve_query,is_active,managed_by,note,created_at,updated_at FROM redirect_records WHERE id=?');$stmt->execute([$id]);$row=$stmt->fetch();if(!is_array($row))throw new RuntimeException('Post redirect could not be reloaded.');return redirectRow($row,false);
 }
 function redirectProject(string $root): array {
     redirectRequireSchema();$records=redirectAllRecords();redirectValidateGraph($records);$map=[];foreach($records as $row){if(empty($row['active']))continue;$source=redirectNormalizeSource((string)$row['source']);$target=redirectNormalizeTarget((string)$row['target'],$source);$map[$source]=['target'=>$target,'status'=>redirectAllowedStatus((int)$row['status']),'preserveQuery'=>(bool)$row['preserveQuery']];}ksort($map);$php="<?php\ndeclare(strict_types=1);\n// Generated from canonical redirect records and configured read-only aliases.\nreturn ".var_export($map,true).";\n";cmsAtomicWrite(rtrim($root,'/\\').'/__redirect-map.php',$php);return ['records'=>count($map),'sha256'=>hash('sha256',$php)];

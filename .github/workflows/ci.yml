@@ -27,6 +27,8 @@ jobs:
         run: python3 tests/site_wide_contract.py
       - name: Bootstrap and readiness contract
         run: python3 tests/bootstrap_readiness_contract.py
+      - name: Release candidate contract
+        run: python3 tests/release_candidate_contract.py
       - name: Content primitive behavior
         run: php tests/content_core.php
       - name: Publishing and SEO behavior
@@ -44,4 +46,12 @@ jobs:
         run: |
           find cms -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Python syntax
-        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/composer_media_contract.py tests/site_wide_contract.py tests/bootstrap_readiness_contract.py
+        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/composer_media_contract.py tests/site_wide_contract.py tests/bootstrap_readiness_contract.py tests/release_candidate_contract.py tools/build_release.py
+      - name: Build internal release candidate
+        run: python3 tools/build_release.py --source-ref "$GITHUB_SHA"
+      - name: Upload internal release candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-native-cms-internal-rc
+          path: dist/*
+          retention-days: 7

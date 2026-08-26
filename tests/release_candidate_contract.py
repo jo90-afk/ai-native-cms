@@ -26,13 +26,15 @@ def main() -> None:
     if 'github.event.pull_request.head.sha || github.sha' not in workflow: fail('CI release artifact does not record reviewed source revision')
     builder=load_builder();candidates=[path.relative_to(ROOT).as_posix() for path in builder.candidate_files()]
     required={
-        'README.md','SECURITY.md','VERSION','LICENSE','LICENSE-APACHE-2.0.txt','NOTICE','release/release.json',
-        'api/runtime.php','api/redirects.php','api/cms-redirects.php',
-        'cms/pages.php','cms/redirects.php','cms/redirects.js','config/site.example.php',
+        'README.md','AGENTS.md','SECURITY.md','VERSION','LICENSE','LICENSE-APACHE-2.0.txt','NOTICE','release/release.json',
+        'index.html','about.html','writing.html','assets/styles.css','assets/site.js','templates/article.html','setup/site.php',
+        'api/runtime.php','api/redirects.php','api/cms-redirects.php','api/onboarding.php','api/cms-onboarding.php',
+        'cms/pages.php','cms/onboarding.php','cms/onboarding.js','cms/redirects.php','cms/redirects.js','config/site.example.php',
         'database/schema.sql','database/bootstrap.php','database/migrations/7-to-8.php','database/private-config.example.ini',
         '__redirect.php','__redirect-map.php',
         'adapters/apache/public.htaccess.example','adapters/apache/private.htaccess.example',
         'docs/ARCHITECTURE.md','docs/INSTALLATION.md','docs/RELEASE.md','docs/DEPLOYMENT-ADAPTERS.md',
+        'docs/REPOSITORY-OPERATIONS.md','docs/LLM-COLLABORATION.md',
     }
     missing=sorted(required.difference(candidates))
     if missing: fail('release candidate is missing required files: '+', '.join(missing))
@@ -55,14 +57,17 @@ def main() -> None:
             for path in ['LICENSE','LICENSE-APACHE-2.0.txt','NOTICE']:
                 if root+path not in names: fail('licensed candidate omitted '+path)
             for path in [
+                'index.html','about.html','writing.html','assets/styles.css','assets/site.js','templates/article.html','setup/site.php',
+                'api/onboarding.php','api/cms-onboarding.php','cms/onboarding.php','cms/onboarding.js','AGENTS.md',
+                'docs/REPOSITORY-OPERATIONS.md','docs/LLM-COLLABORATION.md',
                 'api/redirects.php','database/migrations/7-to-8.php','__redirect.php','__redirect-map.php',
                 'adapters/apache/public.htaccess.example','adapters/apache/private.htaccess.example','docs/DEPLOYMENT-ADAPTERS.md',
             ]:
-                if root+path not in names: fail('schema-v8 candidate omitted '+path)
+                if root+path not in names: fail('rc3 candidate omitted '+path)
     installation=(ROOT/'docs/INSTALLATION.md').read_text(encoding='utf-8');release_doc=(ROOT/'docs/RELEASE.md').read_text(encoding='utf-8')
-    for needle in ['database/bootstrap.php','database/migrations/7-to-8.php --apply','database/reconcile.php initial-import','database/readiness.php','backup','rollback','migration']:
+    for needle in ['setup/site.php','database/bootstrap.php','database/migrations/7-to-8.php --apply','database/reconcile.php initial-import','database/readiness.php','/cms/onboarding.php','backup','rollback','migration']:
         if needle.lower() not in installation.lower(): fail('installation/upgrade documentation is missing: '+needle)
-    for needle in ['internal release candidate','not a public release','Commons Clause','Apache 2.0','source-available','tools/build_release.py','sha256','deployment adapter']:
+    for needle in ['internal release candidate','not a public release','Commons Clause','Apache 2.0','source-available','tools/build_release.py','sha256','deployment adapter','onboarding']:
         if needle.lower() not in release_doc.lower(): fail('release-boundary documentation is missing: '+needle)
     print('PASS: reproducible internal licensed schema-v8 rc3 contract')
 

@@ -5,11 +5,12 @@ require_once __DIR__.'/content-core.php';
 /** Canonical SQL content authority and deterministic static projection. */
 
 function contentAuthorityManagedPages(string $root): array { return cmsManagedPages($root); }
+function contentAuthorityRepositoryPages(string $root): array { return cmsConfiguredPages($root); }
 function contentAuthorityPageSourceKey(string $path): string { return '@page/'.$path; }
 
 function contentAuthorityDocumentSpecs(string $root): array {
     $specs=cmsConfiguredDocuments($root);
-    foreach(contentAuthorityManagedPages($root) as $path=>$label){
+    foreach(contentAuthorityRepositoryPages($root) as $path=>$label){
         $specs[contentAuthorityPageSourceKey($path)]=[
             'sourcePath'=>$path,'targetPath'=>$path,'type'=>'page-source','label'=>$label.' source','format'=>'html'
         ];
@@ -28,7 +29,7 @@ function contentAuthorityImportPageBlocks(string $root,bool $overwrite=false,str
       ? 'INSERT INTO page_blocks (page_path,block_id,tag_name,html_content,content_sha256,source_sha256,source_ref,source_updated_at,updated_by,updated_at) VALUES (?,?,?,?,?,?,?,UTC_TIMESTAMP(),NULLIF(?,0),UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE tag_name=VALUES(tag_name),html_content=VALUES(html_content),content_sha256=VALUES(content_sha256),source_sha256=VALUES(source_sha256),source_ref=VALUES(source_ref),source_updated_at=UTC_TIMESTAMP(),updated_by=VALUES(updated_by),updated_at=UTC_TIMESTAMP()'
       : 'INSERT IGNORE INTO page_blocks (page_path,block_id,tag_name,html_content,content_sha256,source_sha256,source_ref,source_updated_at,updated_by,updated_at) VALUES (?,?,?,?,?,?,?,UTC_TIMESTAMP(),NULLIF(?,0),UTC_TIMESTAMP())';
     $stmt=$pdo->prepare($sql);$baseline=$pdo->prepare("UPDATE page_blocks SET source_sha256=?,source_ref=?,source_updated_at=UTC_TIMESTAMP() WHERE page_path=? AND block_id=? AND source_sha256=''");
-    foreach(contentAuthorityManagedPages($root) as $path=>$label){
+    foreach(contentAuthorityRepositoryPages($root) as $path=>$label){
         $file=cmsSafePublicFile($root,$path);if($file===null)continue;
         foreach(cmsExtractEditableBlocks((string)file_get_contents($file)) as $block){
             $stmt->execute([$path,$block['id'],$block['tag'],$block['html'],$block['hash'],$block['hash'],$sourceRef,$userId]);
@@ -130,19 +131,19 @@ function contentAuthorityProjectConfiguredDocuments(string $root): int {
 }
 
 function contentAuthorityProjectPage(string $root,string $path): void {
-    if(!isset(contentAuthorityManagedPages($root)[$path]))throw new RuntimeException('Page is not configured as CMS-managed.');
+    if(!isset(contentAuthorityManagedPages($root)[$path]))throw new RuntimeException('Page is not CMS-managed.');
     $target=cmsSafePublicFile($root,$path);if($target===null)throw new RuntimeException('Public page template is missing.');
     $source=contentAuthorityReadDocument(contentAuthorityPageSourceKey($path));$html=$source?(string)$source['content']:(string)file_get_contents($target);
     $html=contentAuthorityOverlayBlocks($html,$path);cmsAtomicWrite($target,$html);
 }
 
-function contentAuthorityProjectPages(string $root): int { $count=0;foreach(contentAuthorityManagedPages($root) as $path=>$label){contentAuthorityProjectPage($root,$path);$count++;}return $count; }
+function contentAuthorityProjectPages(string $root): int { $count=0;foreach(contentAuthorityRepositoryPages($root) as $path=>$label){contentAuthorityProjectPage($root,$path);$count++;}return $count; }
 
 function contentAuthorityStatus(string $root): array {
-    $version=(int)db()->query('SELECT schema_version FROM app_meta WHERE id=1')->fetchColumn();$expectedPages=count(contentAuthorityManagedPages($root));$storedPages=0;$blocks=0;$documents=0;$pageSources=0;
+    $version=(int)db()->query('SELECT schema_version FROM app_meta WHERE id=1')->fetchColumn();$expectedPages=count(contentAuthorityRepositoryPages($root));$managedPages=count(contentAuthorityManagedPages($root));$storedPages=0;$blocks=0;$documents=0;$pageSources=0;
     if($version>=7){
         $storedPages=(int)db()->query('SELECT COUNT(DISTINCT page_path) FROM page_blocks')->fetchColumn();$blocks=(int)db()->query('SELECT COUNT(*) FROM page_blocks')->fetchColumn();$documents=(int)db()->query('SELECT COUNT(*) FROM content_documents')->fetchColumn();
-        foreach(contentAuthorityManagedPages($root) as $path=>$label){$stmt=db()->prepare('SELECT 1 FROM content_documents WHERE document_key=?');$stmt->execute([contentAuthorityPageSourceKey($path)]);if($stmt->fetchColumn())$pageSources++;}
+        foreach(contentAuthorityRepositoryPages($root) as $path=>$label){$stmt=db()->prepare('SELECT 1 FROM content_documents WHERE document_key=?');$stmt->execute([contentAuthorityPageSourceKey($path)]);if($stmt->fetchColumn())$pageSources++;}
     }
-    return ['schemaVersion'=>$version,'pages'=>$storedPages,'expectedPages'=>$expectedPages,'blocks'=>$blocks,'documents'=>$documents,'pageSources'=>$pageSources,'ready'=>$version>=7&&$storedPages===$expectedPages&&$pageSources===$expectedPages];
+    return ['schemaVersion'=>$version,'pages'=>$storedPages,'managedPages'=>$managedPages,'expectedPages'=>$expectedPages,'blocks'=>$blocks,'documents'=>$documents,'pageSources'=>$pageSources,'ready'=>$version>=7&&$storedPages>=$expectedPages&&$pageSources===$expectedPages];
 }

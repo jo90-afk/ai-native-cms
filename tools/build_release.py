@@ -19,7 +19,7 @@ TOP_LEVEL_FILES = {
     "README.md", "AGENTS.md", "SECURITY.md", "VERSION", "LICENSE", "LICENSE-APACHE-2.0.txt", "NOTICE",
     "index.html", "about.html", "writing.html", "__redirect.php", "__redirect-map.php",
 }
-INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters", "assets", "templates"}
+INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters", "assets", "templates", "setup"}
 EXCLUDED_PARTS = {".git", ".github", ".lattice", "tests", "tools", "dist", "runtime", "uploads", "__pycache__"}
 EXCLUDED_FILES = {"config/site.php"}
 ALLOWED_INI = {"database/private-config.example.ini"}

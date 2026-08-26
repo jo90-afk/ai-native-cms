@@ -2,7 +2,12 @@
 declare(strict_types=1);
 require_once dirname(__DIR__).'/api/runtime.php';
 enforceCmsHttps(false);secureCmsHeaders();
-if(cmsCurrentUser(dirname(__DIR__))){header('Location: /cms/pages.php');exit;}
+$root=dirname(__DIR__);
+if(cmsCurrentUser($root)){
+    $target='/cms/onboarding.php';
+    try{require_once $root.'/api/onboarding.php';if((bool)(onboardingState($root)['ready']??false))$target='/cms/pages.php';}catch(Throwable $e){}
+    header('Location: '.$target);exit;
+}
 $siteName=(string)siteConfigValue('site','name','Site');
 ?><!doctype html>
 <html lang="en">

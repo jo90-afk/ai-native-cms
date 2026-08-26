@@ -3,132 +3,170 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Baseline branch: `main`
-Baseline commit: `7043eeee47bf4b0112957e7e3a6e564c5da1d020`
-Working branch: `docs/restore-release-gate`
+Baseline commit: `c63dfc211d89bf046b8c48acab8bfa20005d5ecf`
+Working branch: `feat/m011-license-onboarding-foundation`
 Runtime: `lattice-app-works-platform-agnostic` 0.1.6 contract
 Principal alias: `Repository Owner`
 Updated: **2026-08-26 (America/New_York)**
 
 ## Confirmed mandate
 
-Extract the reusable CMS architecture proven in the production personal-site implementation into a public-releasable, site-neutral product. Preserve its security, canonical-content, revision, composition, media, navigation, SEO, redirect, static-projection, and operability strengths while removing personal content and adopter-specific assumptions.
+Maintain a public-releasable, site-neutral AI-native CMS extracted from a production proving ground. Preserve canonical SQL authority, repository/template ownership, static public delivery, revisions/provenance, explicit migrations, deterministic projection, and bounded host adapters. Make the product approachable enough that a new adopter can create, operate, deploy, and iteratively evolve a site with human or LLM assistance without learning or bypassing the internal authority model.
 
-Routine reversible implementation, refactoring, tests, documentation, repository-side merges, upstream parity refreshes, and internal release-candidate preparation are delegated. Repository visibility, license selection, public/tagged release creation, package publication, production deployment, credentials, destructive data actions, and production adoption remain Principal boundaries.
+Routine reversible implementation, refactoring, tests, documentation, repository-side merges, proving-ground parity refreshes, internal release-candidate preparation, and pre-release usability/rehearsal work are delegated. Repository visibility, public/tagged release creation, package publication, production deployment/adoption, credentials, and destructive data actions remain Principal boundaries.
+
+The Principal selected **Apache License 2.0 subject to Commons Clause License Condition v1.0**. The project must describe these terms as **source-available**, not OSI-approved open source. Use, modification, derivative works, attribution-preserving redistribution, and commercial use are permitted subject to the Commons Clause restriction on selling the CMS itself or a product/service whose value derives entirely or substantially from the CMS functionality.
 
 ## Durable product truths
 
-- Anonymous public delivery is static-first and must not require MySQL.
+- Anonymous public delivery is static-first and does not require MySQL.
 - Accepted authored state resolves through one canonical SQL authority before projection.
-- Repository source is a portable proposal/fixture; it must not silently overwrite newer accepted database state.
+- Git owns application code, structural templates/shells, CSS/JS behavior, schema/migrations, tests, documentation, adapters, and public non-secret adopter configuration.
+- Repository source is a proposal/fixture for canonical content; it may not silently overwrite newer accepted database state.
+- Generated HTML/JSON/XML/indexes/redirect maps are outputs, never reverse source authority.
+- Host/provider credentials, rewrites, caching, document-root details, and deployment mechanisms remain explicit operator/adapter state.
 - Human and agent writers converge on the same guarded mutation contracts.
-- Structural HTML is repository/template-owned; browsers and agents submit trusted template identities and bounded typed values, not arbitrary structure.
-- Repository-authored pages and canonical CMS-created pages are distinct source classes; generated pages may consume templates but cannot become Git/template authority.
+- Structural HTML stays repository/template-owned; browsers and agents submit trusted template identities and bounded typed values, not arbitrary structure.
+- Repository-authored pages and CMS-created pages remain distinct source classes; generated pages cannot become repository/template authority.
 - Media bytes remain adopter-owned files while canonical metadata/references may live in SQL.
-- Navigation, branding, publishing, SEO, and redirects are canonical authored state, not incidental generated-file edits.
-- Database bootstrap owns structure and the first persisted owner only. It never seeds adopter content, replaces existing owner credentials, or silently migrates older schemas.
-- Canonical repository content initialization is an explicit reconciliation step after bootstrap.
-- Browser CMS operations may mutate canonical authored objects and rebuild accepted state, but must never promote a generated/live working tree back into repository-source authority.
+- Navigation, branding, publishing, SEO, redirects, and other accepted authored objects are canonical state, not incidental generated-file edits.
+- Database bootstrap owns schema structure and the first persisted owner only. It never seeds adopter content, replaces persisted owner credentials, or migrates older schemas.
+- Friendly onboarding begins after secure bootstrap/auth. Browser onboarding never writes credentials, runs migrations, executes shell commands, deploys, or creates a second onboarding state store.
+- Canonical repository content initialization remains an explicit reconciliation step after bootstrap.
 - CMS mutation surfaces fail closed when the installed schema is older than the code contract.
-- Derived site-wide projection has one explicit finalization boundary so one projector cannot erase another projector's accepted output until the next rebuild.
-- Redirect authority is canonical in SQL, while anonymous redirect requests remain database-free through generated routing data plus a deployment adapter.
-- Redirect graph-changing writes serialize and revalidate globally; optimistic record hashes remain the per-record stale-write boundary.
-- Redirect sources that resolve to existing public files **or directories** cannot become active redirect authorities when deployment adapters serve real filesystem routes first.
-- Conflicting configured read-only system aliases fail closed rather than using order-dependent last-write wins.
-- Readiness is observational and may not initialize, migrate, publish, mail, deploy, invoke shell commands, or expose secret/grant values.
-- Host/provider behavior enters only through bounded adopter/deployment adapters.
-- Reference deployment adapters may ship with the source candidate but never become CMS authority or automatic deployment behavior.
-- Internal candidate generation is not publication. Candidate metadata keeps public distribution and license selection false until explicit Principal decisions change that boundary.
-- Public-release artifacts contain no personal content, credentials, private repository/account identifiers, adopter-local configuration, or runtime/governance state.
-- Before a Principal release gate, compare against the current production proving-ground frontier. A material unresolved reusable core delta automatically reopens delegated parity work.
+- Derived site-wide projection has one explicit finalization boundary.
+- Redirect authority is canonical in SQL; anonymous redirect requests use generated database-free routing state through a deployment adapter.
+- Redirect graph-changing writes serialize/revalidate globally; optimistic hashes protect per-record stale writes; sources colliding with real public files/directories or conflicting authorities fail closed.
+- Readiness is observational. It may not initialize, migrate, publish, mail, deploy, invoke shell commands, or expose secret/grant values.
+- Reference deployment adapters may ship in the candidate but never become CMS authority or automatic deployment behavior.
+- GitHub branches/PRs are the durable review surface for repository-owned changes.
+- LLM collaboration preserves human governance: inspect current state first, identify the owning authority, work through branches or canonical CMS contracts, add tests/docs, and summarize durable state changes. Conversation history is context, not authority.
+- Internal candidate generation is not publication. A selected license does not make a candidate public.
+- Public candidates contain no personal content, credentials, private repository/account identifiers, adopter-local secret configuration, or runtime/governance state.
+- Before any publication decision, compare with the current production proving-ground frontier. A material unresolved reusable core delta automatically reopens delegated parity work.
 
 ## Satisfied milestones
 
-### M-001 — Foundation is generic, executable, and safe to extend
-Established the generic database/security runtime, schema-v7 model, adopter configuration seam, path-compatible upstreaming contract, and public-release guard.
+### M-001 — Generic executable foundation
+Generic runtime/database/security seams, adopter configuration, schema foundation, Lattice capsule, CI, and public-release sanitization.
 
-### M-002 — Canonical page/document state survives every ordinary writer
-Merged at `39e25616068567746e62bc9f46eb8da692975ce8`; added optimistic canonical editing, three-way reconciliation, immutable compare-and-swap update sets, and deterministic configured page/document projection.
+### M-002 — Canonical page/document authority
+Optimistic canonical editing, revisions, three-way repository reconciliation, immutable compare-and-swap update sets, and deterministic page/document projection.
 
-### M-003 — An adopter can operate and extend the page CMS without forking core authority
-Merged at `8c0c5258e05b6e7f10f6175fc194cbe0c6c13cb3`; added bounded trusted projector hooks and first-party secure Pages UI.
+### M-003 — Operable page CMS and bounded projector hooks
+First-party Pages workspace plus trusted repository-owned projection hooks without creating a second write model.
 
-### M-004 — Long-form content and SEO remain reversible, safe, and deterministic
-Merged at `479389c02f9fb2b2a601a08b2678b5cc64d6ef85`; added canonical posts/revisions, bounded Markdown, static publish/unpublish projection, and canonical SEO overrides.
+### M-004 — Long-form publishing and SEO
+Canonical posts/revisions, bounded Markdown, draft/published static projection, restore, SEO overrides, same-origin canonicals, and deterministic ordering.
 
-### M-005 — Typed composition survives ordinary edits, rebuilds, and repository reconciliation
-Merged at `0d7747819bf7f611e3615771c7f30e907d2136af`; added repository-owned templates, canonical typed compositions, leaf preservation across recomposition, and canonical media metadata with bounded raster uploads.
+### M-005 — Typed composition and media
+Repository-owned structural templates, typed canonical compositions, value preservation through template evolution, and bounded first-party media catalog/upload behavior.
 
-### M-006 — New-page hierarchy, navigation, and branding remain safe and deterministic across rebuilds
-Merged at `4c875ae847e7a9a7871ddfab710c49c193f37a7b`; added trusted-shell page creation, validated parent hierarchy, canonical navigation/branding, and deterministic site-wide projection.
+### M-006 — CMS-created pages, hierarchy, navigation, and branding
+Trusted-shell page creation, parent-cycle validation, canonical navigation/branding, bounded design tokens, and deterministic site-wide projection.
 
-### M-007 — Portable bootstrap and readiness preserve authority boundaries
-Merged via PR #7 at `993b3f0a89e6e062a165a6d4ee55a3ce50bac261`; added CLI-only schema/first-owner bootstrap, foreign/partial/current-version repair classification, explicit canonical repository import, read-only core/adapter readiness, and a first-party Readiness workspace.
+### M-007 — Portable bootstrap and readiness
+CLI-only schema/first-owner bootstrap, explicit canonical import, current/partial/foreign classification, read-only readiness core and adapter seam, and first-party Readiness workspace.
 
-### M-008 — A release candidate can be produced reproducibly without crossing the public-release boundary
-Merged via PR #8 at `b3588304acdfc61faa541a1ffa65c1fb284d4513`; added deterministic internal candidate packaging, exact reviewed-head provenance, package residue guards, installation/rollback documentation, and private CI artifact review. `0.1.0-rc.1` remains historical schema-7 evidence.
+### M-008 — Reproducible internal packaging
+Deterministic ZIP/manifest/SHA256, exact reviewed-head provenance, residue guards, installation/backup/rollback documentation, and private CI artifact review.
 
-### M-009 — Canonical redirects and schema-v8 projection boundaries are portable, deterministic, and safe
-Implementation entered `main` through PR #10, verification-closure PR #11, M-010 PR #12, and the final directory-aware parity hardening in PR #13. The accepted schema-v8 core now includes:
+### M-009 — Schema-v8 redirects and projection boundaries
+Explicit 7→8 migration, canonical redirects, safe graph validation/concurrency, post-slug history, static database-free redirect routing, current-schema write guards, source-promotion boundary, and unified final public projection.
 
-- canonical `redirect_records` plus explicit CLI-only `database/migrations/7-to-8.php`;
-- bounded same-site redirect normalization, reserved-path/encoded-separator/dot-segment/file-or-directory collision/conflict/cycle rejection, allowed 301/302/307/308 statuses, query-preservation state, and optimistic revision hashes;
-- a bounded MySQL advisory lock around graph-changing redirect writes;
-- published long-form slug history through redirect authority while preserving manually governed ownership;
-- deterministic `__redirect-map.php` plus database-free `__redirect.php` anonymous routing;
-- configured read-only system aliases with conflicting duplicate definitions rejected;
-- current-schema write guards, no browser Git/source reconciliation path, and one final public-projection boundary with `after_seo` discovery/sitemap support.
+### M-010 — Reference deployment adapters
+Provider-neutral deployment-adapter contract plus public/private Apache examples for unresolved-path redirect interception, conservative public caching/compression, and private `no-store` behavior.
 
-### M-010 — Reference deployment adapters encode redirect interception and bounded transport policy without becoming CMS authority
-Merged via PR #12 at `97d72a74491f66726b3c9a28da313d3753c89646`. The source candidate contains:
+### OBJ-011 — Schema-v8 parity closure
+Production proving-ground parity was rechecked after M-009/M-010; no unresolved reusable core delta remained at the recorded frontier. The schema-v8 rc.2 line was green and reproducible before usability work reopened the pre-release sequence.
 
-- a host-neutral deployment-adapter contract under `docs/DEPLOYMENT-ADAPTERS.md`;
-- an Apache public reference that serves real files/directories first, routes unresolved requests to the static redirect runtime, denies direct map access, applies conservative cache lifetimes, and enables DEFLATE when available;
-- an Apache private/preview reference that retains redirect interception/compression but forces `Cache-Control: no-store, private` and contains no public cache lifetimes;
-- package/residue tests that scan `.example` deployment configuration and include adapters in the deterministic candidate;
-- CI branch-push/manual-dispatch fallbacks for exact-head validation when PR event delivery is delayed.
+### M-011 — Friendly onboarding and coherent starter site
+**Technically satisfied on rc.3 implementation head `f8a8a19ca2ca6fd9df44bda1b350ba6df00f9856`, cumulative run #155 (`33001221021`).**
 
-PR #13 then merged at `7043eeee47bf4b0112957e7e3a6e564c5da1d020`, aligning filesystem collision semantics with the adapter contract and rejecting conflicting duplicate system aliases.
+Delivered:
 
-## Verification and rc.2 artifact evidence
+- neutral, immediately browsable Home/About/Writing starter site with responsive design system and article template;
+- `setup/site.php`, a CLI-only non-secret public site initializer that preserves the shipped config contract and refuses accidental overwrite;
+- authenticated read-only onboarding state derived from actual config/bootstrap/canonical-content/branding/navigation/writing/readiness state rather than a one-time completion flag;
+- placeholder identity cannot count as completed onboarding;
+- first-login and authenticated-entry routing sends unfinished sites to Onboarding and configured/ready sites to normal Pages;
+- Onboarding remains discoverable from every operator workspace;
+- browser onboarding never writes credentials, migrates schema, executes shell commands, promotes Git source into SQL, or creates arbitrary structural state;
+- dedicated structural and executable onboarding/site-setup tests.
 
-- Run #76 (`32994215474`) first completed the cumulative M-001–M-010 gate on the implementation tree.
-- Run #82 (`32994522688`) completed the same gate on PR #12's final documented head `5833123c21b4a3394ba8d87f0a3e1b06f24396a7`.
-- The run #82 artifact directly inspected cleanly: whole-ZIP SHA256 `7a22d7a67cddaea7bc6dba88794b873cea3146de8664e360d7d273ef105b5547`; exact manifest provenance `5833123c21b4a3394ba8d87f0a3e1b06f24396a7`; embedded/external manifests identical; schema 8; `public:false`; `licenseSelected:false`; explicit 7→8 migration, redirect runtime, and both Apache reference adapters present; no excluded operational/adopter path, `LICENSE*`, known reference-adopter marker, private-key marker, GitHub-token marker, or AWS access-key marker.
-- Run #88 (`32995003080`) passed the full cumulative gate on directory-aware hardening head `a9a47a14e9189dade11474a970eadf7ca594a188`.
-- The run #88 artifact also inspected cleanly with exact provenance and ZIP SHA256 `57a4cb593e93a2d35c99683a54ec0ef2d5908f5d761470a3152ec1f466f04cad`.
+### M-012 — Repository and hosting operations are understandable and reversible
+**Technically satisfied on the same rc.3 implementation head/run.**
 
-## Production proving-ground parity
+`docs/REPOSITORY-OPERATIONS.md` now defines:
 
-The source refresh was based on:
+- Git vs canonical SQL vs generated projection vs host/provider state;
+- starting an adopter repository with the safe public config initializer;
+- branch/PR workflow;
+- SSH pull-to-host and reviewed-artifact/copy deployment patterns;
+- secret placement, first deployment, canonical-content handling, host hotfix recovery, backups/migrations, readiness, paired rollback, and provider capability checklist;
+- LLM-assisted repository changes still deploy only after normal review/merge verification.
 
-- production PR #49, merged at `15a4f9acb1370ee6b7d979b1dd57767d6dfca31d`, containing schema-v8 redirect/projection hardening plus site/host-specific updater work;
-- production PR #50, merged at `113068842a808ed00268892dc6a2ffa51c27ffa6`, containing conservative Apache caching/compression policy.
+### M-013 — LLM collaboration accelerates iteration without replacing governance
+**Technically satisfied on the same rc.3 implementation head/run.**
 
-A fresh post-M-010 parity check on **2026-08-26** found production `judeoneill.com` `main` still at `113068842a808ed00268892dc6a2ffa51c27ffa6`; there are no newer production commits to classify. The directory-aware routing behavior inside PR #49 was explicitly rechecked and the final public-core mismatch was closed by PR #13. No unresolved reusable **core** delta remains at this parity point.
+Delivered:
 
-Provider-specific updater/deployment machinery remains an optional adapter concern and does not block the public-source release decision.
+- root `AGENTS.md` as an agent-discoverable repository contract;
+- `docs/LLM-COLLABORATION.md` with the four authority classes and reusable request packets for design, content, feature, bug, schema/migration, and release work;
+- explicit rules for branch-first repository changes, guarded canonical content changes, no reverse authority from generated HTML, explicit migrations, no secret handling, test/doc updates, release residue/parity checks, and conversation history as context rather than authority;
+- release packaging includes these governance documents.
 
-## Current state — Principal release gate restored
+## rc.3 implementation verification evidence
 
-The delegated extraction/parity work required for `0.1.0-rc.2` is complete. The project has returned to the **Principal release gate**.
+Cumulative run **#155** (`33001221021`) passed on exact source head `f8a8a19ca2ca6fd9df44bda1b350ba6df00f9856`:
 
-The candidate remains **internal**, schema v8, private, unlicensed, untagged, unpublished, and undeployed. The next actions are not routine implementation choices; they require explicit Principal authorization:
+- all M-001–M-010 structural contracts;
+- rc.3 release candidate contract;
+- onboarding/governance contract;
+- all executable PHP behavior tests, including onboarding/site setup;
+- PHP, JavaScript, and Python syntax;
+- deterministic internal rc.3 build and private artifact upload.
 
-1. select a public license, if public distribution is desired;
-2. change repository visibility, if desired;
-3. authorize a Git tag / GitHub Release / public package or download;
-4. authorize any production deployment or adoption.
+The run #155 artifact was directly inspected:
 
-Any new production proving-ground release containing a material reusable core capability automatically suspends this gate and reopens parity work before publication.
+- version `0.1.0-rc.3`, schema 8;
+- exact source provenance `f8a8a19ca2ca6fd9df44bda1b350ba6df00f9856`;
+- candidate ZIP SHA256 `4ed0930c3483719f13b074f50bf3b6667905f84e33d4073476f0f4390345a2c9`, matching the emitted checksum;
+- embedded and external manifests identical;
+- `public:false`, `licenseSelected:true`, Apache-2.0 + Commons Clause v1.0 metadata correct;
+- license/NOTICE, starter site, design assets, article template, safe site initializer, onboarding API/UI, `AGENTS.md`, repository/LLM guides, v7→8 migration, redirect runtime, and Apache adapters present;
+- no excluded operational paths, adopter-local `config/site.php`, known personal/reference residue, private-key markers, GitHub token markers, or AWS access-key markers.
 
-## Remaining non-core / post-release frontier
+M-011–M-013 are accepted as implementation-complete subject to the final documentation-head cumulative gate and PR merge.
 
-- Host repository updater / automated deployment: optional provider-specific adapter work.
-- Browser credential-writing setup: excluded from core; CLI bootstrap remains the portable security boundary.
-- Newsletter/subscription: optional extension.
-- Poetry-specific visual/content projection and portfolio/Lattice public views: adopter extensions.
-- Future schema changes after a public release: must ship explicit source/target migrations; bootstrap repair never substitutes for migration.
+## Active milestone — M-014
+
+### M-014 — Clean empty-site release rehearsal proves product, docs, deployment, and agent workflow together
+
+Acceptance conditions:
+
+1. Start from an rc.3 source candidate in a clean environment with no adopter state.
+2. Follow only shipped documentation to create public repository configuration, configure private runtime state, bootstrap schema/owner, initialize canonical repository source, enter onboarding, and reach green readiness.
+3. Confirm the starter produces a coherent multi-page site and exposes navigation, branding, writing, media, SEO, redirects, and readiness without hand-authoring initial HTML.
+4. Exercise one representative LLM-governed repository structural/design change through branch/PR semantics, one canonical content change through the CMS/store contract, and one small feature change with tests.
+5. Exercise one documented deployment flow and the redirect/transport adapter boundary where applicable.
+6. Exercise backup/recovery and paired rollback behavior; schema migration rules must remain explicit even if the clean rehearsal begins at schema 8.
+7. Build rc.3 twice and prove deterministic artifact identity/provenance; inspect license/NOTICE, onboarding/starter/docs/agent contract, schema/migration/redirect/adapters, exclusions, and residue.
+8. Repeat the production proving-ground parity check. Any material reusable core delta reopens extraction.
+9. Only after these conditions pass does the project return to the Principal publication gate.
+
+## License boundary
+
+License selection is resolved. Candidate metadata remains `public:false`; the repository/package remains private and unpublished until separate Principal authorization. Documentation must not call the project OSI open source.
+
+## Optional/post-release frontier
+
+- Additional provider/server/CDN adapters and automated deployment integrations.
+- Browser credential-writing setup remains excluded from core.
+- Newsletter/subscription extension.
+- Additional starter themes/template packs.
+- Future schema changes require explicit migrations; bootstrap repair never substitutes for migration.
 
 ## Release boundary
 
-No public-release authorization has yet been granted. Repository visibility, license selection, tag/GitHub Release creation, package publication, production deployment, credentials, and production adoption remain separate Principal decisions.
+No public-release authorization has been granted. Repository visibility, Git tag/GitHub Release creation, public package publication, production deployment/adoption, credentials, and destructive data actions remain separate Principal decisions. The only active delegated pre-publication work after M-011–M-013 merge is **M-014**.

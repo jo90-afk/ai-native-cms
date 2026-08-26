@@ -112,7 +112,12 @@ def main() -> None:
         "contentRebuildRunHooks($hooks,'after_seo'",
     ], "after_pages -> SEO -> after_seo discovery finalization")
 
-    require(config, ["'writing' => [", "'route_root' => 'writing'", "'index_path' => 'content/posts/index.json'", "'article_template' => ''"], "publishing configuration")
+    require(config, [
+        "'writing' => [",
+        "'route_root' => 'writing'",
+        "'index_path' => 'content/posts/index.json'",
+        "'article_template' => 'templates/article.html'",
+    ], "publishing configuration")
     require(writing_ui, ["/cms/writing.js", "Body (Markdown)", "Revision history", "/cms/seo.php"], "writing workspace")
     require(seo_ui, ["/cms/seo.js", "Canonical URL", "Discovery controls", "/cms/writing.php"], "SEO workspace")
 

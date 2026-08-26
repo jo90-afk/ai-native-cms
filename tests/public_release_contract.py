@@ -18,7 +18,7 @@ BANNED_TEXT = {
 
 TEXT_SUFFIXES = {
     ".php", ".py", ".js", ".mjs", ".json", ".md", ".sql", ".yml", ".yaml",
-    ".css", ".html", ".txt", ".ini", ".sh", ".example",
+    ".css", ".html", ".txt", ".ini", ".sh", ".example", "",
 }
 
 # Operational Lattice state is project governance, not release product code.
@@ -53,6 +53,9 @@ def check_sanitization() -> None:
 def check_required_files() -> None:
     required = [
         "README.md",
+        "LICENSE",
+        "LICENSE-APACHE-2.0.txt",
+        "NOTICE",
         "api/database.php",
         "api/runtime.php",
         "config/site.example.php",
@@ -63,6 +66,19 @@ def check_required_files() -> None:
     missing = [path for path in required if not (ROOT / path).is_file()]
     if missing:
         fail("required foundation files are missing: " + ", ".join(missing))
+
+
+def check_license_contract() -> None:
+    license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+    apache = (ROOT / "LICENSE-APACHE-2.0.txt").read_text(encoding="utf-8")
+    notice = (ROOT / "NOTICE").read_text(encoding="utf-8")
+    for token in ["Commons Clause", "Apache License", "right to Sell the Software", "source-available"]:
+        if token.lower() not in license_text.lower():
+            fail("selected license is missing: " + token)
+    if "Version 2.0, January 2004" not in apache or "TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION" not in apache:
+        fail("Apache 2.0 base license is incomplete")
+    if "AI Native CMS" not in notice or "Commons Clause" not in notice:
+        fail("NOTICE does not preserve project attribution/license condition")
 
 
 def check_environment_contract() -> None:
@@ -127,6 +143,7 @@ def check_lattice_capsule() -> None:
 def main() -> None:
     check_required_files()
     check_sanitization()
+    check_license_contract()
     check_environment_contract()
     check_schema_contract()
     check_lattice_capsule()

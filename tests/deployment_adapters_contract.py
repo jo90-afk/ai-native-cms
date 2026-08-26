@@ -78,10 +78,7 @@ def main() -> None:
         "Other adapters",
     ], "host-neutral deployment contract")
 
-    if 'INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters"}' not in builder:
-        fail("release builder does not include deployment adapters")
-    if '".example"' not in builder:
-        fail("release builder does not scan example deployment configs as text")
+    require(builder, ["INCLUDE_ROOTS", '"adapters"', '".example"'], "release builder deployment-adapter inclusion")
 
     print("PASS: deployment adapter contract")
 

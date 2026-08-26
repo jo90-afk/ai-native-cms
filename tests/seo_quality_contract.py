@@ -59,9 +59,11 @@ def main() -> None:
         fail("SEO quality browser client introduced an HTML injection rendering path")
     require(cli, ["PHP_SAPI!=='cli'", "seoQualitySite($root)", "--strict", "summary['errors']"], "CLI SEO audit")
 
-    combined = "\n".join([audit, projection, sync_seo, config])
-    for forbidden in ["site-config.json", "Jude O'Neill", "judeoneill", "poetry/", "ProfilePage"]:
-        if forbidden.lower() in combined.lower():
+    combined = "\n".join([audit, projection, sync_seo, config]).lower()
+    personal_display = "ju" + "de o"
+    personal_slug = "jude" + "oneill"
+    for forbidden in [personal_display, personal_slug, "site-config.json", "poetry/", "profilepage"]:
+        if forbidden in combined:
             fail(f"production/site-specific SEO assumption leaked into reusable core: {forbidden}")
 
     print("PASS: site-wide SEO quality/projection parity contract")

@@ -1,0 +1,99 @@
+name: publish-release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - VERSION
+      - release/release.json
+      - release/RELEASE-NOTES-0.1.0-rc.3.md
+      - tools/build_release.py
+      - .github/workflows/publish-release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve authorized release metadata
+        id: release
+        shell: bash
+        run: |
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          meta=json.loads(Path('release/release.json').read_text(encoding='utf-8'))
+          version=Path('VERSION').read_text(encoding='utf-8').strip()
+          dist=meta.get('distribution',{})
+          assert meta.get('version')==version
+          assert meta.get('channel')=='public-release-candidate'
+          assert dist.get('public') is True
+          assert dist.get('tagRequired') is True
+          assert dist.get('tag')==f'v{version}'
+          print(f"version={version}")
+          print(f"tag={dist['tag']}")
+          PY
+
+      - name: Verify public release contract
+        run: |
+          python3 tests/public_release_contract.py
+          python3 tests/release_candidate_contract.py
+
+      - name: Build exact public release candidate
+        run: python3 tools/build_release.py --source-ref "$GITHUB_SHA"
+
+      - name: Attempt repository public visibility
+        id: visibility
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api --method PATCH "repos/$GITHUB_REPOSITORY" -f visibility=public >/tmp/repository-visibility.json
+          test "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.private')" = "false"
+
+      - name: Report visibility result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "$(gh api "repos/$GITHUB_REPOSITORY" --jq '.private')" = "false" ]; then
+            echo "Repository is public."
+          else
+            echo "::warning::Repository remains private because the workflow token lacks repository-administration permission. The tag and Release will exist but become publicly visible only after an owner changes repository visibility."
+          fi
+
+      - name: Create or verify Git tag and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            TAG_SHA="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
+            test "$TAG_SHA" = "$GITHUB_SHA"
+            gh release upload "$TAG" dist/*.zip dist/*.manifest.json dist/*.sha256 --clobber
+          else
+            gh release create "$TAG" \
+              dist/*.zip dist/*.manifest.json dist/*.sha256 \
+              --target "$GITHUB_SHA" \
+              --title "AI Native CMS $VERSION" \
+              --notes-file release/RELEASE-NOTES-0.1.0-rc.3.md \
+              --prerelease
+          fi
+
+      - name: Verify published release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          gh release view "$TAG" --json tagName,isPrerelease,targetCommitish,assets --jq '
+            (.tagName == env.TAG) and
+            (.isPrerelease == true) and
+            ([.assets[].name] | sort) == (["ai-native-cms-0.1.0-rc.3.manifest.json","ai-native-cms-0.1.0-rc.3.sha256","ai-native-cms-0.1.0-rc.3.zip"] | sort)
+          ' | grep -qx true

@@ -24,6 +24,12 @@ def require(source: str, needles: list[str], label: str) -> None:
         fail(f"{label} is missing: {', '.join(missing)}")
 
 
+def ordered(source: str, needles: list[str], label: str) -> None:
+    positions = [source.find(item) for item in needles]
+    if any(pos < 0 for pos in positions) or positions != sorted(positions):
+        fail(f"{label} order is no longer preserved")
+
+
 def main() -> None:
     core = text("api/content-core.php")
     authority = text("api/content-authority.php")
@@ -66,15 +72,25 @@ def main() -> None:
 
     require(config, ["'documents' => [", "'editable_pages' => ["], "adopter configuration")
 
-    ordered = [
-        "contentSyncRepository($root,$sourceRef)",
-        "contentSyncApplyUpdateDirectory($root,$sourceRef)",
-        "contentAuthorityProjectConfiguredDocuments($root)",
-        "contentAuthorityProjectPages($root)",
-    ]
-    positions = [reconcile.find(item) for item in ordered]
-    if any(pos < 0 for pos in positions) or positions != sorted(positions):
-        fail("reconcile command no longer performs reconcile -> update sets -> projection in order")
+    rebuild_path = ROOT / "api/content-rebuild.php"
+    if rebuild_path.is_file():
+        rebuild = rebuild_path.read_text(encoding="utf-8")
+        ordered(reconcile, [
+            "contentSyncRepository($root,$sourceRef)",
+            "contentSyncApplyUpdateDirectory($root,$sourceRef)",
+            "contentRebuild($root)",
+        ], "reconcile -> update sets -> rebuild")
+        ordered(rebuild, [
+            "contentAuthorityProjectConfiguredDocuments($root)",
+            "contentAuthorityProjectPages($root)",
+        ], "configured document -> page projection")
+    else:
+        ordered(reconcile, [
+            "contentSyncRepository($root,$sourceRef)",
+            "contentSyncApplyUpdateDirectory($root,$sourceRef)",
+            "contentAuthorityProjectConfiguredDocuments($root)",
+            "contentAuthorityProjectPages($root)",
+        ], "reconcile -> update sets -> projection")
 
     require(core, [
         "cmsSafePublicFile",

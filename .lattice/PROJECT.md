@@ -3,8 +3,8 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Baseline branch: `main`
-Baseline commit: `a9b9b7dc9f79d693acfaf2bd60140e767d85336b`
-Working branch: `feat/content-authority`
+Baseline commit: `39e25616068567746e62bc9f46eb8da692975ce8`
+Working branch: `feat/rebuild-page-ui`
 Runtime: `lattice-app-works-platform-agnostic` 0.1.6 contract
 Principal alias: `Repository Owner`
 Updated: **2026-08-25 (America/New_York)**
@@ -28,36 +28,40 @@ Routine reversible implementation, refactoring, tests, documentation, repository
 - Public-release artifacts must contain no personal content, credentials, private repository links, or adopter-specific operational state.
 - Technical readiness and repository merge do not imply public visibility, licensing, tagged release, or production adoption.
 
-## Satisfied milestone
+## Satisfied milestones
 
-**M-001 — Foundation is generic, executable, and safe to extend.**
+### M-001 — Foundation is generic, executable, and safe to extend
 
-Merged to `main` after GitHub Actions independently passed the public-release contract plus PHP/Python syntax checks. The foundation established the generic database/security runtime, schema-v7 model, adopter configuration seam, path-compatible upstreaming contract, and extraction matrix.
+Merged after GitHub Actions independently passed the public-release contract plus PHP/Python syntax checks. The foundation established the generic database/security runtime, schema-v7 model, adopter configuration seam, path-compatible upstreaming contract, and extraction matrix.
+
+### M-002 — Canonical page/document state survives every ordinary writer
+
+Merged at `39e25616068567746e62bc9f46eb8da692975ce8` after GitHub Actions passed the public-release guard, reconciliation contract, executable sanitization/block tests, PHP syntax, and Python syntax. The merged authority now includes optimistic canonical page editing, three-way source reconciliation, immutable compare-and-swap update sets, and deterministic configured page/document projection.
 
 ## Active objective
 
-**OBJ-002 — Establish canonical content authority.**
+**OBJ-003 — Make the canonical core operable and extensible.**
 
-Connect the generic runtime/schema to the product’s defining write model: canonical page/document state, revision-safe editing, three-way repository reconciliation, immutable explicit supersession, and deterministic static projection.
+Provide a stable rebuild extension boundary for adopter-specific deterministic projectors and a native operator surface that uses the same guarded authentication and page-mutation contracts as automated callers.
 
 ## Active milestone
 
-**M-002 — Canonical page/document state survives every ordinary writer.**
+**M-003 — An adopter can operate and extend the page CMS without forking core authority.**
 
 Readiness conditions:
 
-1. `authority.blocks`: configured HTML pages can be seeded into canonical `page_blocks` and full page-source documents.
-2. `authority.editing`: authenticated page edits use optimistic hashes, sanitization, revision snapshots, and canonical SQL commits before projection.
-3. `authority.reconcile`: repository candidates advance canonical SQL only when SQL still matches the prior effective source; divergent SQL is preserved and logged.
-4. `authority.supersession`: immutable compare-and-swap update sets support deliberate corrections, with optional standing transforms for lagging repository source.
-5. `authority.projection`: configured pages/documents deterministically project from canonical SQL while anonymous delivery remains database-free.
-6. `authority.verification`: CI exercises pure content behavior and locks the reconciliation/authentication contract without depending on an adopter site or the later site-builder layer.
+1. `rebuild.registry`: core projection has named bounded phases for trusted repository-owned adopter hooks.
+2. `rebuild.boundary`: hook scripts must resolve inside the repository root and execute named callables without shell/eval dispatch.
+3. `ui.auth`: the native CMS exposes secure login/logout through the existing HTTPS, session, same-origin, CSRF, rate-limit, and audit boundary.
+4. `ui.pages`: authenticated operators can select configured pages, edit canonical blocks, detect stale hashes, save, and receive conflicts through the guarded page API.
+5. `ui.runtime`: the CMS interface has no third-party active runtime dependency and does not introduce an HTML-injection rendering path.
+6. `m003.verification`: CI validates the rebuild/UI contract, JS syntax, PHP syntax, and all prior milestone contracts.
 
-Implementation for all six conditions is present on `feat/content-authority`; independent PR verification remains the current acceptance boundary.
+Implementation for all six conditions is present on `feat/rebuild-page-ui`; independent PR verification remains the current acceptance boundary.
 
-## Next frontier after M-002
+## Next frontier after M-003
 
-Add the rebuild/projector extension contract and reusable CMS page-editing UI. Subsequent writing, SEO, templates/composer, media, navigation, branding, and hierarchy work must attach to the canonical authority rather than introducing parallel state.
+Extract long-form writing/publishing and SEO controls onto the same canonical/projection runtime. Later templates/composer, media, navigation, branding, hierarchy, readiness, and setup work must attach to these shared contracts rather than introduce parallel state.
 
 ## Release boundary
 

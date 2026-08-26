@@ -27,6 +27,8 @@ order=[rebuild.index(x) for x in ["$context['core']['seo']=seoProjectAll", "cont
 assert order==sorted(order), 'site-wide finalization order regressed'
 for path in ['api/cms-pages.php','api/cms-composer.php','api/cms-media.php','api/cms-navigation.php','api/cms-branding.php','api/cms-writing.php','api/cms-seo.php','api/cms-redirects.php']:
     need(path,'dbRequireSchemaVersion(8)')
+for path in ['cms/pages.php','cms/composer.php','cms/media.php','cms/navigation.php','cms/branding.php','cms/writing.php','cms/seo.php','cms/readiness.php','cms/redirects.php']:
+    need(path,'href="/cms/redirects.php"')
 config=need('config/site.example.php',"'redirects' =>",'system_aliases','after_seo')
 metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'))
 assert metadata['version']=='0.1.0-rc.2' and metadata['schemaVersion']==8, 'release metadata must describe schema-v8 rc2'

@@ -1,0 +1,14 @@
+# AI Native CMS — Apache CMS-directory reference
+#
+# Copy this file to /cms/.htaccess only when the host permits per-directory
+# Apache configuration. It prevents authenticated operator HTML, JavaScript,
+# and CSS from remaining stale across deployments. Non-Apache hosts should
+# apply the equivalent no-store/private policy to the entire /cms/ path.
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+  Header always set Cache-Control "no-store, private"
+  Header always set Pragma "no-cache"
+  Header always set X-Robots-Tag "noindex, nofollow, noarchive, nosnippet"
+</IfModule>

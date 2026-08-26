@@ -23,8 +23,8 @@ This is the bounded frontier for moving the production-proven CMS into a reusabl
 | Portable database bootstrap | `database/bootstrap-core.php`, `database/bootstrap.php` | core | extracted | CLI-only schema + first owner; derive schema contract from `schema.sql`; no adopter content seed; no owner overwrite; no implicit migration |
 | Production readiness | `api/readiness.php`, `api/cms-readiness.php`, `database/readiness.php`, `cms/readiness.php` | core + adapter checks | extracted | Read-only actionable report; no mutation or secret/grant-content disclosure; host-specific checks enter only through trusted repository-owned adapters |
 | Browser credential-writing setup | deployment adapter | adapter | excluded from core | Core bootstrap does not write database credentials or expose a provider-specific setup surface |
-| Internal release-candidate package | `VERSION`, `release/release.json`, `tools/build_release.py` | release engineering | implemented / verifying | Deterministic source ZIP + manifest + SHA256; exclude governance/runtime/adopter state; keep `public:false` and `licenseSelected:false` until explicit decisions |
-| Installation/backup/rollback guidance | `docs/INSTALLATION.md`, `docs/RELEASE.md` | release engineering | implemented / verifying | Fresh install is schema/owner bootstrap -> explicit canonical import -> readiness; rollback pairs database and code state |
+| Internal release-candidate package | `VERSION`, `release/release.json`, `tools/build_release.py` | release engineering | extracted | Deterministic source ZIP + manifest + SHA256; reviewed-head provenance; exclude governance/runtime/adopter state; preserve `public:false` and `licenseSelected:false` |
+| Installation/backup/rollback guidance | `docs/INSTALLATION.md`, `docs/RELEASE.md` | release engineering | extracted | Fresh install is schema/owner bootstrap -> explicit canonical import -> readiness; rollback pairs database and code state |
 | Schema migrations/upgrades | future versioned migration layer | post-release compatibility | deferred until needed | This is the first candidate, so no prior public schema exists. Future schema changes must ship explicit source/target migrations; bootstrap must never substitute for them |
 | Host repository updater | deployment adapter | adapter | later | Keep deployment authority explicit and host-specific |
 | Newsletter/subscription | extension | optional extension | later | Generic capability; not required for CMS core readiness |
@@ -32,8 +32,8 @@ This is the bounded frontier for moving the production-proven CMS into a reusabl
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## M-008 acceptance boundary
+## Extraction status after M-008
 
-The first release-candidate artifact is a **private internal review artifact**, not a publication mechanism. Acceptance requires cumulative CI on the exact PR head, byte-for-byte reproducibility for a fixed source ref, inspected archive contents, correct reviewed-head provenance, and durable documentation of the installation and release boundaries.
+The reusable core extraction is complete through portable operability and reproducible internal candidate generation. The current source candidate can be built deterministically, inspected through a manifest/checksum, and reviewed without including development/governance/runtime/adopter state.
 
-Repository visibility, license selection, tag/release creation, package publication, production deployment, and production adoption remain Principal decisions. A green M-008 merge may prepare those choices; it may not make them.
+The next boundary is not another extraction milestone. Repository visibility, license selection, tag/release creation, package publication, production deployment, and production adoption are Principal decisions. Future post-release schema changes will also create a new compatibility obligation for explicit versioned migrations; no prior public schema exists for this first candidate.

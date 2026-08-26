@@ -14,16 +14,19 @@ def load_builder():
 
 def main() -> None:
     version=(ROOT/'VERSION').read_text(encoding='utf-8').strip()
-    if version!='0.1.0-rc.2': fail('unexpected internal release candidate version')
+    if version!='0.1.0-rc.3': fail('unexpected internal release candidate version')
     metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'))
-    if metadata.get('version')!=version or metadata.get('schemaVersion')!=8: fail('release metadata does not describe schema-v8 rc2')
+    if metadata.get('version')!=version or metadata.get('schemaVersion')!=8: fail('release metadata does not describe schema-v8 rc3')
     distribution=metadata.get('distribution',{})
-    if distribution.get('public') is not False or distribution.get('licenseSelected') is not False: fail('release candidate metadata crossed the public/license boundary')
+    if distribution.get('public') is not False or distribution.get('licenseSelected') is not True: fail('release candidate distribution/license state is wrong')
+    license_meta=distribution.get('license',{})
+    if license_meta.get('base')!='Apache-2.0' or license_meta.get('condition')!='Commons Clause License Condition v1.0': fail('release candidate license metadata is wrong')
+    if license_meta.get('sourceAvailable') is not True or license_meta.get('osiApproved') is not False or license_meta.get('attributionRequired') is not True: fail('release candidate license classification is wrong')
     workflow=(ROOT/'.github/workflows/ci.yml').read_text(encoding='utf-8')
     if 'github.event.pull_request.head.sha || github.sha' not in workflow: fail('CI release artifact does not record reviewed source revision')
     builder=load_builder();candidates=[path.relative_to(ROOT).as_posix() for path in builder.candidate_files()]
     required={
-        'README.md','SECURITY.md','VERSION','release/release.json',
+        'README.md','SECURITY.md','VERSION','LICENSE','LICENSE-APACHE-2.0.txt','NOTICE','release/release.json',
         'api/runtime.php','api/redirects.php','api/cms-redirects.php',
         'cms/pages.php','cms/redirects.php','cms/redirects.js','config/site.example.php',
         'database/schema.sql','database/bootstrap.php','database/migrations/7-to-8.php','database/private-config.example.ini',
@@ -43,12 +46,14 @@ def main() -> None:
         if hashlib.sha256(za).hexdigest()!=a['sha256']: fail('reported release checksum does not match candidate ZIP')
         ma=json.loads(Path(a['manifest']).read_text(encoding='utf-8'));mb=json.loads(Path(b['manifest']).read_text(encoding='utf-8'))
         if ma!=mb or ma.get('sourceRevision')!='release-contract-ref' or ma.get('schemaVersion')!=8: fail('release manifest provenance/schema is wrong')
+        if ma.get('distribution',{}).get('licenseSelected') is not True: fail('release manifest lost selected license state')
         with zipfile.ZipFile(a['zip'],'r') as archive:
             names=archive.namelist();root=metadata['packageRoot'].rstrip('/')+'/'
             if root+'RELEASE-MANIFEST.json' not in names: fail('candidate ZIP does not contain its release manifest')
             if any(name.startswith(root+prefix) for prefix in forbidden_prefixes for name in names): fail('candidate ZIP contains an excluded operational path')
             if root+'config/site.php' in names: fail('candidate ZIP contains adopter-local config/site.php')
-            if any(name.rsplit('/',1)[-1].lower().startswith('license') for name in names): fail('candidate contains a license even though licenseSelected is false')
+            for path in ['LICENSE','LICENSE-APACHE-2.0.txt','NOTICE']:
+                if root+path not in names: fail('licensed candidate omitted '+path)
             for path in [
                 'api/redirects.php','database/migrations/7-to-8.php','__redirect.php','__redirect-map.php',
                 'adapters/apache/public.htaccess.example','adapters/apache/private.htaccess.example','docs/DEPLOYMENT-ADAPTERS.md',
@@ -57,8 +62,8 @@ def main() -> None:
     installation=(ROOT/'docs/INSTALLATION.md').read_text(encoding='utf-8');release_doc=(ROOT/'docs/RELEASE.md').read_text(encoding='utf-8')
     for needle in ['database/bootstrap.php','database/migrations/7-to-8.php --apply','database/reconcile.php initial-import','database/readiness.php','backup','rollback','migration']:
         if needle.lower() not in installation.lower(): fail('installation/upgrade documentation is missing: '+needle)
-    for needle in ['internal release candidate','not a public release','license','tag','tools/build_release.py','sha256','deployment adapter']:
+    for needle in ['internal release candidate','not a public release','Commons Clause','Apache 2.0','source-available','tools/build_release.py','sha256','deployment adapter']:
         if needle.lower() not in release_doc.lower(): fail('release-boundary documentation is missing: '+needle)
-    print('PASS: reproducible internal schema-v8 release candidate contract')
+    print('PASS: reproducible internal licensed schema-v8 rc3 contract')
 
 if __name__=='__main__': main()

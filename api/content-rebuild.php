@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/content-authority.php';
+require_once __DIR__.'/post-renderer.php';
+require_once __DIR__.'/seo.php';
 
 /** Deterministic rebuild orchestration with bounded adopter projector hooks. */
 
@@ -41,6 +43,8 @@ function contentRebuild(string $root): array {
     foreach(contentRebuildRunHooks($hooks,'after_documents',$root,$context) as $run)$runs[]=$run;
     foreach(contentRebuildRunHooks($hooks,'before_pages',$root,$context) as $run)$runs[]=$run;
     $context['core']['pages']=contentAuthorityProjectPages($root);
+    $context['core']['publishing']=projectPublishedPosts($root);
+    $context['core']['seo']=seoProjectAll($root);
     foreach(contentRebuildRunHooks($hooks,'after_pages',$root,$context) as $run)$runs[]=$run;
     foreach(contentRebuildRunHooks($hooks,'finalize',$root,$context) as $run)$runs[]=$run;
     $context['finishedAt']=gmdate('c');return ['ok'=>true,'core'=>$context['core'],'hooks'=>$runs,'finishedAt'=>$context['finishedAt']];

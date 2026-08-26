@@ -13,10 +13,10 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | Deterministic page/document projection | `api/content-authority.php`, `database/reconcile.php` | core | extracted | Reconcile -> update sets -> projection; anonymous reads remain static |
 | Static rebuild/projector registry | `api/content-rebuild.php` | core + adapter hooks | extracted | Core owns phase order; trusted adopter scripts resolve inside repository root |
 | CMS authentication + page editor UI | `api/cms-auth.php`, `cms/` | core | extracted | UI consumes guarded APIs; no second write model or third-party active runtime |
-| Posts/drafts/revisions/publishing | `api/cms-writing.php`, `cms/writing.php` and helpers | core | next | Remove site categories/content defaults; retain Markdown/static projection |
-| SEO controls | `api/cms-seo.php`, `cms/seo.php` | core | next | Origin restrictions use configured public origin |
-| Reusable block templates/composer | `api/cms-composer.php`, CMS composer UI | core | planned | Structural HTML remains server-owned; values are typed/bounded |
-| Media library | `api/cms-media.php`, `cms/media.php` | core | planned | First-party asset catalog; adopter controls storage root/limits |
+| Posts/drafts/revisions/publishing | `api/post-store.php`, `api/post-renderer.php`, `api/cms-writing.php`, `cms/writing.php` | core | extracted | MySQL canonical; optimistic hashes; bounded Markdown; static projection; adopter owns article template |
+| SEO controls | `api/seo.php`, `api/cms-seo.php`, `cms/seo.php` | core | extracted | Canonical overrides reapply after projection; canonicals stay on configured public origin |
+| Reusable block templates/composer | `api/cms-composer.php`, CMS composer UI | core | next | Structural HTML remains server-owned; values are typed/bounded |
+| Media library | `api/cms-media.php`, `cms/media.php` | core | next | First-party asset catalog; adopter controls storage root/limits |
 | Navigation | `api/cms-navigation.php`, CMS navigation UI | core | planned | Site-wide state canonical in SQL; projection hook is generic |
 | Branding | `api/cms-branding.php`, CMS branding UI | core | planned | Product stores bounded design tokens, not one site’s CSS vocabulary |
 | New-page hierarchy | composition APIs/UI | core | planned | Preserve parent validation, cycle rejection, discovery projection hooks |
@@ -28,6 +28,6 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## Immediate frontier after M-003
+## Immediate frontier after M-004
 
-Extract the reusable writing/publishing path and SEO controls onto the same canonical/projection runtime. Long-form content is the next major authored object type needed for a generally useful publishing product; search/social metadata should travel with that publishing boundary rather than becoming a later competing layer.
+Extract reusable block templates/composition together with the media library. Those capabilities are coupled in the production implementation: typed template variables can reference first-party media, while structural HTML remains server-owned. Extracting them together avoids inventing a temporary template API that would immediately change when media arrives.

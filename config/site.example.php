@@ -36,6 +36,15 @@ return [
             'tests/',
         ],
     ],
+    'writing' => [
+        // Published posts materialize at <route_root>/<slug>/index.html.
+        'route_root' => 'writing',
+        'index_path' => 'content/posts/index.json',
+        // Optional repository-owned HTML template. Supported placeholders:
+        // {{site_name}}, {{title}}, {{dek}}, {{category}}, {{date}},
+        // {{canonical}}, {{reading_minutes}}, {{body_html}}.
+        'article_template' => '',
+    ],
     'projection' => [
         'outputs' => [
             'feed.xml',
@@ -48,7 +57,7 @@ return [
         // Optional trusted repository-owned PHP projectors. Hooks receive
         // ($root, $context) and may return an array of deterministic results.
         // Supported phases: before_documents, after_documents, before_pages,
-        // after_pages, finalize.
+        // after_pages, finalize. after_pages runs after core post + SEO projection.
         'hooks' => [
             // 'after_pages' => [
             //     [

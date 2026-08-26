@@ -1,51 +1,66 @@
-# Extraction matrix
+# Extraction and pre-release matrix
 
-This is the bounded frontier for moving production-proven CMS behavior into a reusable product. It is a product map, not a backlog; Lattice derives executable work from active milestone conditions.
+This is the bounded product frontier for AI Native CMS. Lattice derives executable work from the active milestone; this file records what belongs in reusable core, adapters, release engineering, and adopter-specific layers.
 
-| Capability | Public destination | Classification | Status | Extraction rule |
+| Capability | Public destination | Classification | Status | Product rule |
 | --- | --- | --- | --- | --- |
-| MySQL transport and secret loading | `api/database.php` | core | extracted | Generic `AINCMS_*` configuration; secrets outside public root |
-| HTTPS/origin/session/auth/CSRF/rate limits/audit | `api/runtime.php` | core | extracted | Preserve fail-closed production behavior; no adopter identity |
-| Canonical schema | `database/schema.sql` | core | extracted — v8 | Structure only; no authored seed content |
-| Explicit schema upgrades | `database/migrations/` | core compatibility | extracted — 7→8 | Versioned CLI migration; backup/rollback documented; never route through bootstrap repair |
-| Repository page/document registry | `config/site.php` | adapter | extracted | Never hard-code adopter page/document names in core; keep repository source distinct from CMS-generated pages |
-| Page block editing/revisions | `api/content-core.php`, `api/cms-pages.php` | core | extracted | Managed-page graph; sanitized bounded rich text; optimistic hashes; revision snapshot |
-| Canonical content commit/reconciliation | `api/content-authority.php`, `api/content-sync.php` | core | extracted | Preserve canonical/source hashes, three-way reconciliation, immutable compare-and-swap update sets; browser endpoints do not promote repository source into SQL |
-| Deterministic page/document projection | `api/content-authority.php`, `database/reconcile.php` | core | extracted | Explicit reconciliation → accepted state → projection; anonymous reads remain static |
-| Static rebuild/projector registry | `api/content-rebuild.php` | core + adapter hooks | extracted | One finalization boundary; core owns phase order; trusted adopter scripts resolve inside repository root; `after_seo` supports sitemap/discovery adapters |
-| CMS authentication + page editor UI | `api/cms-auth.php`, `cms/` | core | extracted | UI consumes guarded APIs; no second write model or third-party active runtime |
-| Posts/drafts/revisions/publishing | `api/post-store.php`, `api/post-renderer.php`, `api/cms-writing.php`, `cms/writing.php` | core | extracted | MySQL canonical; optimistic hashes; bounded Markdown; static projection; adopter owns article template; published slug history uses redirect authority |
-| SEO controls | `api/seo.php`, `api/cms-seo.php`, `cms/seo.php` | core | extracted | Canonical overrides reapply after projection; canonicals stay on configured public origin; discovery adapters consume final SEO state |
-| Canonical redirects | `api/redirects.php`, `api/cms-redirects.php`, `cms/redirects.php` | core | extracted | SQL authority; same-site bounded paths/statuses; optimistic record revisions; global graph serialization; file/directory collision, duplicate authority, and cycle rejection; configured system aliases read-only |
-| Static redirect runtime | `__redirect.php`, `__redirect-map.php` | core projection | extracted | Generated deterministic map; anonymous routing is database-free; unknown paths 404; query/status semantics stay in projected runtime |
-| Reusable block templates/composer | `api/composer.php`, `api/composition-store.php`, `api/cms-composer.php`, `cms/composer.php` | core | extracted | Structural HTML stays repository-owned; canonical composition stores template identities + typed values; generated pages consume but do not author templates |
-| Media library | `api/media.php`, `api/cms-media.php`, `cms/media.php` | core | extracted | Canonical metadata + adopter-owned bytes; configured public roots; validated raster uploads only |
-| New-page hierarchy | `api/composition-store.php`, Composer UI | core | extracted | CMS-created root-level routes use trusted shells/templates; validate parents and reject cycles; never feed generated routes back into repository lineage |
-| Navigation | `api/navigation.php`, `api/cms-navigation.php`, `cms/navigation.php` | core | extracted | Ordered canonical SQL state; bounded safe destinations; optimistic hash; hierarchy-aware active projection into `#site-nav` only |
-| Branding | `api/branding.php`, `api/cms-branding.php`, `cms/branding.php` | core + adapter token definitions | extracted | Core stores identity + adopter-declared bounded CSS custom properties, not one site’s CSS vocabulary |
-| Portable database bootstrap | `database/bootstrap-core.php`, `database/bootstrap.php` | core | extracted | CLI-only schema + first owner; derive schema contract from `schema.sql`; no adopter content seed; no owner overwrite; no implicit migration |
-| Production readiness | `api/readiness.php`, `api/cms-readiness.php`, `database/readiness.php`, `cms/readiness.php` | core + adapter checks | extracted | Read-only actionable report; no mutation or secret/grant-content disclosure; host-specific checks enter only through trusted repository-owned adapters |
-| Browser credential-writing setup | deployment adapter | adapter | excluded from core | Core bootstrap does not write database credentials or expose a provider-specific setup surface |
-| Redirect interception contract | `docs/DEPLOYMENT-ADAPTERS.md` | deployment adapter contract | extracted | Serve real files/dirs first; unresolved requests use static redirect projection; generated map is not a public asset; canonical authority refuses routes that the adapter would serve before fallback |
-| Apache public transport reference | `adapters/apache/public.htaccess.example` | reference adapter | extracted | Conservative versionless-asset caching, HTML revalidation, DEFLATE, unresolved redirect fallback; merge deliberately with adopter host/security rules |
-| Apache private/preview reference | `adapters/apache/private.htaccess.example` | reference adapter | extracted | Same redirect/compression behavior with global `no-store, private`; no public max-age leakage |
-| Other server/CDN adapters | `adapters/<target>/` | optional adapters | later | nginx/Caddy/CDN/edge implementations may follow the same contract; no platform is required by core |
-| Internal release-candidate package | `VERSION`, `release/release.json`, `tools/build_release.py` | release engineering | extracted — rc.2 | Deterministic source ZIP + manifest + SHA256; exact reviewed-head provenance; include schema-v8 migration/redirect runtime/reference adapters; exclude governance/runtime/adopter state; preserve `public:false` and `licenseSelected:false` |
-| Installation/backup/rollback guidance | `docs/INSTALLATION.md`, `docs/RELEASE.md` | release engineering | extracted | Fresh install is schema/owner bootstrap → explicit canonical import → readiness; v7 upgrades use explicit migration; rollback pairs database and code state |
-| Host repository updater / automatic deployment | deployment adapter | adapter | later / optional | Keep provider authority explicit and host-specific; not required for CMS core or first public source release |
-| Newsletter/subscription | extension | optional extension | later | Generic capability; not required for CMS core readiness |
-| Poetry-specific layout/visual projection | adopter extension | site/content-type adapter | excluded from core | Useful architecture may upstream; authored semantics remain adopter-owned |
-| Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
-| Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
+| MySQL transport and secret loading | `api/database.php` | core | extracted | Generic `AINCMS_*` configuration; secrets stay outside public root |
+| HTTPS/origin/session/auth/CSRF/rate limits/audit | `api/runtime.php` | core | extracted | Preserve fail-closed production behavior |
+| Canonical schema | `database/schema.sql` | core | extracted — v8 | Structure only; no adopter content seed |
+| Explicit schema upgrades | `database/migrations/` | compatibility core | extracted — 7→8 | Versioned CLI migrations; bootstrap repair is never migration |
+| Repository page/document registry | `config/site.php` | adopter config | extracted | Public structure only; no secrets; repository pages remain distinct from CMS-created pages |
+| Page editing/revisions | content/page APIs + Pages UI | core | extracted | Sanitized bounded content, optimistic hashes, revision snapshots |
+| Canonical content reconciliation | content authority/sync + CLI reconcile | core | extracted | Three-way source/canonical reconciliation; browsers never promote repository source into SQL |
+| Deterministic public projection | rebuild/projector pipeline | core + adapter hooks | extracted | Accepted state projects deterministically; anonymous reads stay static-first |
+| Posts/drafts/revisions/publishing | writing store/API/UI | core | extracted | Canonical SQL, bounded Markdown, static projection, slug-history redirects |
+| SEO controls | SEO store/API/UI | core | extracted | Canonical overrides; same-origin canonicals; discovery consumes final SEO state |
+| Canonical redirects | redirect store/API/UI | core | extracted | Graph serialization, optimistic record revisions, collision/conflict/cycle rejection |
+| Static redirect runtime | `__redirect.php`, `__redirect-map.php` | core projection | extracted | Anonymous redirect path is database-free |
+| Templates/composer | composer APIs/UI | core | extracted | Structural HTML remains repository-owned; CMS stores trusted template identities + typed values |
+| Media library | media APIs/UI | core | extracted | Canonical metadata + adopter-owned bytes; bounded validated uploads |
+| Page hierarchy | composition store/Composer | core | extracted | Trusted shells, bounded routes, parent validation/cycle rejection |
+| Navigation | navigation store/API/UI | core | extracted | Canonical ordered state; safe destinations; projection only into `#site-nav` |
+| Branding | branding store/API/UI | core + adopter token definitions | extracted | Identity + explicitly declared bounded CSS variables only |
+| Database bootstrap | `database/bootstrap*.php` | core | extracted | CLI-only schema + first owner; no content seed, credential overwrite, or implicit migration |
+| Production readiness | readiness API/CLI/UI | core + adapter checks | extracted | Read-only actionable evidence; never deploys, migrates, publishes, or exposes secrets |
+| Starter public site | root pages, `assets/`, `templates/article.html` | product starter | **extracted — rc.3** | Neutral Home/About/Writing site works before customization and seeds trusted templates |
+| Public site initializer | `setup/site.php` | onboarding utility | **extracted — rc.3** | CLI-only non-secret public config writer; refuses overwrite unless explicit; never reads/writes credentials |
+| State-derived onboarding | onboarding API/UI | core UX | **extracted — rc.3 / M-011 satisfied** | Authenticated read-only progress model; no completion flag; hands mutations to owning guarded contracts |
+| GitHub/repository operations guide | `docs/REPOSITORY-OPERATIONS.md` | operability docs | **extracted — rc.3 / M-012 satisfied** | Git vs SQL vs projection vs host state, PR workflow, deploy patterns, backup/migration/rollback/provider checklist |
+| Agent repository contract | `AGENTS.md` | governance | **extracted — rc.3 / M-013 satisfied** | Discoverable authority, branch, migration, secret, test, and change-packet rules for coding agents |
+| LLM collaboration guide | `docs/LLM-COLLABORATION.md` | governance docs | **extracted — rc.3 / M-013 satisfied** | Design/content/feature/bug/schema/release request packets preserve the four authority classes |
+| Browser credential-writing setup | deployment/provider layer | excluded from core | excluded | Friendly onboarding begins after secure bootstrap/auth; core never writes provider/database credentials in browser |
+| Redirect interception contract | `docs/DEPLOYMENT-ADAPTERS.md` | adapter contract | extracted | Serve real files/dirs first; unresolved requests use static redirect projection |
+| Apache public/private references | `adapters/apache/` | reference adapters | extracted | Conservative public caching/compression; private/preview `no-store`; not required by core |
+| Other server/CDN adapters | `adapters/<target>/` | optional adapters | later | Follow the same contract; no platform is required |
+| Deterministic release candidate | `VERSION`, release metadata, builder | release engineering | **extracted — rc.3** | Exact source provenance, reproducible ZIP/manifest/SHA256, residue guards, selected license, `public:false` |
+| License and attribution | `LICENSE`, `LICENSE-APACHE-2.0.txt`, `NOTICE` | distribution governance | **selected — rc.3** | Apache 2.0 subject to Commons Clause v1.0; source-available, attribution-preserving, not OSI open source |
+| Installation/upgrade/rollback | installation + release docs | release engineering | **updated — rc.3** | Public site init → private secrets → bootstrap → reconcile → onboarding → readiness; migrations and rollback explicit |
+| Clean empty-site release rehearsal | M-014 | release assurance | **active / required before publication gate** | Rehearse shipped docs, clean bootstrap, onboarding, representative LLM/repo/canonical changes, deploy/rollback, artifact and parity evidence |
+| Host repository updater / automatic deployment | provider adapter | optional | later | Host authority stays explicit/provider-specific |
+| Newsletter/subscription | extension | optional | later | Not required for core release |
+| Site-specific themes/content/integrations | adopter repository | site-only | excluded | Reusable mechanisms may upstream; identity/authored semantics do not |
 
-## Extraction status after M-010 and final parity hardening
+## rc.3 verification evidence
 
-The reusable core extraction includes the production-proven schema-v8 redirect/projection hardening, explicit 7→8 migration, database-free redirect runtime, and optional reference deployment adapters while retaining the private/unlicensed distribution boundary.
+The first complete M-011–M-013 implementation head `f8a8a19ca2ca6fd9df44bda1b350ba6df00f9856` passed cumulative validation run **#155** (`33001221021`): every M-001–M-010 contract, the new onboarding/governance contract, all executable PHP behavior tests including onboarding/site setup, PHP/JavaScript/Python syntax, deterministic rc.3 build, and private artifact upload.
 
-PR #12 merged the M-010/reference-adapter line at `97d72a74491f66726b3c9a28da313d3753c89646` after cumulative run #82 and direct rc.2 artifact inspection. PR #13 then merged directory-aware collision and duplicate configured-system conflict hardening at `7043eeee47bf4b0112957e7e3a6e564c5da1d020`; cumulative run #88 and its rc.2 artifact also passed direct inspection.
+The run #155 artifact was inspected directly:
 
-A fresh production proving-ground parity check on **2026-08-26** found the production source repository still exactly at PR #50 merge `113068842a808ed00268892dc6a2ffa51c27ffa6`. No newer source work exists to classify, and the remaining directory-aware behavior within PR #49 was explicitly reconciled by PR #13. There is no unresolved reusable **core** delta at the recorded parity point.
+- version `0.1.0-rc.3`, schema 8;
+- manifest source revision exactly `f8a8a19ca2ca6fd9df44bda1b350ba6df00f9856`;
+- candidate ZIP SHA256 `4ed0930c3483719f13b074f50bf3b6667905f84e33d4073476f0f4390345a2c9`, matching the emitted checksum;
+- embedded/external manifests identical;
+- `public:false`, `licenseSelected:true`, Apache-2.0 + Commons Clause v1.0 metadata present;
+- `LICENSE`, Apache license text, `NOTICE`, starter Home/About/Writing site, design assets, article template, safe site initializer, onboarding API/UI, `AGENTS.md`, repository operations guide, LLM collaboration guide, v7→v8 migration, redirect runtime, and Apache reference adapters all present;
+- no `.git`, `.github`, `.lattice`, tests/tools/dist/runtime/uploads, adopter-local `config/site.php`, known personal/reference-adopter residue, private-key markers, GitHub token markers, or AWS access-key markers.
 
-The extraction frontier is therefore closed for the current candidate and the project has returned to the **Principal release gate**. Any future production release containing a material reusable core capability reopens parity work automatically before publication.
+M-011, M-012, and M-013 are therefore technically satisfied on the implementation tree. A final documentation head and PR merge still require cumulative verification.
 
-Repository visibility, license selection, tag/GitHub Release creation, package publication, production deployment, credentials, and production adoption remain explicit separate decisions.
+## Current frontier — M-014
+
+The next delegated milestone is the **clean empty-site release rehearsal**. It must start from an rc.3 candidate with no adopter state and prove the product, documentation, repository workflow, LLM governance, deployment boundary, rollback path, deterministic artifact, and production-proving-ground parity together.
+
+Only after M-014 passes does the project return to the Principal publication gate.
+
+Repository visibility, Git tag/GitHub Release creation, public package publication, production deployment, credentials, and production adoption remain separate Principal decisions. License selection is resolved and does not itself authorize publication.

@@ -51,6 +51,14 @@ return [
             'contentWidth' => ['css'=>'--content-width','type'=>'length','default'=>1120,'min'=>720,'max'=>1440,'unit'=>'px'],
         ],
     ],
+    'seo' => [
+        // Used only for deterministic projection defaults. Canonical page-specific
+        // titles/descriptions/canonicals/social-mode controls remain in seo_overrides.
+        'author' => 'Site Owner',
+        'social_image' => '/assets/share-card.svg',
+        'locale' => 'en_US',
+        'language' => 'en-US',
+    ],
     'redirects' => [
         // Optional repository-owned compatibility aliases. They are merged into
         // the generated static map and visible in CMS Redirects, but remain read-only.

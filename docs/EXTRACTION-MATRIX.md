@@ -15,11 +15,11 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | CMS authentication + page editor UI | `api/cms-auth.php`, `cms/` | core | extracted | UI consumes guarded APIs; no second write model or third-party active runtime |
 | Posts/drafts/revisions/publishing | `api/post-store.php`, `api/post-renderer.php`, `api/cms-writing.php`, `cms/writing.php` | core | extracted | MySQL canonical; optimistic hashes; bounded Markdown; static projection; adopter owns article template |
 | SEO controls | `api/seo.php`, `api/cms-seo.php`, `cms/seo.php` | core | extracted | Canonical overrides reapply after projection; canonicals stay on configured public origin |
-| Reusable block templates/composer | `api/cms-composer.php`, CMS composer UI | core | next | Structural HTML remains server-owned; values are typed/bounded |
-| Media library | `api/cms-media.php`, `cms/media.php` | core | next | First-party asset catalog; adopter controls storage root/limits |
-| Navigation | `api/cms-navigation.php`, CMS navigation UI | core | planned | Site-wide state canonical in SQL; projection hook is generic |
-| Branding | `api/cms-branding.php`, CMS branding UI | core | planned | Product stores bounded design tokens, not one site’s CSS vocabulary |
-| New-page hierarchy | composition APIs/UI | core | planned | Preserve parent validation, cycle rejection, discovery projection hooks |
+| Reusable block templates/composer | `api/composer.php`, `api/composition-store.php`, `api/cms-composer.php`, `cms/composer.php` | core | extracted | Structural HTML stays repository-owned; canonical composition stores template identities + typed values; composed pages bypass shell block reconciliation |
+| Media library | `api/media.php`, `api/cms-media.php`, `cms/media.php` | core | extracted | Canonical metadata + adopter-owned bytes; configured public roots; validated raster uploads only |
+| Navigation | `api/cms-navigation.php`, CMS navigation UI | core | next | Site-wide state canonical in SQL; projection hook is generic |
+| Branding | `api/cms-branding.php`, CMS branding UI | core | next | Product stores bounded design tokens, not one site’s CSS vocabulary |
+| New-page hierarchy | composition APIs/UI | core | next | Build on merged composition primitives; validate parents and reject cycles before projection/navigation changes |
 | Production readiness | `api/cms-readiness.php` | core + adapter checks | planned | Separate portable checks from host-specific checks |
 | Shared-host bootstrap/setup | `database/bootstrap.php`, `setup/` | deployment adapter | planned | Generic defaults; no hosting-vendor identity in core |
 | Host repository updater | deployment adapter | adapter | later | Keep deployment authority explicit and host-specific |
@@ -28,6 +28,6 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## Immediate frontier after M-004
+## Immediate frontier after M-005
 
-Extract reusable block templates/composition together with the media library. Those capabilities are coupled in the production implementation: typed template variables can reference first-party media, while structural HTML remains server-owned. Extracting them together avoids inventing a temporary template API that would immediately change when media arrives.
+Add new-page hierarchy, canonical navigation, and bounded branding together. They form the next coherent site-wide layer: a new composed page needs a validated parent/navigation relationship, while site-wide branding must reapply deterministically across both repository pages and composed projections without owning adopter-specific CSS structure.

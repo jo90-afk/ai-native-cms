@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__.'/runtime.php';
 require_once __DIR__.'/content-authority.php';
+require_once __DIR__.'/composition-store.php';
 
 secureJsonHeaders();requireCmsAuth(true);$root=dirname(__DIR__);$method=(string)($_SERVER['REQUEST_METHOD']??'GET');
 try{
@@ -17,7 +18,7 @@ try{
         $html=(string)file_get_contents($full);$ready=(bool)($authority['ready']??false);
         if($ready)$html=contentAuthorityOverlayBlocks($html,$path);
         $blocks=$ready?array_values(contentAuthorityPageBlocks($path)):cmsExtractEditableBlocks($html);
-        runtimeJson(['ok'=>true,'page'=>cmsPublicPageInfo($root,$path,$managed[$path]),'blocks'=>$blocks,'contentAuthority'=>$authority]);
+        runtimeJson(['ok'=>true,'page'=>cmsPublicPageInfo($root,$path,$managed[$path]),'blocks'=>$blocks,'contentAuthority'=>$authority,'composed'=>compositionExists($path)]);
     }
     if($method!=='POST')runtimeJson(['ok'=>false,'error'=>'Method not allowed.'],405);
     requireSameOrigin(true);requireCmsCsrf();enforceRateLimit('cms-page-save',120,3600,$root);
@@ -33,9 +34,9 @@ try{
     if(!(bool)($authority['ready']??false))throw new RuntimeException('Canonical content authority could not be initialized.');
     $full=cmsSafePublicFile($root,$path);if($full===null)runtimeJson(['ok'=>false,'error'=>'Page not found.'],404);$original=(string)file_get_contents($full);$canonicalBefore=contentAuthorityOverlayBlocks($original,$path);$pdo=db();$pdo->beginTransaction();$wrote=false;
     try{
-        contentAuthorityBackupPage($path,$canonicalBefore,'content');$changed=contentAuthorityStoreBlockChanges($path,$validated);contentAuthorityProjectPage($root,$path);$wrote=true;$pdo->commit();
-        cmsAudit('content','Edited page text',['page'=>$path,'blocks'=>$changed,'authority'=>'mysql'],$root);
-        runtimeJson(['ok'=>true,'saved'=>$changed,'page'=>cmsPublicPageInfo($root,$path,$managed[$path]),'contentAuthority'=>contentAuthorityStatus($root)]);
+        contentAuthorityBackupPage($path,$canonicalBefore,'content');$changed=contentAuthorityStoreBlockChanges($path,$validated);projectCmsPage($root,$path);$wrote=true;$pdo->commit();
+        cmsAudit('content','Edited page text',['page'=>$path,'blocks'=>$changed,'authority'=>'mysql','composed'=>compositionExists($path)],$root);
+        runtimeJson(['ok'=>true,'saved'=>$changed,'page'=>cmsPublicPageInfo($root,$path,$managed[$path]),'contentAuthority'=>contentAuthorityStatus($root),'composed'=>compositionExists($path)]);
     }catch(Throwable $e){if($pdo->inTransaction())$pdo->rollBack();if($wrote){try{cmsAtomicWrite($full,$canonicalBefore);}catch(Throwable $ignored){}}throw $e;}
 }catch(Throwable $e){
     if($e instanceof RuntimeException&&str_contains($e->getMessage(),'Page changed since it was opened'))runtimeJson(['ok'=>false,'error'=>'Page changed since it was opened. Refresh before saving.'],409);

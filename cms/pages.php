@@ -15,7 +15,7 @@ secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue
 <body data-cms-view="pages">
 <header class="app-header">
 <div><p class="eyebrow">AI Native CMS</p><strong><?=htmlspecialchars($siteName,ENT_QUOTES|ENT_HTML5,'UTF-8')?></strong></div>
-<nav class="cms-nav" aria-label="CMS"><a href="/cms/pages.php" aria-current="page">Pages</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php">SEO</a></nav>
+<nav class="cms-nav" aria-label="CMS"><a href="/cms/pages.php" aria-current="page">Pages</a><a href="/cms/composer.php">Composer</a><a href="/cms/media.php">Media</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php">SEO</a></nav>
 <div class="header-actions"><span class="user-label"><?=htmlspecialchars((string)($user['displayName']??$user['username']??'Owner'),ENT_QUOTES|ENT_HTML5,'UTF-8')?></span><button id="logout" class="secondary" type="button">Sign out</button></div>
 </header>
 <main class="editor-shell">
@@ -29,7 +29,7 @@ secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue
 <div><p class="eyebrow">Editable copy</p><h1 id="page-heading">Choose a page</h1></div>
 <button id="save-page" type="button" disabled>Save changes</button>
 </div>
-<p class="muted">Only text leaves explicitly marked by the site are editable here. Structural HTML remains repository-owned.</p>
+<p class="muted">Only text leaves explicitly marked by the site are editable here. Structural HTML remains repository-owned or composer-template-owned.</p>
 <div id="blocks" class="blocks" aria-live="polite"></div>
 <p id="editor-status" class="status" role="status" aria-live="polite"></p>
 </section>

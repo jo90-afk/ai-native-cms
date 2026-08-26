@@ -45,6 +45,13 @@ return [
         // {{canonical}}, {{reading_minutes}}, {{body_html}}.
         'article_template' => '',
     ],
+    'media' => [
+        // Existing images inside these public roots may be cataloged and selected
+        // by typed composer variables. Uploads are restricted to raster images.
+        'public_roots' => ['assets'],
+        'upload_root' => 'assets/uploads',
+        'max_upload_bytes' => 8388608,
+    ],
     'projection' => [
         'outputs' => [
             'feed.xml',

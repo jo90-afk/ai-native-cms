@@ -67,7 +67,7 @@ def main() -> None:
         "requireCmsCsrf()",
         "enforceRateLimit('cms-page-save'",
         "contentAuthorityStoreBlockChanges",
-        "contentAuthorityProjectPage",
+        "projectCmsPage($root,$path)",
     ], "page editing endpoint")
 
     require(config, ["'documents' => [", "'editable_pages' => ["], "adopter configuration")

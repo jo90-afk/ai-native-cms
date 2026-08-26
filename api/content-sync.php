@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/content-authority.php';
+require_once __DIR__.'/composition-store.php';
 
 /** Three-way repository reconciliation plus immutable compare-and-swap update sets. */
 
@@ -26,6 +27,7 @@ function contentSyncRepository(string $root,string $sourceRef='repository'): arr
         $accept=$pdo->prepare('UPDATE page_blocks SET tag_name=?,html_content=?,content_sha256=?,source_sha256=?,source_ref=?,source_updated_at=UTC_TIMESTAMP(),updated_by=NULL,updated_at=UTC_TIMESTAMP() WHERE page_path=? AND block_id=?');
         $track=$pdo->prepare('UPDATE page_blocks SET tag_name=?,source_sha256=?,source_ref=?,source_updated_at=UTC_TIMESTAMP() WHERE page_path=? AND block_id=?');
         foreach(contentAuthorityManagedPages($root) as $path=>$label){
+            if(compositionExists($path))continue;
             $file=cmsSafePublicFile($root,$path);if($file===null)continue;
             foreach(cmsExtractEditableBlocks((string)file_get_contents($file)) as $block){
                 $block['html']=contentSyncTransformBlockCandidate($standing,$path,(string)$block['id'],(string)$block['html']);$block['hash']=hash('sha256',(string)$block['html']);$select->execute([$path,$block['id']]);$row=$select->fetch();$target=$path.'#'.$block['id'];

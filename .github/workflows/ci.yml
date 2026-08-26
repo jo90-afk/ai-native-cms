@@ -48,7 +48,7 @@ jobs:
       - name: Python syntax
         run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/composer_media_contract.py tests/site_wide_contract.py tests/bootstrap_readiness_contract.py tests/release_candidate_contract.py tools/build_release.py
       - name: Build internal release candidate
-        run: python3 tools/build_release.py --source-ref "$GITHUB_SHA"
+        run: python3 tools/build_release.py --source-ref "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Upload internal release candidate
         uses: actions/upload-artifact@v4
         with:

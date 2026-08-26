@@ -28,8 +28,8 @@ def main() -> None:
 
     require(bootstrap,[
         'bootstrapSchemaVersion','bootstrapRequiredTables','bootstrapSqlStatements','bootstrapClassifyState',
-        "status']==='foreign'","status']==='partial'",'allowRepair','GET_LOCK','RELEASE_LOCK',
-        'bootstrapInstallOwner','bootstrapOwnerCount','database/reconcile.php',
+        'bootstrapRepairable','bootstrapAssertInstallable','Automatic repair is limited to incomplete installs already stamped with the current schema version',
+        'allowRepair','GET_LOCK','RELEASE_LOCK','bootstrapConfiguredOwner','bootstrapInstallOwner','bootstrapOwnerCount','database/reconcile.php',
     ],'portable bootstrap')
     if 'content-seed' in bootstrap or 'INSERT INTO posts' in bootstrap:
         fail('portable bootstrap must not seed adopter content')
@@ -51,6 +51,12 @@ def main() -> None:
     require(readiness_ui,['Read-only diagnostics','/cms/readiness.php'],'native readiness workspace')
     if 'innerHTML' in readiness_js: fail('readiness UI reintroduced innerHTML')
     if 'http://' in readiness_js or 'https://' in readiness_js: fail('readiness UI contains a third-party active runtime dependency')
+
+    for path in [
+        'cms/pages.php','cms/composer.php','cms/media.php','cms/navigation.php',
+        'cms/branding.php','cms/writing.php','cms/seo.php','cms/readiness.php',
+    ]:
+        require(text(path),['href="/cms/readiness.php"'],f'{path} readiness navigation')
 
     print('PASS: bootstrap and readiness contract')
 

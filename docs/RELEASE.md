@@ -1,105 +1,61 @@
 # Release-candidate process
 
-AI Native CMS `0.1.0-rc.1` is an **internal release candidate**, not a public release.
+AI Native CMS `0.1.0-rc.2` is an **internal release candidate**, not a public release. It supersedes rc.1 for current source-parity evaluation because rc.2 carries schema v8 redirect authority and projection-boundary hardening. `0.1.0-rc.1` remains historical evidence for the earlier schema-7 extraction.
 
-A release candidate is a reproducible review artifact. It does not make the repository public, select or imply a license, create a Git tag or GitHub Release, publish a package, authorize deployment, or adopt the core into any production site.
+A candidate is a reproducible review artifact. It does not make the repository public, select or imply a license, create a Git tag or GitHub Release, publish a package, authorize deployment, or adopt the core into production.
 
 ## Candidate identity
 
-The candidate identity is split across two version-controlled files:
-
-- `VERSION` — the candidate semantic version;
-- `release/release.json` — product/channel/schema/runtime metadata and explicit distribution-boundary flags.
-
-`tools/build_release.py` refuses to build when those files disagree, when the declared schema version differs from `database/schema.sql`, or when the metadata says public distribution or license selection has already occurred.
+`VERSION` defines the semantic candidate version. `release/release.json` defines product/channel/schema/runtime metadata and explicit distribution-boundary flags. `tools/build_release.py` refuses mismatched version/schema metadata or a candidate whose metadata has crossed the current private/unlicensed boundary.
 
 ## Build
-
-From a clean repository checkout:
 
 ```bash
 python3 tools/build_release.py --source-ref <git-sha>
 ```
 
-The default output directory is `dist/`, which is local generated state and must not be committed.
+The builder emits deterministic files under `dist/`:
 
-The builder produces:
+- `ai-native-cms-0.1.0-rc.2.zip`
+- `ai-native-cms-0.1.0-rc.2.manifest.json`
+- `ai-native-cms-0.1.0-rc.2.sha256`
 
-- `dist/ai-native-cms-0.1.0-rc.1.zip`
-- `dist/ai-native-cms-0.1.0-rc.1.manifest.json`
-- `dist/ai-native-cms-0.1.0-rc.1.sha256`
-
-The ZIP has sorted file order, fixed entry timestamps and permissions, and deterministic compression settings. Building the same source tree with the same `--source-ref` must produce the same bytes and SHA256 digest.
+Sorted file order, fixed ZIP metadata, deterministic compression, and exact source-ref provenance make repeated builds byte-for-byte comparable.
 
 ## Candidate contents
 
-The source candidate includes product/runtime code and reusable documentation:
+The source candidate includes reusable runtime/product code, `README.md`, `SECURITY.md`, release metadata, `api/`, `cms/`, generic config examples, schema/bootstrap/migrations/reconciliation/readiness, root redirect runtime/map seed, and `docs/`.
 
-- `README.md`, `SECURITY.md`, `VERSION`;
-- `release/release.json`;
-- `api/`;
-- `cms/`;
-- generic `config/` files, excluding adopter-local `config/site.php`;
-- portable `database/` schema/bootstrap/reconcile/readiness/example configuration;
-- `docs/`.
+It excludes `.git/`, `.github/`, `.lattice/`, tests, release tooling, generated `dist/`, runtime/upload state, adopter-local `config/site.php`, populated INI files, symlinks, credentials, and known reference-adopter residue.
 
-It intentionally excludes development/governance/runtime state:
-
-- `.git/`, `.github/`, `.lattice/`;
-- `tests/` and `tools/`;
-- `dist/`;
-- runtime/upload directories;
-- adopter-local `config/site.php`;
-- populated INI files and other deployment credentials.
-
-The builder fails closed on symlinks in the candidate set, known reference-adopter identifiers, obvious private-key/token patterns, or non-example INI files.
+Schema-v8 candidates must include `api/redirects.php`, `api/cms-redirects.php`, `cms/redirects.php`, `database/migrations/7-to-8.php`, `__redirect.php`, and `__redirect-map.php`.
 
 ## Manifest
 
-`RELEASE-MANIFEST.json` is embedded in the ZIP and also emitted beside it. It records:
-
-- product/version/channel;
-- exact source revision supplied to the builder;
-- schema version;
-- minimum runtime versions;
-- distribution-boundary flags;
-- package root;
-- every packaged file’s byte length and SHA256 digest.
-
-The embedded manifest is not self-hashed in its own file list. The outer `.sha256` file hashes the complete ZIP.
+The embedded/external `RELEASE-MANIFEST.json` records product/version/channel, exact reviewed source revision, schema version, runtime requirements, distribution flags, package root, and per-file byte length/SHA256. The outer `.sha256` hashes the complete ZIP.
 
 ## Verification
 
-Repository CI must pass the cumulative M-001–M-008 validation suite before a candidate can be called reviewable. M-008 adds `tests/release_candidate_contract.py`, which builds the candidate twice from the same fixed source ref and requires byte-for-byte equality, then opens the ZIP and verifies required files and exclusions.
+CI must pass the cumulative M-001–M-009 gate on the exact candidate head. For the review artifact verify at minimum:
 
-For a human review candidate, verify at minimum:
+1. CI is green on the exact reviewed head;
+2. ZIP SHA256 matches the emitted checksum;
+3. embedded and external manifests are identical and record that head;
+4. schema version is 8 and the explicit 7→8 migration plus redirect runtime are packaged;
+5. no adopter/local configuration, private residue, or `LICENSE*` entry exists;
+6. `docs/INSTALLATION.md` accurately covers fresh install, explicit 7→8 migration, readiness, source reconciliation, backup, and paired rollback;
+7. `SECURITY.md` still describes secret/request/static-routing boundaries.
 
-1. the cumulative CI run is green on the exact source head;
-2. the generated ZIP SHA256 matches the emitted `.sha256` file;
-3. `RELEASE-MANIFEST.json` reports the intended source revision and schema version;
-4. no adopter/local configuration is present;
-5. `docs/INSTALLATION.md` accurately describes fresh install, backup, migration boundaries, readiness, and rollback;
-6. `SECURITY.md` still describes the disclosure and secret-handling posture;
-7. the candidate contains no `LICENSE` file unless the Principal has explicitly selected one.
+The CI artifact remains short-lived and private. It is evidence for review, not publication.
 
 ## License and public-distribution boundary
 
-No license is selected by this milestone. Absence of a license means this internal candidate should not be treated as an authorized public/open-source distribution.
+No license is selected. `release/release.json` remains `public:false` and `licenseSelected:false`, and the release contract rejects a `LICENSE*` entry in this state.
 
-Selecting a license is a Principal decision. Once selected, the release process must add the correct license text and update `release/release.json` deliberately; the current builder is expected to refuse the old `licenseSelected: false` candidate contract once a future public-release milestone changes that boundary.
+Selecting a license, changing repository visibility, creating a tag/GitHub Release, publishing a package/download, or deploying/adopting the core are separate Principal decisions.
 
-Similarly, repository visibility, Git tags, GitHub Releases, package registries, public downloads, and production deployment remain separate explicit actions.
+## Source-parity gate
 
-## Tagging and publication
+Before a future candidate is promoted to a public-release decision, compare the production proving-ground repository with the recorded parity point. A material reusable **core** delta reopens delegated extraction work. Host/transport adapters and site-only changes do not automatically block release.
 
-M-008 does not create a tag. A future publication workflow should require all of the following to be explicit and mutually consistent before tagging:
-
-- final version;
-- selected license;
-- exact source commit;
-- release notes/changelog;
-- schema/migration support statement;
-- candidate SHA256;
-- public visibility/distribution authorization.
-
-Until those exist, `0.1.0-rc.1` remains an internal review identity only.
+Until that parity review and explicit release decisions occur, `0.1.0-rc.2` remains an internal review identity only.

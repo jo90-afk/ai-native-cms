@@ -1,4 +1,4 @@
--- AI Native CMS — MySQL schema v7 extraction baseline
+-- AI Native CMS — MySQL schema v8 extraction baseline
 -- MySQL 5.7+/8.0 compatible; utf8mb4 throughout.
 -- Contains structure only. Adopter-authored content belongs in adopter seeds or canonical runtime state.
 
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS app_meta (
   schema_version INT UNSIGNED NOT NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-INSERT INTO app_meta (id, schema_version) VALUES (1, 7)
-  ON DUPLICATE KEY UPDATE schema_version=GREATEST(schema_version, 7);
+INSERT INTO app_meta (id, schema_version) VALUES (1, 8)
+  ON DUPLICATE KEY UPDATE schema_version=GREATEST(schema_version, 8);
 
 CREATE TABLE IF NOT EXISTS cms_users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -152,6 +152,26 @@ CREATE TABLE IF NOT EXISTS site_navigation (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   KEY idx_site_navigation_user (updated_by),
   CONSTRAINT fk_site_navigation_user FOREIGN KEY (updated_by) REFERENCES cms_users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS redirect_records (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  source_path VARCHAR(512) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL,
+  target_path VARCHAR(1024) NOT NULL,
+  status_code SMALLINT UNSIGNED NOT NULL DEFAULT 301,
+  preserve_query TINYINT(1) NOT NULL DEFAULT 1,
+  is_active TINYINT(1) NOT NULL DEFAULT 1,
+  managed_by VARCHAR(32) NOT NULL DEFAULT 'manual',
+  note VARCHAR(1000) NOT NULL DEFAULT '',
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_redirect_records_source (source_path),
+  KEY idx_redirect_records_active (is_active, source_path(191)),
+  KEY idx_redirect_records_updated (updated_at),
+  CONSTRAINT fk_redirect_records_created_user FOREIGN KEY (created_by) REFERENCES cms_users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_redirect_records_updated_user FOREIGN KEY (updated_by) REFERENCES cms_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS content_documents (

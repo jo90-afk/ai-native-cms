@@ -40,14 +40,15 @@ def main() -> None:
     require(readiness,[
         'readinessCheck','readinessCoreChecks','readinessDatabaseChecks','readinessFilesystemChecks',
         'readinessWritableTarget','contentAuthorityStatus','SHOW GRANTS FOR CURRENT_USER','Ssl_cipher',
-        "siteConfigValue('readiness','adapters'",'pathInside','readinessAdapterChecks','blockingFailures',
+        "siteConfigValue('readiness','adapters'",'pathInside','readinessAdapters','readinessAdapterChecks','blockingFailures',
+        "['id'=>$id,'path'=>$full,'callable'=>$callable]",
     ],'read-only readiness model')
     for forbidden in ['mail(', 'exec(', 'shell_exec(', 'system(', 'passthru(']:
         if forbidden in readiness: fail(f'readiness model contains active side effect primitive: {forbidden}')
     require(readiness_api,['requireCmsAuth(true)',"$method!=='GET'",'readinessReport'],'authenticated readiness API')
     if 'requireCmsCsrf' in readiness_api or "REQUEST_METHOD']??'GET')==='POST'" in readiness_api:
         fail('readiness API should remain GET-only and non-mutating')
-    require(config,["'readiness' => [","'adapters' => [","'script' => 'adapters/readiness-shared-host.php'","'callable' => 'sharedHostReadiness'"],'readiness adapter seam')
+    require(config,["'readiness' => [","'adapters' => [","'script'=>","'callable'=>"],'readiness adapter configuration seam')
     require(readiness_ui,['Read-only diagnostics','/cms/readiness.php'],'native readiness workspace')
     if 'innerHTML' in readiness_js: fail('readiness UI reintroduced innerHTML')
     if 'http://' in readiness_js or 'https://' in readiness_js: fail('readiness UI contains a third-party active runtime dependency')

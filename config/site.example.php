@@ -17,6 +17,15 @@ return [
             'about.html' => 'About',
             'writing.html' => 'Writing',
         ],
+        // Optional structured authored files that should participate in the same
+        // canonical-SQL/repository-reconciliation model as editable pages.
+        'documents' => [
+            // 'content/site.json' => [
+            //     'type' => 'site-data',
+            //     'label' => 'Site data',
+            //     'format' => 'json',
+            // ],
+        ],
         'generated_roots' => [
             'writing/',
         ],

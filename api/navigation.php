@@ -30,22 +30,22 @@ function navigationState(string $root): array {
 function navigationPathFromHref(string $href): ?string {
     if(!str_starts_with($href,'/'))return null;$fragment=parse_url($href,PHP_URL_FRAGMENT);if(is_string($fragment)&&$fragment!=='')return null;$path=(string)(parse_url($href,PHP_URL_PATH)??'');if($path===''||$path==='/')return 'index.html';return ltrim($path,'/');
 }
-function navigationCandidates(string $path): array {
-    $out=[$path];$parents=compositionParentMap();$seen=[$path=>true];$cursor=$parents[$path]??null;
+function navigationCandidates(string $path,array $parents=[]): array {
+    $out=[$path];$seen=[$path=>true];$cursor=$parents[$path]??null;
     while(is_string($cursor)&&$cursor!==''&&!isset($seen[$cursor])){$seen[$cursor]=true;$out[]=$cursor;$cursor=$parents[$cursor]??null;}return $out;
 }
-function navigationActiveId(string $path,array $items): ?string {
-    foreach(navigationCandidates($path) as $candidate)foreach($items as $item){if(empty($item['enabled']))continue;$target=navigationPathFromHref((string)$item['href']);if($target!==null&&$target===$candidate)return (string)$item['id'];}return null;
+function navigationActiveId(string $path,array $items,array $parents=[]): ?string {
+    foreach(navigationCandidates($path,$parents) as $candidate)foreach($items as $item){if(empty($item['enabled']))continue;$target=navigationPathFromHref((string)$item['href']);if($target!==null&&$target===$candidate)return (string)$item['id'];}return null;
 }
 function navigationHtml(array $items,?string $activeId=null): string {
     $html='';foreach($items as $item){if(empty($item['enabled']))continue;$label=htmlspecialchars((string)$item['label'],ENT_QUOTES|ENT_HTML5,'UTF-8');$href=htmlspecialchars((string)$item['href'],ENT_QUOTES|ENT_HTML5,'UTF-8');$external=preg_match('#^https://#i',(string)$item['href'])===1;$active=$activeId!==null&&hash_equals($activeId,(string)$item['id']);$html.='<a'.($active?' class="active" aria-current="page"':'').' href="'.$href.'"'.($external?' target="_blank" rel="noopener noreferrer"':'').'>'.$label.'</a>';}
     return $html;
 }
-function navigationApply(string $html,array $items,string $path): string {
-    $active=navigationActiveId($path,$items);$nav=navigationHtml($items,$active);return preg_replace_callback('/(<nav\b(?=[^>]*\bid=["\']site-nav["\'])[^>]*>).*?(<\/nav>)/is',fn($m)=>$m[1].$nav.$m[2],$html,1)??$html;
+function navigationApply(string $html,array $items,string $path,array $parents=[]): string {
+    $active=navigationActiveId($path,$items,$parents);$nav=navigationHtml($items,$active);return preg_replace_callback('/(<nav\b(?=[^>]*\bid=["\']site-nav["\'])[^>]*>).*?(<\/nav>)/is',fn($m)=>$m[1].$nav.$m[2],$html,1)??$html;
 }
 function navigationProject(string $root): array {
-    $state=navigationState($root);$changed=0;$pages=0;foreach(presentationPublicHtmlFiles($root) as $path=>$full){$html=(string)file_get_contents($full);$next=navigationApply($html,$state['items'],$path);if($next!==$html){cmsAtomicWrite($full,$next);$changed++;}$pages++;}return ['pages'=>$pages,'changed'=>$changed,'hash'=>$state['hash']];
+    $state=navigationState($root);$parents=compositionParentMap();$changed=0;$pages=0;foreach(presentationPublicHtmlFiles($root) as $path=>$full){$html=(string)file_get_contents($full);$next=navigationApply($html,$state['items'],$path,$parents);if($next!==$html){cmsAtomicWrite($full,$next);$changed++;}$pages++;}return ['pages'=>$pages,'changed'=>$changed,'hash'=>$state['hash']];
 }
 function navigationSave(string $root,array $items,string $expectedHash): array {
     $current=navigationState($root);if($expectedHash===''||!hash_equals($expectedHash,$current['hash']))throw new RuntimeException('Navigation changed since it was opened. Refresh before saving.');$items=navigationValidate($items);if($current['configured'])presentationRevision('@navigation','navigation',$current['items']);

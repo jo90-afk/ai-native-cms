@@ -8,22 +8,23 @@ secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="cms-csrf" content="<?=htmlspecialchars($csrf,ENT_QUOTES|ENT_HTML5,'UTF-8')?>">
-<title>SEO — AI Native CMS</title>
+<title>Search + Social — AI Native CMS</title>
 <link rel="stylesheet" href="/cms/cms.css">
 <link rel="stylesheet" href="/cms/editor.css">
 </head>
 <body data-cms-view="seo">
 <header class="app-header">
 <div><p class="eyebrow">AI Native CMS</p><strong><?=htmlspecialchars($siteName,ENT_QUOTES|ENT_HTML5,'UTF-8')?></strong></div>
-<nav class="cms-nav" aria-label="CMS"><a href="/cms/onboarding.php">Onboarding</a><a href="/cms/pages.php">Pages</a><a href="/cms/composer.php">Composer</a><a href="/cms/media.php">Media</a><a href="/cms/navigation.php">Navigation</a><a href="/cms/branding.php">Branding</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php" aria-current="page">SEO</a><a href="/cms/redirects.php">Redirects</a><a href="/cms/readiness.php">Readiness</a></nav>
+<nav class="cms-nav" aria-label="CMS"><a href="/cms/onboarding.php">Onboarding</a><a href="/cms/pages.php">Pages</a><a href="/cms/composer.php">Composer</a><a href="/cms/media.php">Media</a><a href="/cms/navigation.php">Navigation</a><a href="/cms/branding.php">Branding</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php" aria-current="page">Search + Social</a><a href="/cms/redirects.php">Redirects</a><a href="/cms/readiness.php">Readiness</a></nav>
 <div class="header-actions"><span class="user-label"><?=htmlspecialchars((string)($user['displayName']??$user['username']??'Owner'),ENT_QUOTES|ENT_HTML5,'UTF-8')?></span><button id="logout" class="secondary" type="button">Sign out</button></div>
 </header>
-<main class="workspace">
+<main class="workspace seo-workspace">
 <aside class="workspace-list">
-<section class="section-card" aria-labelledby="seo-quality-heading"><p class="eyebrow">Site-wide quality</p><h2 id="seo-quality-heading">Inspecting…</h2><p id="seo-quality-summary" class="muted"></p><div id="seo-site-findings" class="revision-list" aria-live="polite"></div></section>
+<section class="section-card" aria-labelledby="seo-quality-heading"><p class="eyebrow">Search surface</p><h2 id="seo-quality-heading">Inspecting…</h2><p id="seo-quality-summary" class="muted"></p><div id="seo-site-findings" class="revision-list" aria-live="polite"></div></section>
+<label class="field seo-target-filter">Choose a page<input id="seo-filter" type="search" placeholder="Filter pages" autocomplete="off"></label>
 <div id="seo-list" aria-label="SEO targets"></div>
 </aside>
-<section class="workspace-main">
+<section class="workspace-main seo-editor" data-seo-state="empty">
 <div class="toolbar"><div><p class="eyebrow">Search and social metadata</p><h1 id="seo-heading">Choose a page</h1></div><button id="save-seo" type="button" disabled>Save SEO</button></div>
 <section id="seo-page-quality" class="section-card" hidden><div class="toolbar"><div><p class="eyebrow">Page quality</p><h2 id="seo-page-score">Not scored</h2></div></div><div id="seo-page-findings" class="revision-list" aria-live="polite"></div></section>
 <form id="seo-form" class="field-grid" hidden>

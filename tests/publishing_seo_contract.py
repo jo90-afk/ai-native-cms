@@ -94,9 +94,8 @@ def main() -> None:
         "seoApplyToHtml",
     ], "guarded SEO API")
 
-    # M-009 moved SEO and site-wide projectors behind one explicit finalization
-    # boundary. Preserve M-004's substantive guarantee (published output exists
-    # before SEO) without requiring the obsolete pre-finalizer hook ordering.
+    # Site-wide SEO projection remains behind the single finalization boundary.
+    # Preserve the substantive M-004 ordering even as that projector evolves.
     if "function contentFinalizePublicProjections" not in rebuild or "function contentRebuild(" not in rebuild:
         fail("site-wide projection finalizer is missing")
     finalizer = rebuild.split("function contentFinalizePublicProjections", 1)[1].split("function contentRebuild(", 1)[0]
@@ -108,7 +107,7 @@ def main() -> None:
     ], "page -> publishing -> finalization rebuild")
     ordered(finalizer, [
         "contentRebuildRunHooks($hooks,'after_pages'",
-        "seoProjectAll($root)",
+        "seoProjectAllPublicPages($root)",
         "contentRebuildRunHooks($hooks,'after_seo'",
     ], "after_pages -> SEO -> after_seo discovery finalization")
 

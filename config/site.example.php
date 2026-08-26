@@ -45,5 +45,18 @@ return [
             'llms.txt',
             'llms-full.txt',
         ],
+        // Optional trusted repository-owned PHP projectors. Hooks receive
+        // ($root, $context) and may return an array of deterministic results.
+        // Supported phases: before_documents, after_documents, before_pages,
+        // after_pages, finalize.
+        'hooks' => [
+            // 'after_pages' => [
+            //     [
+            //         'id' => 'discovery',
+            //         'script' => 'adapters/discovery.php',
+            //         'callable' => 'projectDiscovery',
+            //     ],
+            // ],
+        ],
     ],
 ];

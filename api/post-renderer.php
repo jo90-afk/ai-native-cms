@@ -54,7 +54,7 @@ function writingConfig(string $key,mixed $default=null): mixed {return siteConfi
 function writingRouteRoot(): string {$root=trim((string)writingConfig('route_root','writing'),'/');return preg_match('/^[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)*$/',$root)?$root:'writing';}
 function writingIndexPath(): string {$path=trim((string)writingConfig('index_path','content/posts/index.json'),'/');return preg_match('/^[A-Za-z0-9._\/-]+$/',$path)?$path:'content/posts/index.json';}
 function writingArticlePath(string $slug): string {return writingRouteRoot().'/'.cleanSlug($slug).'/index.html';}
-function writingCanonicalUrl(string $slug): string {$base=rtrim((string)siteConfigValue('site','base_url',''),'/');return $base.'/'.$root=writingRouteRoot().'/'.rawurlencode(cleanSlug($slug)).'/';}
+function writingCanonicalUrl(string $slug): string {$base=rtrim((string)siteConfigValue('site','base_url',''),'/');$route=writingRouteRoot();return $base.'/'.$route.'/'.rawurlencode(cleanSlug($slug)).'/';}
 
 function postPublicMeta(array $post): array {
     $keys=['slug','title','dek','category','categoryLabel','date','status','featured','tags','thesis','related','territoryImage','featuredImage','socialImage','imageAlt','updatedAt'];$out=[];
@@ -68,7 +68,7 @@ function ensureGeneratedDirectory(string $root,string $relativeDir): string {
 }
 
 function renderPostPage(string $root,array $post): string {
-    $siteName=(string)siteConfigValue('site','name','Site');$base=rtrim((string)siteConfigValue('site','base_url',''),'/');$route=writingRouteRoot();$canonical=$base.'/'.$route.'/'.rawurlencode($post['slug']).'/';$body=renderPostMarkdown((string)$post['body']);
+    $siteName=(string)siteConfigValue('site','name','Site');$canonical=writingCanonicalUrl((string)$post['slug']);$body=renderPostMarkdown((string)$post['body']);
     $templatePath=trim((string)writingConfig('article_template',''));
     $values=[
         '{{site_name}}'=>postEscape($siteName),'{{title}}'=>postEscape((string)$post['title']),'{{dek}}'=>postEscape((string)$post['dek']),

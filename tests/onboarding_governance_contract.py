@@ -100,6 +100,7 @@ def main() -> None:
         "brandingState()",
         "navigationState($root)",
         "content.authority",
+        "$identity['customized']&&$starterReady",
         "Repository-owned structure and code change through Git branches/review.",
     ], "state-derived onboarding model")
     for forbidden in ["INSERT INTO", "UPDATE ", "DELETE FROM", "file_put_contents", "cmsAtomicWrite", "$_POST"]:
@@ -116,6 +117,13 @@ def main() -> None:
     require(cms_index, ["/cms/onboarding.php", "onboardingState($root)", "/cms/pages.php"], "state-aware authenticated CMS entry")
     require(cms_js, ["data.onboarding?.ready ? '/cms/pages.php' : '/cms/onboarding.php'"], "state-aware post-login handoff")
 
+    workspace_paths = [
+        "cms/pages.php", "cms/composer.php", "cms/media.php", "cms/navigation.php", "cms/branding.php",
+        "cms/writing.php", "cms/seo.php", "cms/redirects.php", "cms/readiness.php",
+    ]
+    for path in workspace_paths:
+        require(text(path), ['href="/cms/onboarding.php"'], f"shared onboarding navigation in {path}")
+
     repo_ops = text("docs/REPOSITORY-OPERATIONS.md")
     llm = text("docs/LLM-COLLABORATION.md")
     agents = text("AGENTS.md")
@@ -125,7 +133,7 @@ def main() -> None:
         "Generated public output",
         "Branch and pull-request workflow",
         "SSH pull-to-host",
-        "Build/copy artifact",
+        "reviewed artifact/copy",
         "Database backups and migrations",
         "Rollback",
         "Working with an LLM on the repository",

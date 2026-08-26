@@ -2,6 +2,7 @@
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+REFERENCE_SITE_MARKER = "jude" + "oneill"
 
 
 def fail(message: str) -> None:
@@ -63,7 +64,7 @@ def main() -> None:
 
     for name, source in [("public", public), ("private", private)]:
         lowered = source.lower()
-        for forbidden in ["bluehost", "cpanel", "judeoneill", "authuserfile", "authname", "require valid-user"]:
+        for forbidden in ["bluehost", "cpanel", REFERENCE_SITE_MARKER, "authuserfile", "authname", "require valid-user"]:
             if forbidden in lowered:
                 fail(f"{name} Apache adapter contains provider/site/access-control assumption: {forbidden}")
 

@@ -101,7 +101,7 @@ def main() -> None:
     ], "base page -> composition -> publishing -> finalization rebuild")
     ordered(finalizer, [
         "contentRebuildRunHooks($hooks,'after_pages'",
-        "seoProjectAll($root)",
+        "seoProjectAllPublicPages($root)",
         "contentRebuildRunHooks($hooks,'after_seo'",
         "navigationProject($root)",
         "brandingProject($root)",

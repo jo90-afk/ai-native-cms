@@ -16,7 +16,7 @@ TEXT_SUFFIXES = {
     ".css", ".html", ".txt", ".ini", ".sh", "",
 }
 TOP_LEVEL_FILES = {"README.md", "SECURITY.md", "VERSION"}
-INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs"}
+INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters"}
 EXCLUDED_PARTS = {".git", ".github", ".lattice", "tests", "tools", "dist", "runtime", "uploads", "__pycache__"}
 EXCLUDED_FILES = {"config/site.php"}
 ALLOWED_INI = {"database/private-config.example.ini"}

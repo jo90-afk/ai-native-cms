@@ -10,10 +10,12 @@ secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue
 <meta name="cms-csrf" content="<?=htmlspecialchars($csrf,ENT_QUOTES|ENT_HTML5,'UTF-8')?>">
 <title>Pages — AI Native CMS</title>
 <link rel="stylesheet" href="/cms/cms.css">
+<link rel="stylesheet" href="/cms/editor.css">
 </head>
 <body data-cms-view="pages">
 <header class="app-header">
 <div><p class="eyebrow">AI Native CMS</p><strong><?=htmlspecialchars($siteName,ENT_QUOTES|ENT_HTML5,'UTF-8')?></strong></div>
+<nav class="cms-nav" aria-label="CMS"><a href="/cms/pages.php" aria-current="page">Pages</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php">SEO</a></nav>
 <div class="header-actions"><span class="user-label"><?=htmlspecialchars((string)($user['displayName']??$user['username']??'Owner'),ENT_QUOTES|ENT_HTML5,'UTF-8')?></span><button id="logout" class="secondary" type="button">Sign out</button></div>
 </header>
 <main class="editor-shell">

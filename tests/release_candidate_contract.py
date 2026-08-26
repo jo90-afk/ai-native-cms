@@ -40,6 +40,10 @@ def main() -> None:
     if distribution.get("public") is not False or distribution.get("licenseSelected") is not False:
         fail("release candidate metadata crossed the public/license boundary")
 
+    workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+    if "github.event.pull_request.head.sha || github.sha" not in workflow:
+        fail("CI release artifact does not record the reviewed PR head or main push SHA")
+
     builder = load_builder()
     candidates = [path.relative_to(ROOT).as_posix() for path in builder.candidate_files()]
     required = {
@@ -87,6 +91,8 @@ def main() -> None:
                 fail("candidate ZIP contains an excluded operational path")
             if root + "config/site.php" in names:
                 fail("candidate ZIP contains adopter-local config/site.php")
+            if any(name.rsplit("/", 1)[-1].lower().startswith("license") for name in names):
+                fail("candidate contains a license even though licenseSelected is false")
 
     installation = (ROOT / "docs/INSTALLATION.md").read_text(encoding="utf-8")
     release_doc = (ROOT / "docs/RELEASE.md").read_text(encoding="utf-8")

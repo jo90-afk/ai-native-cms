@@ -2,20 +2,20 @@
 
 AI Native CMS is a static-first publishing system designed for human and LLM-assisted iteration without turning generated files or conversation history into a second source of truth.
 
-MySQL owns accepted authored state. Git owns application code, structural templates, migrations, tests, documentation, and adopter-owned public configuration. Authenticated humans and agents work through the same guarded contracts, and public HTML/JSON/XML plus redirect routing data are deterministic projections. Anonymous readers do not require a database connection.
+MySQL owns accepted authored state. Git owns application code, structural templates, migrations, tests, documentation, and adopter-owned public configuration. Authenticated humans and agents work through the same guarded contracts, while public HTML/JSON/XML and redirect routing data are deterministic projections. Anonymous readers do not require a database connection.
 
 ## Why “AI native”
 
-An AI agent should be able to help redesign a site, revise content, add a feature, diagnose a bug, or prepare a release without bypassing the CMS governance model.
+An AI agent should be able to help redesign a site, revise content, add a feature, diagnose a bug, or prepare a release without bypassing CMS governance.
 
 That means:
 
 - repository-owned structure and code change through branches and reviewable diffs;
 - accepted authored content/state remains canonical in MySQL;
-- generated public output is inspected as evidence, never promoted into hidden reverse authority;
+- generated public output is evidence, never hidden reverse authority;
 - schema changes require explicit migrations;
-- human and agent writers share the same authentication, validation, revision, expected-hash, provenance, and projection rules;
-- important decisions live in code/tests/docs/project state rather than only in one chat thread.
+- human and agent writers share authentication, validation, revision, expected-hash, provenance, and projection rules;
+- important decisions live in code, tests, documentation, and project state rather than only in a chat thread.
 
 Start with `AGENTS.md` and `docs/LLM-COLLABORATION.md` when using a coding or content agent.
 
@@ -29,7 +29,7 @@ The binding files are `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE`.
 
 Repository visibility, a Git tag/GitHub Release, public package publication, and production deployment remain separate release decisions.
 
-## Start with a real site, not an empty framework
+## Start with a real site
 
 rc.3 ships a neutral starter site:
 
@@ -39,8 +39,6 @@ rc.3 ships a neutral starter site:
 - `assets/styles.css` — responsive starter design system;
 - `assets/site.js` — database-free writing-index rendering;
 - `templates/article.html` — long-form article shell.
-
-The starter is intentionally simple enough to replace, but complete enough to browse immediately and rich enough to seed the Composer template library.
 
 Create adopter-owned **public, non-secret** configuration with:
 
@@ -57,20 +55,7 @@ php database/bootstrap.php
 php database/reconcile.php initial-import
 ```
 
-Open `/cms/` over HTTPS. An unfinished site lands in the resumable **Onboarding** workspace, which derives progress from actual configuration, database, canonical-content, branding/navigation, publication, and readiness state. There is no separate “wizard complete” flag.
-
-Onboarding guides the adopter through:
-
-1. site identity and public repository configuration;
-2. starter-site integrity;
-3. secure database/owner bootstrap;
-4. canonical content initialization;
-5. starter page editing and additional page composition;
-6. branding and navigation;
-7. optional first writing publication;
-8. final readiness evidence.
-
-Each step hands off to the existing guarded workspace or CLI boundary that owns the state. Browser onboarding never writes credentials, runs migrations, deploys, or promotes repository source into canonical SQL.
+Open `/cms/` over HTTPS. An unfinished site lands in the resumable **Onboarding** workspace, which derives progress from actual configuration, database, canonical-content, branding/navigation, publication, and readiness state. There is no separate wizard-complete flag.
 
 See `docs/INSTALLATION.md` for the full first-run and upgrade path.
 
@@ -85,7 +70,7 @@ The first-party `/cms/` workspaces cover:
 - **Navigation** — canonical primary navigation;
 - **Branding** — site identity plus adopter-declared bounded CSS tokens;
 - **Writing** — Markdown long-form publishing with revisions and static projection;
-- **SEO** — canonical metadata/discovery controls;
+- **Search + Social / SEO** — canonical page metadata plus read-only site-wide quality findings and deterministic social/schema projection;
 - **Redirects** — governed same-site redirect authority and slug history;
 - **Readiness** — authenticated read-only deployment/operability evidence.
 
@@ -95,33 +80,15 @@ There is no frontend framework or third-party active runtime dependency in the C
 
 ### Git / repository authority
 
-Repository files own:
-
-- PHP/JavaScript application behavior;
-- structural page shells and trusted templates;
-- CSS and responsive/accessibility behavior;
-- schema and explicit migrations;
-- tests/contracts;
-- documentation and `AGENTS.md`;
-- deployment adapters;
-- adopter-owned `config/site.php` when it contains only public structure.
+Repository files own application behavior, structural page shells/templates, CSS/JavaScript behavior, schema/migrations, tests, documentation, deployment adapters, and adopter-owned public non-secret configuration.
 
 ### Canonical MySQL authority
 
-Accepted authored state includes:
-
-- page content leaves;
-- typed page compositions;
-- posts and revisions;
-- media metadata;
-- primary navigation;
-- bounded branding values;
-- SEO overrides;
-- redirect records.
+Accepted authored state includes page content leaves, typed page compositions, posts/revisions, media metadata, primary navigation, bounded branding values, SEO overrides, and redirect records.
 
 ### Generated public projection
 
-HTML, JSON, XML, indexes, and redirect maps are deterministic outputs. Fix their owning repository/canonical source rather than editing the generated symptom and calling it durable.
+HTML, JSON, XML, indexes, social/schema defaults, and redirect maps are deterministic outputs. Fix the owning repository/canonical source rather than editing the generated symptom and calling it durable.
 
 ### Host/provider state
 
@@ -134,11 +101,13 @@ The reusable core includes:
 - hardened PHP/MySQL owner authentication, HTTPS/origin/CSRF/session/rate-limit boundaries, and audit records;
 - schema-v8 canonical content, revisions, provenance, composition, media, navigation, branding, SEO, and redirects;
 - repository-owned page-source lineage with three-way reconciliation that preserves newer canonical edits;
-- trusted structural templates exposing only bounded rich-text, safe-link, and media values;
+- trusted structural templates exposing bounded rich-text, safe-link, and media values;
 - canonical typed compositions and CMS-created root-level pages with validated parent hierarchy;
 - bounded raster uploads and canonical media metadata;
 - long-form Markdown publishing with immutable prior snapshots, stale-write rejection, restore, draft/published projection, and slug-history redirects;
-- canonical SEO, navigation, branding, and redirect authority;
+- canonical SEO controls plus read-only site-wide duplicate/link/orphan/sitemap/canonical/H1/social/schema/alt quality checks;
+- deterministic author/Open Graph/Twitter/fallback-schema enhancement that does not create a second SEO authority;
+- guarded release-managed SEO compare-and-swap semantics that preserve newer canonical CMS authorship;
 - redirect graph validation, global graph-write serialization, file/directory collision rejection, and database-free static redirect routing;
 - deterministic site-wide finalization with bounded `after_pages`, `after_seo`, and final adapter hooks;
 - CLI-only schema/first-owner bootstrap and explicit schema migrations;
@@ -147,54 +116,29 @@ The reusable core includes:
 
 ## Repository → hosting operations
 
-`docs/REPOSITORY-OPERATIONS.md` is the operator guide for managing a site as a GitHub repository and deploying it without collapsing source boundaries.
-
-It covers:
-
-- what belongs in Git vs canonical MySQL vs generated output vs host state;
-- branch/pull-request workflow;
-- SSH pull-to-host deployments;
-- reviewed artifact/SFTP/provider-copy deployments;
-- secret placement;
-- database backups and migrations;
-- host-side hotfix recovery;
-- readiness and rollback;
-- provider capability checks.
+`docs/REPOSITORY-OPERATIONS.md` covers Git vs canonical SQL vs generated output vs host state, branch/PR workflow, SSH pull-to-host and reviewed-artifact/copy deployment patterns, secret placement, database backups/migrations, host-side hotfix recovery, readiness, rollback, and provider capability checks.
 
 A Git deployment updates repository-owned behavior. It does **not** reset canonical CMS content from Git on every deploy.
 
 ## Working with an LLM
 
-`AGENTS.md` is the repository-level contract an agent should read before changing the project. `docs/LLM-COLLABORATION.md` provides practical request patterns for:
-
-- interface/design iteration;
-- content revision;
-- feature development;
-- bug fixes;
-- schema/migration work;
-- release preparation.
+`AGENTS.md` is the repository-level contract an agent should read before changing the project. `docs/LLM-COLLABORATION.md` provides practical request patterns for interface/design iteration, content revision, features, bug fixes, schema/migration work, and release preparation.
 
 The central rule is simple: an LLM can inspect, propose, implement, test, and explain changes, but it does not become a new authority layer.
 
-For repository work, use a branch/PR and verification. For canonical content, use the CMS/store contract. For generated-output problems, fix the owning source. For provider behavior, use an adapter. Do not hand an agent production secrets merely to make repository changes.
+For repository work, use a branch/PR and verification. For accepted content, use the canonical CMS/store contract. For generated-output problems, fix the owning source. For provider behavior, use an adapter. Do not hand an agent production secrets merely to make repository changes.
 
 ## Publishing and public delivery
 
-`posts` is canonical. Published posts materialize static article HTML and a public JSON writing index. Drafts have no public article projection. The starter `writing.html` reads only that static index, so anonymous browsing stays database-free.
+`posts` is canonical. Published posts materialize static article HTML and a public JSON writing index; drafts have no public article projection. The starter writing page reads only that static index.
 
-SEO is canonical in `seo_overrides`; custom canonicals stay on the configured public origin. Primary navigation projects only into `<nav id="site-nav">`. Branding controls only identity text and CSS custom properties explicitly exposed by adopter configuration.
+SEO overrides are canonical in `seo_overrides`; custom canonicals stay on the configured public origin. Site-wide SEO quality inspection is read-only, and deterministic social/schema enhancement runs through the final projection boundary. Primary navigation projects only into `<nav id="site-nav">`. Branding controls only identity text and CSS custom properties explicitly exposed by adopter configuration.
 
 Manual redirects are canonical in `redirect_records`. Read-only system aliases come from repository configuration. Published slug changes enter redirect authority automatically. `__redirect.php` consumes a generated static map and never opens MySQL.
 
 ## Deployment adapters
 
-`docs/DEPLOYMENT-ADAPTERS.md` defines the provider-neutral transport contract. The included Apache examples demonstrate:
-
-- serve existing files/directories first;
-- route unresolved requests to the database-free redirect runtime;
-- deny direct map access;
-- conservative public cache lifetimes and compression;
-- private/preview `Cache-Control: no-store, private`.
+`docs/DEPLOYMENT-ADAPTERS.md` defines the provider-neutral transport contract. Included Apache examples demonstrate serving existing files/directories first, routing unresolved requests to the database-free redirect runtime, denying direct map access, conservative public caching/compression, and private/preview `no-store` behavior.
 
 They are examples, not automatic deployment behavior or CMS authority.
 
@@ -223,9 +167,7 @@ Use the read-only readiness report after setup/deployment:
 php database/readiness.php
 ```
 
-See `docs/INSTALLATION.md` for fresh install, backup, migration, rollback, and onboarding detail.
-
-## Release-candidate build
+## Release-candidate build and rehearsal
 
 Build a deterministic internal candidate from an exact source revision:
 
@@ -233,22 +175,26 @@ Build a deterministic internal candidate from an exact source revision:
 python3 tools/build_release.py --source-ref <git-sha>
 ```
 
-The builder emits a ZIP, manifest, and SHA256 under `dist/`. rc.3 packages the license/NOTICE files, starter public site, onboarding, safe public site initializer, operator documentation, `AGENTS.md`, schema/migrations, redirect runtime, and deployment examples. It excludes `.git`, `.github`, `.lattice`, tests, release tooling, local `config/site.php`, populated secret INI files, uploads/runtime state, and known adopter/private residue.
+The builder emits a ZIP, manifest, and SHA256 under `dist/`. It packages the license/NOTICE files, starter public site, onboarding, safe public site initializer, operator documentation, `AGENTS.md`, schema/migrations, SEO quality/projection support, redirect runtime, and deployment examples. It excludes repository governance/runtime state, tests/release tooling, adopter-local `config/site.php`, populated secret INI files, uploads/runtime state, and known private/adopter residue.
 
-CI produces the same candidate only as a short-lived private workflow artifact until publication is explicitly authorized.
+The final clean release gate is executable. `.github/workflows/release-rehearsal.yml` extracts the packaged candidate into an empty environment with a clean MySQL 8 service, then proves setup, schema/owner bootstrap, explicit reconciliation, authenticated onboarding, green readiness, governed repository and canonical-content changes, static redirect routing, paired filesystem/database restore, deterministic double-build identity, provenance, exclusions, and the `public:false` publication boundary.
 
-See `docs/RELEASE.md` for the candidate contract and final pre-release blockers.
+M-011 through M-014 now have technical evidence. A fresh proving-ground comparison is still required at the final merge/publication gates; material reusable core changes reopen extraction automatically.
 
-## Pre-release frontier
+See `docs/RELEASE.md` for the full candidate and publication-gate contract.
 
-Before a public publication decision, rc.3 must prove four things:
+## Publication boundary
 
-1. a new adopter can reach a coherent site through the documented onboarding path;
-2. GitHub-to-host operation and rollback are understandable and reproducible;
-3. iterative LLM collaboration can change design/content/features without bypassing governance;
-4. the complete empty-site path is rehearsed from a clean candidate, including representative agent-assisted change and recovery/rollback evidence.
+After the final M-014 documentation head passes both the cumulative and clean-rehearsal gates and merges, delegated pre-publication engineering is complete.
 
-The production proving-ground parity check still applies: a material reusable core feature added upstream automatically reopens parity work before publication.
+The following remain separate Principal decisions:
+
+1. repository visibility;
+2. public tag/GitHub Release creation;
+3. public package/download publication;
+4. production deployment/adoption.
+
+The selected license does not itself authorize those actions, and release metadata remains `public:false` until an explicit publication decision.
 
 ## Further documentation
 

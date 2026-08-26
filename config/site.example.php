@@ -26,7 +26,7 @@ return [
     'writing' => [
         'route_root' => 'writing',
         'index_path' => 'content/posts/index.json',
-        'article_template' => '',
+        'article_template' => 'templates/article.html',
     ],
     'media' => [
         'public_roots' => ['assets'],
@@ -38,12 +38,17 @@ return [
         'primary' => [],
     ],
     'branding' => [
-        'mark' => '',
+        'mark' => 'A',
         'identity_classes' => ['mark'=>'brand-mark','name'=>'brand-name'],
-        'stylesheet' => '',
+        'stylesheet' => 'assets/styles.css',
         'tokens' => [
-            // 'accent' => ['css'=>'--accent','type'=>'color','default'=>'#3366ff'],
-            // 'radius' => ['css'=>'--radius','type'=>'length','default'=>16,'min'=>0,'max'=>48,'unit'=>'px'],
+            'accent' => ['css'=>'--accent','type'=>'color','default'=>'#245c45'],
+            'canvas' => ['css'=>'--canvas','type'=>'color','default'=>'#f7f5ef'],
+            'surface' => ['css'=>'--surface','type'=>'color','default'=>'#ffffff'],
+            'ink' => ['css'=>'--ink','type'=>'color','default'=>'#171918'],
+            'muted' => ['css'=>'--muted','type'=>'color','default'=>'#626862'],
+            'radius' => ['css'=>'--radius','type'=>'length','default'=>18,'min'=>0,'max'=>48,'unit'=>'px'],
+            'contentWidth' => ['css'=>'--content-width','type'=>'length','default'=>1120,'min'=>720,'max'=>1440,'unit'=>'px'],
         ],
     ],
     'redirects' => [

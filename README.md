@@ -12,21 +12,25 @@ An AI agent does not receive a privileged second authority system. The same auth
 
 ## Current usable slice
 
-The repository now contains a working site-neutral CMS for configured static pages, structured documents, and long-form Markdown publishing:
+The repository now contains a working site-neutral CMS for configured static pages, typed structural composition, first-party media, structured documents, long-form Markdown publishing, and canonical SEO:
 
 - hardened PHP/MySQL owner authentication and request boundaries;
 - schema-v7 canonical content, revision, provenance, composition, media, navigation, branding, and SEO tables;
 - canonical editable page blocks plus full page-source documents;
 - authenticated page editing with optimistic hashes and bounded rich-text sanitization;
+- repository-owned page-block templates exposing bounded rich-text, link, and media variables;
+- canonical typed page compositions with stale-write protection and deterministic re-projection;
+- a first-party media catalog whose metadata is canonical SQL while image bytes remain adopter-owned files;
+- validated JPEG/PNG/WebP/GIF uploads constrained to configured public roots and size limits;
 - transactional long-form posts with immutable prior snapshots, stale-write rejection, revision restore, draft/published state, and deterministic public article projection;
 - escaped bounded Markdown rendering with safe links and no raw-HTML passthrough;
 - canonical SEO overrides with structured robots controls, same-origin canonical enforcement, inherited/custom social copy, and deterministic reapplication after rebuild;
-- three-way repository reconciliation that preserves newer CMS edits;
+- three-way repository reconciliation that preserves newer CMS edits and leaves composition-owned page leaves alone;
 - immutable compare-and-swap release update sets;
 - deterministic rebuild ordering and bounded adopter projector hooks;
-- first-party `/cms/` workspaces for Pages, Writing, and SEO with no frontend framework or third-party active runtime dependency.
+- first-party `/cms/` workspaces for Pages, Composer, Media, Writing, and SEO with no frontend framework or third-party active runtime dependency.
 
-Composer/templates, media management, global navigation, branding controls, new-page hierarchy, bootstrap UI, and production readiness are still being extracted.
+Global navigation, branding controls, new-page hierarchy, bootstrap UI, and production readiness are still being extracted.
 
 ## Product boundary
 
@@ -47,6 +51,7 @@ Adopter-owned state:
 - page/document registry and labels;
 - theme assets and visual identity;
 - article template and other site-specific templates;
+- media file bytes and public asset roots;
 - custom deterministic projectors and project integrations;
 - deployment credentials and host-specific secrets.
 
@@ -69,7 +74,7 @@ Requirements:
 
 Node is used only for repository-side JavaScript syntax validation; it is not a production runtime dependency.
 
-1. Copy `config/site.example.php` to `config/site.php` and define the site name, public origin, editable HTML pages, canonical structured documents, and writing paths. Site configuration contains public structure, not credentials.
+1. Copy `config/site.example.php` to `config/site.php` and define the site name, public origin, editable HTML pages, canonical structured documents, writing paths, and media roots. Site configuration contains public structure, not credentials.
 2. Create a MySQL database and import `database/schema.sql`.
 3. Put private settings in environment variables or an INI file outside the public root. `database/private-config.example.ini` lists the supported `AINCMS_*` keys. At minimum configure the database, public origin, CMS bootstrap username/password hash, and rate-limit secret.
 4. Ensure every configured editable page already exists and mark editable text leaves with stable `data-cms-id` values, for example `<h1 data-cms-id="hero.title">Title</h1>`.
@@ -81,7 +86,23 @@ php database/reconcile.php initial-import
 
 6. Serve the repository with PHP and open `/cms/` directly. The CMS intentionally does not require or add a public-site navigation link.
 
-The first successful bootstrap login persists the owner identity into MySQL. Pages can then be edited under **Pages**. **Writing** creates Markdown-backed drafts or published posts; publishing materializes `<writing.route_root>/<slug>/index.html` plus the configured public post index. **SEO** manages search/social metadata for configured pages and published articles.
+The first successful bootstrap login persists the owner identity into MySQL. Pages can then be edited under **Pages**. **Composer** discovers top-level structural blocks from configured pages and lets an operator reorder trusted templates or change only their typed values. **Media** catalogs configured first-party asset roots and supports validated raster uploads. **Writing** creates Markdown-backed drafts or published posts; publishing materializes `<writing.route_root>/<slug>/index.html` plus the configured public post index. **SEO** manages search/social metadata for configured pages and published articles.
+
+## Composition model
+
+The browser never submits structural HTML. Template discovery stores repository-owned top-level blocks in `page_block_templates` together with only the values the block exposes: bounded rich text, safe links, and first-party media references. A composition stores `templateKey`, a stable instance ID, and normalized typed values in `page_compositions`.
+
+When a composition is saved, editable leaf IDs are namespaced to the template instance. Surviving canonical page-block values are retained when blocks are reordered or recomposed, so structural work does not reset copy that was subsequently edited under **Pages**. The save also carries an expected composition hash; a stale operator receives a conflict rather than overwriting a newer composition.
+
+A composed page continues to keep its repository page-source document. Repository reconciliation may advance that shell/source document, but it no longer reconciles the shell’s original leaf blocks against composition-owned page blocks. Full rebuild and ordinary Pages edits both re-project through the canonical composition.
+
+This milestone deliberately composes only pages already listed in `cms.editable_pages`. New routes, page hierarchy, and navigation mutation are separate capabilities.
+
+## Media model
+
+Media file bytes remain ordinary adopter-owned public assets. `media_library` stores canonical path identity, hashes, dimensions, MIME type, title, alt text, caption, and provenance. Existing JPEG/PNG/WebP/GIF/SVG files under configured `media.public_roots` may be cataloged; Composer can select them through typed media variables.
+
+Uploads are more restrictive than catalog discovery: the CMS accepts JPEG, PNG, WebP, and GIF only, verifies MIME type and decoded image dimensions, enforces `media.max_upload_bytes`, generates its own filename, and writes only inside `media.upload_root`. SVG upload is intentionally not enabled.
 
 ## Publishing model
 
@@ -95,7 +116,7 @@ Drafts have no public article projection. Published posts materialize static HTM
 
 SEO state is canonical in `seo_overrides`, not in whichever generated HTML happened to be edited most recently. The editor controls title, description, indexing/follow/archive behavior, preview limits, canonical mode, and inherited/custom Open Graph/Twitter copy.
 
-Custom canonicals are restricted to the configured public origin. During rebuild, pages and articles are regenerated first and saved SEO overrides are applied afterward, so publishing cannot erase deliberate metadata.
+Custom canonicals are restricted to the configured public origin. During rebuild, pages and compositions are regenerated first, then articles, then saved SEO overrides are applied, so publishing or recomposition cannot erase deliberate metadata.
 
 ## Repository reconciliation
 
@@ -105,17 +126,18 @@ Custom canonicals are restricted to the configured public origin. During rebuild
 2. compare incoming repository candidates with both canonical hashes and prior effective source hashes;
 3. accept ordinary source changes only when canonical SQL still matches the prior source;
 4. preserve divergent/newer canonical SQL and record the incoming source lineage;
-5. apply immutable explicit update sets from `database/content-updates/`;
-6. project canonical documents/pages;
-7. project published long-form articles and their public post index;
-8. reapply canonical SEO overrides;
-9. run adopter projectors at the configured bounded phases.
+5. skip repository leaf-block reconciliation for pages whose leaf structure is composition-owned, while continuing to reconcile their underlying page-source document;
+6. apply immutable explicit update sets from `database/content-updates/`;
+7. project canonical documents/base pages and then canonical compositions;
+8. project published long-form articles and their public post index;
+9. reapply canonical SEO overrides;
+10. run adopter projectors at the configured bounded phases.
 
-This prevents a Git pull from silently undoing an accepted CMS edit and prevents regeneration from silently undoing SEO state.
+This prevents a Git pull from silently undoing accepted CMS state and prevents regeneration from silently undoing composition or SEO state.
 
 ## Rebuild hooks
 
-Adopters may register trusted repository-owned projectors in `config/site.php` under `projection.hooks`. Hooks run only at bounded phases (`before_documents`, `after_documents`, `before_pages`, `after_pages`, `finalize`), their scripts must resolve inside the repository root, and the callable is named explicitly. `after_pages` executes after the core page, publishing, and SEO projections, so discovery/feed/sitemap adapters can consume final public targets.
+Adopters may register trusted repository-owned projectors in `config/site.php` under `projection.hooks`. Hooks run only at bounded phases (`before_documents`, `after_documents`, `before_pages`, `after_pages`, `finalize`), their scripts must resolve inside the repository root, and the callable is named explicitly. `after_pages` executes after the core page, composition, publishing, and SEO projections, so discovery/feed/sitemap adapters can consume final public targets.
 
 Hooks are for deterministic presentation/integration work. They must not become alternate stores of authored truth.
 

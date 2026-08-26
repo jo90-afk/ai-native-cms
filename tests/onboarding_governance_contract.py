@@ -121,7 +121,13 @@ def main() -> None:
     cms_index = text("cms/index.php")
     cms_js = text("cms/cms.js")
     require(cms_index, ["/cms/onboarding.php", "onboardingState($root)", "/cms/pages.php"], "state-aware authenticated CMS entry")
-    require(cms_js, ["data.onboarding?.ready ? '/cms/pages.php' : '/cms/onboarding.php'"], "state-aware post-login handoff")
+    require(cms_js, [
+        "let target = '/cms/onboarding.php'",
+        "await request('/api/cms-onboarding.php')",
+        "state.onboarding?.ready",
+        "target = '/cms/pages.php'",
+        "location.href = target",
+    ], "state-aware post-login handoff")
 
     workspace_paths = [
         "cms/pages.php", "cms/composer.php", "cms/media.php", "cms/navigation.php", "cms/branding.php",

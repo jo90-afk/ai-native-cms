@@ -15,7 +15,7 @@ TEXT_SUFFIXES = {
     ".php", ".py", ".js", ".mjs", ".json", ".md", ".sql", ".yml", ".yaml",
     ".css", ".html", ".txt", ".ini", ".sh", ".example", "",
 }
-TOP_LEVEL_FILES = {"README.md", "SECURITY.md", "VERSION"}
+TOP_LEVEL_FILES = {"README.md", "SECURITY.md", "VERSION", "__redirect.php", "__redirect-map.php"}
 INCLUDE_ROOTS = {"api", "cms", "config", "database", "docs", "adapters"}
 EXCLUDED_PARTS = {".git", ".github", ".lattice", "tests", "tools", "dist", "runtime", "uploads", "__pycache__"}
 EXCLUDED_FILES = {"config/site.php"}

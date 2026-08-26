@@ -28,7 +28,7 @@ def main() -> None:
 
     require(bootstrap,[
         'bootstrapSchemaVersion','bootstrapRequiredTables','bootstrapSqlStatements','bootstrapClassifyState',
-        "status']==='foreign'","status']==='partial'","--repair",'GET_LOCK','RELEASE_LOCK',
+        "status']==='foreign'","status']==='partial'",'allowRepair','GET_LOCK','RELEASE_LOCK',
         'bootstrapInstallOwner','bootstrapOwnerCount','database/reconcile.php',
     ],'portable bootstrap')
     if 'content-seed' in bootstrap or 'INSERT INTO posts' in bootstrap:

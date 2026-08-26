@@ -16,9 +16,11 @@ function siteSetupMark(string $name): string {
     $parts=preg_split('/\s+/u',trim($name))?:[];$mark='';foreach(array_slice($parts,0,2) as $part)$mark.=function_exists('mb_substr')?mb_substr($part,0,1):substr($part,0,1);return strtoupper(substr($mark!==''?$mark:'S',0,8));
 }
 function siteSetupConfig(array $base,string $name,string $url,string $owner=''): array {
-    $name=trim($name);if($name===''||strlen($name)>120)throw new RuntimeException('Site name must be between 1 and 120 characters.');$url=siteSetupUrl($url);$owner=trim($owner);
-    if(!isset($base['site'])||!is_array($base['site']))$base['site']=[];$base['site']['name']=$name;$base['site']['base_url']=$url;$base['site']['owner_display_name']=$owner!==''?substr($owner,0,120):$name;
-    if(!isset($base['branding'])||!is_array($base['branding']))$base['branding']=[];$base['branding']['mark']=siteSetupMark($name);return $base;
+    $name=trim($name);if($name===''||strlen($name)>120)throw new RuntimeException('Site name must be between 1 and 120 characters.');$url=siteSetupUrl($url);$owner=trim($owner);$display=$owner!==''?substr($owner,0,120):$name;
+    if(!isset($base['site'])||!is_array($base['site']))$base['site']=[];$base['site']['name']=$name;$base['site']['base_url']=$url;$base['site']['owner_display_name']=$display;
+    if(!isset($base['branding'])||!is_array($base['branding']))$base['branding']=[];$base['branding']['mark']=siteSetupMark($name);
+    if(isset($base['seo'])&&is_array($base['seo']))$base['seo']['author']=$display;
+    return $base;
 }
 function siteSetupWrite(string $root,array $config,bool $force=false): string {
     $rootReal=realpath($root);if($rootReal===false||!is_dir($rootReal))throw new RuntimeException('Site root is unavailable.');$target=$rootReal.'/config/site.php';$dir=dirname($target);if(!is_dir($dir))throw new RuntimeException('Config directory is unavailable.');if(is_file($target)&&!$force)throw new RuntimeException('config/site.php already exists. Re-run with --force only if replacing repository-owned public configuration is intentional.');

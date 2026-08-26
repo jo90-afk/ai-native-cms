@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+<title id="title">AI Native CMS starter share card</title>
+<desc id="desc">A neutral geometric share card for a new AI Native CMS site.</desc>
+<rect width="1200" height="630" fill="#f7f5ef"/>
+<rect x="76" y="76" width="1048" height="478" rx="32" fill="#ffffff" stroke="#d8d8d2" stroke-width="2"/>
+<circle cx="186" cy="186" r="54" fill="#245c45"/>
+<path d="M166 214l20-62 20 62m-32-23h24" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="276" y="205" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="58" font-weight="700" fill="#171918">Example Site</text>
+<text x="128" y="350" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="44" font-weight="650" fill="#171918">A useful place to begin.</text>
+<text x="128" y="418" font-family="system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif" font-size="30" fill="#626862">Built with AI Native CMS</text>
+</svg>

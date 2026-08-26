@@ -2,6 +2,8 @@
 declare(strict_types=1);
 require_once __DIR__.'/content-authority.php';
 require_once __DIR__.'/composition-store.php';
+require_once __DIR__.'/seo.php';
+require_once __DIR__.'/content-sync-seo.php';
 
 /** Three-way repository reconciliation plus immutable compare-and-swap update sets. */
 
@@ -76,7 +78,9 @@ function contentSyncApplyUpdateSet(string $root,array $set,string $defaultRef=''
         foreach($changes as $change){if(!is_array($change))throw new RuntimeException('Invalid content update change.');$kind=(string)($change['kind']??'');
             if($kind==='block'){$page=(string)($change['page']??'');$block=(string)($change['block']??'');$new=(string)($change['new']??'');$expected=array_key_exists('old',$change)?hash('sha256',(string)$change['old']):(isset($change['expectedHash'])?(string)$change['expectedHash']:null);$outcome=contentAuthorityCommitBlock($page,$block,$new,$origin,$originRef,$expected);}
             elseif($kind==='document'){$key=(string)($change['key']??'');$new=(string)($change['new']??'');$expected=array_key_exists('old',$change)?hash('sha256',(string)$change['old']):(isset($change['expectedHash'])?(string)$change['expectedHash']:null);$outcome=contentAuthorityCommitDocument($key,$new,$origin,$originRef,$expected);}
-            elseif($kind==='document-replace')$outcome=contentSyncApplyDocumentReplace($pdo,$change,$origin,$originRef);else throw new RuntimeException('Unsupported content update kind: '.$kind);
+            elseif($kind==='document-replace')$outcome=contentSyncApplyDocumentReplace($pdo,$change,$origin,$originRef);
+            elseif($kind==='seo')$outcome=contentSyncApplySeoOverride($pdo,$change,$origin,$originRef);
+            else throw new RuntimeException('Unsupported content update kind: '.$kind);
             if($outcome==='applied')$applied++;elseif($outcome==='already_current')$already++;elseif($outcome==='preserved_newer')$preserved++;else throw new RuntimeException('Content update target could not be resolved for '.$id.'.');
         }
         $insert=$pdo->prepare('INSERT INTO content_update_sets (update_id,origin,origin_ref,update_sha256,applied_count,preserved_count,applied_at) VALUES (?,?,?,?,?,?,UTC_TIMESTAMP())');$insert->execute([$id,$origin,$originRef,$hash,$applied,$preserved]);$pdo->commit();return ['id'=>$id,'alreadyApplied'=>false,'applied'=>$applied,'alreadyCurrent'=>$already,'preserved'=>$preserved];

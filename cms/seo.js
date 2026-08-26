@@ -6,6 +6,12 @@ const form = document.getElementById('seo-form');
 const save = document.getElementById('save-seo');
 const heading = document.getElementById('seo-heading');
 const statusEl = document.getElementById('seo-status');
+const qualityHeading = document.getElementById('seo-quality-heading');
+const qualitySummary = document.getElementById('seo-quality-summary');
+const siteFindings = document.getElementById('seo-site-findings');
+const pageQuality = document.getElementById('seo-page-quality');
+const pageScore = document.getElementById('seo-page-score');
+const pageFindings = document.getElementById('seo-page-findings');
 let currentPath = '';
 let expectedCanonical = '';
 
@@ -23,6 +29,24 @@ function value(id) { return document.getElementById(id).value; }
 function checked(id) { return document.getElementById(id).checked; }
 function setValue(id, next) { document.getElementById(id).value = next ?? ''; }
 function setChecked(id, next) { document.getElementById(id).checked = Boolean(next); }
+
+function findingNode(issue) {
+  const item = document.createElement('article'); item.className = 'revision-item'; item.dataset.severity = issue?.severity || 'info';
+  const title = document.createElement('strong'); title.textContent = String(issue?.severity || 'info').toUpperCase();
+  const message = document.createElement('p'); message.textContent = issue?.message || issue?.code || 'SEO finding';
+  item.append(title, message); return item;
+}
+function renderSiteQuality(data) {
+  const summary = data?.summary || {}; const errors = Number(summary.errors || 0); const warnings = Number(summary.warnings || 0); const score = Number(summary.score ?? 0);
+  qualityHeading.textContent = errors ? `${errors} error${errors === 1 ? '' : 's'} need attention` : warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : 'No site-wide findings';
+  qualitySummary.textContent = `${Number(summary.pages || 0)} pages · ${score}% quality score · ${errors} errors · ${warnings} warnings`;
+  siteFindings.replaceChildren(); for (const issue of data?.siteFindings || []) siteFindings.append(findingNode(issue));
+}
+function renderPageQuality(page) {
+  const issues = page?.issues || []; pageQuality.hidden = false; pageScore.textContent = `${Number(page?.score ?? 100)}% · ${issues.length} finding${issues.length === 1 ? '' : 's'}`; pageFindings.replaceChildren();
+  if (!issues.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No page-level SEO findings.'; pageFindings.append(p); return; }
+  for (const issue of issues) pageFindings.append(findingNode(issue));
+}
 
 function syncModes() {
   const canonicalCustom = value('seo-canonical-mode') === 'custom';
@@ -44,13 +68,13 @@ function fill(page) {
   setValue('seo-canonical-mode', controls.canonicalMode || 'self'); setValue('seo-social-mode', controls.socialMode || 'inherit');
   setValue('seo-og-title', seo.ogTitle || seo.title || ''); setValue('seo-og-description', seo.ogDescription || seo.description || '');
   setValue('seo-twitter-title', seo.twitterTitle || seo.title || ''); setValue('seo-twitter-description', seo.twitterDescription || seo.description || '');
-  document.getElementById('seo-expected').textContent = `Expected self-canonical: ${expectedCanonical}`; form.hidden = false; save.disabled = false; syncModes();
+  document.getElementById('seo-expected').textContent = `Expected self-canonical: ${expectedCanonical}`; form.hidden = false; save.disabled = false; syncModes(); renderPageQuality(page);
 }
 
 async function loadIndex(preferred = '') {
-  const data = await request('/api/cms-seo.php'); list.replaceChildren();
+  const data = await request('/api/cms-seo.php'); renderSiteQuality(data); list.replaceChildren();
   for (const page of data.pages || []) {
-    const button = document.createElement('button'); button.type = 'button'; button.textContent = page.label || page.path; button.dataset.path = page.path;
+    const button = document.createElement('button'); button.type = 'button'; const count = (page.issues || []).length; button.textContent = `${page.label || page.path}${count ? ` · ${count}` : ''}`; button.dataset.path = page.path;
     if (page.path === preferred) button.setAttribute('aria-current', 'true'); button.addEventListener('click', () => loadPage(page.path)); list.append(button);
   }
   if (!(data.pages || []).length) { const empty = document.createElement('p'); empty.className = 'empty-list'; empty.textContent = 'No SEO-editable HTML targets found.'; list.append(empty); }
@@ -58,7 +82,7 @@ async function loadIndex(preferred = '') {
 
 async function loadPage(path) {
   setStatus('Loading…');
-  try { const data = await request(`/api/cms-seo.php?path=${encodeURIComponent(path)}`); fill(data.page); await loadIndex(path); setStatus(''); }
+  try { const data = await request(`/api/cms-seo.php?path=${encodeURIComponent(path)}`); renderSiteQuality(data); fill(data.page); await loadIndex(path); setStatus(''); }
   catch (error) { setStatus(error.message, 'error'); }
 }
 
@@ -72,7 +96,7 @@ function payload() {
 
 save?.addEventListener('click', async () => {
   if (!currentPath) return; save.disabled = true; setStatus('Saving…');
-  try { const data = await request('/api/cms-seo.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CMS-CSRF': csrf }, body: JSON.stringify(payload()) }); fill(data.page); await loadIndex(currentPath); setStatus('SEO saved and projected.', 'success'); }
+  try { const data = await request('/api/cms-seo.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CMS-CSRF': csrf }, body: JSON.stringify(payload()) }); renderSiteQuality(data); fill(data.page); await loadIndex(currentPath); setStatus('SEO saved, projected, and re-audited.', 'success'); }
   catch (error) { setStatus(error.message, 'error'); }
   finally { save.disabled = false; }
 });

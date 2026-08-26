@@ -19,14 +19,19 @@ $base=[
     'site'=>['name'=>'Example Site','base_url'=>'https://example.com','owner_display_name'=>'Site Owner'],
     'cms'=>['editable_pages'=>['index.html'=>'Home']],
     'branding'=>['mark'=>'','tokens'=>['accent'=>['css'=>'--accent','type'=>'color','default'=>'#3366ff']]],
+    'seo'=>['author'=>'Site Owner','social_image'=>'/assets/share-card.svg','locale'=>'en_US','language'=>'en-US'],
 ];
 $config=siteSetupConfig($base,'Acme Knowledge','https://docs.example.org','Editor');
 check($config['site']['name']==='Acme Knowledge','site name was not updated');
 check($config['site']['base_url']==='https://docs.example.org','site origin was not updated');
 check($config['site']['owner_display_name']==='Editor','owner display name was not updated');
 check($config['branding']['mark']==='AK','derived brand mark is wrong');
+check(($config['seo']['author']??'')==='Editor','SEO author did not follow configured owner identity');
+check(($config['seo']['social_image']??'')==='/assets/share-card.svg','site initializer discarded SEO projection defaults');
 check(isset($config['cms']['editable_pages']['index.html']),'site initializer discarded unrelated public configuration');
 check(isset($config['branding']['tokens']['accent']),'site initializer discarded branding token definitions');
+$ownerFallback=siteSetupConfig($base,'Acme Knowledge','https://docs.example.org','');
+check(($ownerFallback['seo']['author']??'')==='Acme Knowledge','SEO author did not fall back to site identity');
 
 $tmp=sys_get_temp_dir().'/aincms-onboarding-'.bin2hex(random_bytes(5));
 mkdir($tmp.'/config',0777,true);

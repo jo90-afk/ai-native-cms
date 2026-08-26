@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__.'/content-core.php';
+require_once __DIR__.'/slug.php';
 
 /** First-party media catalog. File bytes remain adopter-owned; metadata is canonical SQL. */
 
@@ -16,7 +17,6 @@ function mediaAllowedPath(string $path): bool {
 }
 function mediaKey(string $path): string {return 'asset-'.substr(hash('sha256',$path),0,32);}
 function mediaSubstr(string $value,int $length): string {return function_exists('mb_substr')?mb_substr($value,0,$length):substr($value,0,$length);}
-function mediaFilenameSlug(string $value): string {$value=strtolower(trim($value));$value=preg_replace('/[^a-z0-9-]+/','-',$value)??'';$value=preg_replace('/-+/','-',$value)??'';return trim($value,'-');}
 
 function mediaInfo(string $root,string $path): array {
     if(!mediaAllowedPath($path))throw new RuntimeException('Invalid public media path.');$full=realpath(rtrim($root,'/\\').'/'.$path);
@@ -53,7 +53,7 @@ function mediaUpload(string $root,array $file,array $meta=[]): array {
     $info=@getimagesize($tmp);if(!is_array($info)||($info[0]??0)<1||($info[1]??0)<1)throw new RuntimeException('Uploaded image could not be validated.');
     $uploadRoot=trim(str_replace('\\','/',(string)mediaConfig('upload_root','assets/uploads')),'/');if($uploadRoot===''||!mediaAllowedPath($uploadRoot.'/x.'.$extensions[$mime]))throw new RuntimeException('Configured media upload root is invalid.');
     $dir=rtrim($root,'/\\').'/'.$uploadRoot;if(!is_dir($dir)&&!mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create media upload directory.');$realDir=realpath($dir);if($realDir===false||!pathInside($realDir,$root))throw new RuntimeException('Media upload directory escaped the public root.');
-    $base=mediaFilenameSlug(pathinfo((string)($file['name']??'image'),PATHINFO_FILENAME))?:'image';$name=$base.'-'.substr(bin2hex(random_bytes(6)),0,10).'.'.$extensions[$mime];$target=$realDir.'/'.$name;
+    $base=cleanSlug(pathinfo((string)($file['name']??'image'),PATHINFO_FILENAME))?:'image';$name=$base.'-'.substr(bin2hex(random_bytes(6)),0,10).'.'.$extensions[$mime];$target=$realDir.'/'.$name;
     if(!move_uploaded_file($tmp,$target))throw new RuntimeException('Could not store uploaded image.');$relative=$uploadRoot.'/'.$name;
     try{return mediaUpsertRecord($root,$relative,(string)($meta['title']??''),(string)($meta['alt']??''),(string)($meta['caption']??''),'upload');}catch(Throwable $e){@unlink($target);throw $e;}
 }

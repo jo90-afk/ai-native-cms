@@ -94,12 +94,23 @@ def main() -> None:
         "seoApplyToHtml",
     ], "guarded SEO API")
 
-    ordered(rebuild, [
+    # M-009 moved SEO and site-wide projectors behind one explicit finalization
+    # boundary. Preserve M-004's substantive guarantee (published output exists
+    # before SEO) without requiring the obsolete pre-finalizer hook ordering.
+    if "function contentFinalizePublicProjections" not in rebuild or "function contentRebuild(" not in rebuild:
+        fail("site-wide projection finalizer is missing")
+    finalizer = rebuild.split("function contentFinalizePublicProjections", 1)[1].split("function contentRebuild(", 1)[0]
+    rebuild_body = rebuild.split("function contentRebuild(", 1)[1]
+    ordered(rebuild_body, [
         "contentAuthorityProjectPages($root)",
         "projectPublishedPosts($root)",
-        "seoProjectAll($root)",
+        "contentFinalizePublicProjections($root",
+    ], "page -> publishing -> finalization rebuild")
+    ordered(finalizer, [
         "contentRebuildRunHooks($hooks,'after_pages'",
-    ], "page -> publishing -> SEO -> adopter hook rebuild")
+        "seoProjectAll($root)",
+        "contentRebuildRunHooks($hooks,'after_seo'",
+    ], "after_pages -> SEO -> after_seo discovery finalization")
 
     require(config, ["'writing' => [", "'route_root' => 'writing'", "'index_path' => 'content/posts/index.json'", "'article_template' => ''"], "publishing configuration")
     require(writing_ui, ["/cms/writing.js", "Body (Markdown)", "Revision history", "/cms/seo.php"], "writing workspace")

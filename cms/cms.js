@@ -40,7 +40,7 @@ function initLogin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', username: document.getElementById('username').value, password: document.getElementById('password').value }),
       });
-      location.href = '/cms/pages.php';
+      location.href = '/cms/onboarding.php';
     } catch (error) {
       setStatus(status, error.message, 'error');
       button.disabled = false;

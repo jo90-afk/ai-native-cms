@@ -89,15 +89,25 @@ def main() -> None:
     require(branding_api, ["requireCmsAuth(true)", "requireSameOrigin(true)", "requireCmsCsrf()", "enforceRateLimit('cms-branding'"], "branding API guard")
     require(config, ["'navigation' => [", "'branding' => [", "'identity_classes' => [", "'tokens' => ["], "adopter site-wide configuration")
 
-    ordered(rebuild, [
+    if "function contentFinalizePublicProjections" not in rebuild or "function contentRebuild(" not in rebuild:
+        fail("site-wide finalization boundary is missing")
+    finalizer = rebuild.split("function contentFinalizePublicProjections",1)[1].split("function contentRebuild(",1)[0]
+    rebuild_body = rebuild.split("function contentRebuild(",1)[1]
+    ordered(rebuild_body, [
         "contentAuthorityProjectPages($root)",
         "compositionProjectAll($root)",
         "projectPublishedPosts($root)",
+        "contentFinalizePublicProjections($root",
+    ], "base page -> composition -> publishing -> finalization rebuild")
+    ordered(finalizer, [
+        "contentRebuildRunHooks($hooks,'after_pages'",
         "seoProjectAll($root)",
+        "contentRebuildRunHooks($hooks,'after_seo'",
         "navigationProject($root)",
         "brandingProject($root)",
-        "contentRebuildRunHooks($hooks,'after_pages'",
-    ], "site-wide rebuild")
+        "redirectProject($root)",
+        "contentRebuildRunHooks($hooks,'finalize'",
+    ], "site-wide finalizer")
 
     for path in ["cms/pages.php", "cms/composer.php", "cms/media.php", "cms/navigation.php", "cms/branding.php", "cms/writing.php", "cms/seo.php"]:
         source = text(path)

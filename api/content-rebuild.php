@@ -4,6 +4,7 @@ require_once __DIR__.'/content-authority.php';
 require_once __DIR__.'/composition-store.php';
 require_once __DIR__.'/post-renderer.php';
 require_once __DIR__.'/seo.php';
+require_once __DIR__.'/seo-projection.php';
 require_once __DIR__.'/navigation.php';
 require_once __DIR__.'/branding.php';
 require_once __DIR__.'/redirects.php';
@@ -29,7 +30,7 @@ function contentRebuildRunHooks(array $hooks,string $phase,string $root,array &$
 function contentFinalizePublicProjections(string $root,?array $hooks=null,?array $seedContext=null): array {
     dbRequireSchemaVersion(8);$hooks=$hooks??contentRebuildHooks($root);$context=$seedContext??['startedAt'=>gmdate('c'),'hooks'=>[],'core'=>[]];$runs=[];
     foreach(contentRebuildRunHooks($hooks,'after_pages',$root,$context) as $run)$runs[]=$run;
-    $context['core']['seo']=seoProjectAll($root);
+    $context['core']['seo']=seoProjectAllPublicPages($root);
     foreach(contentRebuildRunHooks($hooks,'after_seo',$root,$context) as $run)$runs[]=$run;
     $context['core']['navigation']=navigationProject($root);
     $context['core']['branding']=brandingProject($root);

@@ -2,9 +2,11 @@
 
 const csrf = document.querySelector('meta[name="cms-csrf"]')?.content || '';
 const list = document.getElementById('seo-list');
+const filter = document.getElementById('seo-filter');
 const form = document.getElementById('seo-form');
 const save = document.getElementById('save-seo');
 const heading = document.getElementById('seo-heading');
+const editor = document.querySelector('.seo-editor');
 const statusEl = document.getElementById('seo-status');
 const qualityHeading = document.getElementById('seo-quality-heading');
 const qualitySummary = document.getElementById('seo-quality-summary');
@@ -37,13 +39,13 @@ function findingNode(issue) {
   item.append(title, message); return item;
 }
 function renderSiteQuality(data) {
-  const summary = data?.summary || {}; const errors = Number(summary.errors || 0); const warnings = Number(summary.warnings || 0); const score = Number(summary.score ?? 0);
-  qualityHeading.textContent = errors ? `${errors} error${errors === 1 ? '' : 's'} need attention` : warnings ? `${warnings} warning${warnings === 1 ? '' : 's'}` : 'No site-wide findings';
-  qualitySummary.textContent = `${Number(summary.pages || 0)} pages · ${score}% quality score · ${errors} errors · ${warnings} warnings`;
+  const summary = data?.summary || {}; const errors = Number(summary.errors || 0); const warnings = Number(summary.warnings || 0); const score = Number(summary.score ?? 0); const open = errors + warnings;
+  qualityHeading.textContent = errors ? `${errors} search error${errors === 1 ? '' : 's'} need attention` : warnings ? `${warnings} search warning${warnings === 1 ? '' : 's'}` : 'Search surface is clear';
+  qualitySummary.textContent = `${Number(summary.pages || 0)} search pages · ${score}% score · ${open} search findings · ${Number(summary.sitemapUrls || 0)} sitemap URLs · ${Number(summary.managedPages ?? data?.pages?.length ?? 0)} managed pages`;
   siteFindings.replaceChildren(); for (const issue of data?.siteFindings || []) siteFindings.append(findingNode(issue));
 }
 function renderPageQuality(page) {
-  const issues = page?.issues || []; pageQuality.hidden = false; pageScore.textContent = `${Number(page?.score ?? 100)}% · ${issues.length} finding${issues.length === 1 ? '' : 's'}`; pageFindings.replaceChildren();
+  const issues = page?.issues || []; pageQuality.hidden = false; pageScore.textContent = `${Number(page?.score ?? 100)}% · ${issues.length} finding${issues.length === 1 ? '' : 's'}${page?.indexable === false ? ' · not indexed' : ''}`; pageFindings.replaceChildren();
   if (!issues.length) { const p = document.createElement('p'); p.className = 'muted'; p.textContent = 'No page-level SEO findings.'; pageFindings.append(p); return; }
   for (const issue of issues) pageFindings.append(findingNode(issue));
 }
@@ -60,7 +62,7 @@ function syncModes() {
 }
 
 function fill(page) {
-  currentPath = page.path; expectedCanonical = page.expectedCanonical || ''; heading.textContent = page.label || page.path;
+  currentPath = page.path; expectedCanonical = page.expectedCanonical || ''; heading.textContent = page.label || page.path; editor.dataset.seoState = 'selected';
   const seo = page.seo || {}; const controls = page.controls || {};
   setValue('seo-title', seo.title || ''); setValue('seo-description', seo.description || ''); setValue('seo-canonical', seo.canonical || expectedCanonical);
   setChecked('seo-index', controls.index !== false); setChecked('seo-follow', controls.follow !== false); setChecked('seo-archive', controls.archive !== false);
@@ -71,13 +73,22 @@ function fill(page) {
   document.getElementById('seo-expected').textContent = `Expected self-canonical: ${expectedCanonical}`; form.hidden = false; save.disabled = false; syncModes(); renderPageQuality(page);
 }
 
+function filterPages() {
+  const term = (filter?.value || '').trim().toLowerCase();
+  for (const button of list.querySelectorAll('button[data-path]')) {
+    const haystack = `${button.dataset.path || ''} ${button.textContent || ''}`.toLowerCase();
+    button.hidden = term !== '' && !haystack.includes(term);
+  }
+}
+
 async function loadIndex(preferred = '') {
   const data = await request('/api/cms-seo.php'); renderSiteQuality(data); list.replaceChildren();
   for (const page of data.pages || []) {
-    const button = document.createElement('button'); button.type = 'button'; const count = (page.issues || []).length; button.textContent = `${page.label || page.path}${count ? ` · ${count}` : ''}`; button.dataset.path = page.path;
+    const button = document.createElement('button'); button.type = 'button'; const count = (page.issues || []).length; button.textContent = `${page.label || page.path}${count ? ` · ${count}` : ''}${page.indexable === false ? ' · not indexed' : ''}`; button.dataset.path = page.path;
     if (page.path === preferred) button.setAttribute('aria-current', 'true'); button.addEventListener('click', () => loadPage(page.path)); list.append(button);
   }
   if (!(data.pages || []).length) { const empty = document.createElement('p'); empty.className = 'empty-list'; empty.textContent = 'No SEO-editable HTML targets found.'; list.append(empty); }
+  filterPages();
 }
 
 async function loadPage(path) {
@@ -101,6 +112,7 @@ save?.addEventListener('click', async () => {
   finally { save.disabled = false; }
 });
 
+filter?.addEventListener('input', filterPages);
 for (const id of ['seo-canonical-mode', 'seo-social-mode']) document.getElementById(id)?.addEventListener('change', syncModes);
 for (const id of ['seo-title', 'seo-description']) document.getElementById(id)?.addEventListener('input', () => { if (value('seo-social-mode') === 'inherit') syncModes(); });
 document.getElementById('logout')?.addEventListener('click', async () => { try { await request('/api/cms-auth.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CMS-CSRF': csrf }, body: JSON.stringify({ action: 'logout' }) }); } finally { location.href = '/cms/'; } });

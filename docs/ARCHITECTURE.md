@@ -10,7 +10,9 @@ The reference implementation proved this model on a static-first PHP/MySQL site.
 
 ### 1. Site adapter
 
-`config/site.php` describes the adopter’s public structure: site identity, editable pages, generated roots, and projection outputs. A site may add adapter code for custom content types, but core modules must not require a particular site’s page names, project taxonomy, or theme.
+`config/site.php` describes the adopter’s public structure: site identity, editable pages, canonical structured documents, generated roots, and projection outputs. A site may add adapter code for custom content types, but core modules must not require a particular site’s page names, project taxonomy, or theme.
+
+`cms.editable_pages` names HTML surfaces whose `data-cms-id` leaves are editable. `cms.documents` optionally registers structured authored files that should participate in the same canonical SQL and repository-reconciliation model.
 
 ### 2. Guarded runtime
 
@@ -23,25 +25,41 @@ Human UI and agent-facing operations share these boundaries. An agent does not g
 MySQL stores accepted authored state:
 
 - `page_blocks` for editable page leaves;
-- `content_documents` for structured authored documents;
+- `content_documents` for full page sources and structured authored documents;
 - `posts` and `post_revisions` for long-form publishing;
 - `page_block_templates` and `page_compositions` for reusable composed pages;
 - `site_navigation`, `site_branding`, `media_library`, and `seo_overrides` for site-wide authored metadata;
 - `page_revisions`, `cms_activity`, `content_change_log`, and `content_update_sets` for history and provenance.
 
+`api/content-core.php` contains site-neutral filesystem, block extraction, sanitization, optimistic-revision, and atomic-write primitives. `api/content-authority.php` owns canonical block/document commits and projection. `api/cms-pages.php` is the first guarded human/agent-compatible mutation endpoint using that authority.
+
 Repository source remains useful as a portable seed, code-reviewed proposal, and database-free test fixture. It does not silently outrank a newer accepted database value.
 
 ### 4. Reconciliation
 
-Repository candidates and other non-interactive origins reconcile against canonical state instead of using last-write-wins.
+`api/content-sync.php` implements three-way repository reconciliation. For content that tracks source lineage, the runtime retains both the accepted content hash and the last effective source hash.
 
-For content that tracks source lineage, the runtime retains both the accepted content hash and the last effective source hash. A changed repository candidate may advance canonical state only when canonical state still matches the prior effective source. Otherwise the database value is preserved and the attempted source change is recorded.
+When a repository candidate changes:
 
-Deliberate supersession uses immutable, compare-and-swap update sets. An update names the predecessor it expects so it cannot erase an unexpected newer value.
+1. if canonical SQL still equals the prior effective repository source, the new repository candidate advances SQL;
+2. if canonical SQL has diverged, the SQL value is preserved and only source lineage advances;
+3. every applied or preserved transition is recorded in `content_change_log`.
+
+This is deliberately not last-write-wins.
+
+Deliberate supersession uses immutable, compare-and-swap update sets under `database/content-updates/`. An update names the predecessor it expects so it cannot erase an unexpected newer value. A standing update set may also normalize a lagging repository candidate until the adopter’s checked-in source catches up.
 
 ### 5. Projection
 
-Authenticated writes resolve into canonical state first. Deterministic projectors then materialize public HTML, JSON, XML, feeds, indexes, and other discovery surfaces.
+Authenticated writes resolve into canonical state first. Deterministic projectors then materialize public HTML and configured structured documents. `php database/reconcile.php <source-ref>` currently performs the portable core sequence:
+
+1. bootstrap canonical page/document state when needed;
+2. reconcile repository candidates;
+3. apply immutable update sets;
+4. project configured documents;
+5. project configured pages with canonical block overlays.
+
+Additional projectors for posts, discovery, navigation, composed pages, feeds, and other derived outputs attach after this authority layer; they must not become alternate authored-state stores.
 
 Anonymous requests do not depend on MySQL. A static host or CDN can serve the public projection while the CMS remains a private authoring plane.
 

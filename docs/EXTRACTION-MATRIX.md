@@ -7,10 +7,12 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | MySQL transport and secret loading | `api/database.php` | core | extracted | Generic `AINCMS_*` configuration; secrets outside public root |
 | HTTPS/origin/session/auth/CSRF/rate limits/audit | `api/runtime.php` | core | extracted | Preserve fail-closed production behavior; no adopter identity |
 | Canonical schema | `database/schema.sql` | core | extracted | Structure only; no authored seed content |
-| Editable-page registry | `config/site.php` | adapter | extracted seam | Never hard-code adopter page names in core |
-| Page block editing/revisions | `api/cms-lib.php`, `api/cms-pages.php`, `cms/pages.php` | core | next | Replace hard-coded allowlist with site config |
-| Canonical content commit/reconciliation | `api/content-authority.php`, `api/cms-content-authority.php` | core | next | Preserve canonical/source hashes and compare-and-swap semantics |
-| Full static rebuild | `api/content-rebuild.php`, `database/rebuild-public.php` | core + adapter hooks | next | Core orchestrates; adopter registers projectors/outputs |
+| Editable-page/document registry | `config/site.php` | adapter | extracted | Never hard-code adopter page or document names in core |
+| Page block editing/revisions | `api/content-core.php`, `api/cms-pages.php` | core | API extracted; UI next | Configured page registry; sanitized bounded rich text; optimistic hashes; revision snapshot |
+| Canonical content commit/reconciliation | `api/content-authority.php`, `api/content-sync.php` | core | extracted | Preserve canonical/source hashes, three-way reconciliation, immutable compare-and-swap update sets |
+| Deterministic page/document projection | `api/content-authority.php`, `database/reconcile.php` | core | extracted | Reconcile -> update sets -> projection; anonymous reads remain static |
+| Full static rebuild/projector registry | future rebuild orchestration | core + adapter hooks | next | Core orchestrates; adopter registers additional projectors/outputs |
+| CMS page editor UI | `cms/pages.php` and shared UI | core | next | UI consumes the same guarded API; no second write model |
 | Posts/drafts/revisions/publishing | `api/cms-writing.php`, `cms/writing.php` and helpers | core | planned | Remove site categories/content defaults; retain Markdown/static projection |
 | SEO controls | `api/cms-seo.php`, `cms/seo.php` | core | planned | Origin restrictions use configured public origin |
 | Reusable block templates/composer | `api/cms-composer.php`, CMS composer UI | core | planned | Structural HTML remains server-owned; values are typed/bounded |
@@ -26,6 +28,6 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## Immediate frontier after M-001
+## Immediate frontier after M-002
 
-The next high-leverage slice is canonical page editing plus content reconciliation. It joins the already-extracted security/database foundation to the product’s defining authority model and creates the write contract that later human and agent interfaces can share.
+The next high-leverage slice is the projector/rebuild extension contract plus a usable CMS page-editing surface. The authority model is now present; subsequent features should attach to it instead of inventing parallel persistence or projection paths.

@@ -45,7 +45,7 @@ Build a review candidate from a repository checkout with:
 python3 tools/build_release.py --source-ref <git-sha>
 ```
 
-The builder emits a deterministic source ZIP, a per-file manifest, and a whole-archive SHA256 under `dist/`. It excludes development/governance/runtime/adopter state such as `.git`, `.github`, `.lattice`, tests, release tooling, local `config/site.php`, uploads, runtime state, populated INI files, and generated `dist/` artifacts. CI also produces the candidate only as a short-lived private workflow artifact for review.
+The builder emits a deterministic source ZIP, a per-file manifest, and a whole-archive SHA256 under `dist/`. It excludes development/governance/runtime/adopter state such as `.git`, `.github`, `.lattice`, tests, release tooling, local `config/site.php`, uploads, runtime state, populated INI files, and generated `dist/` artifacts. It now includes optional reference deployment adapters under `adapters/` alongside the portable product documentation. CI also produces the candidate only as a short-lived private workflow artifact for review.
 
 `0.1.0-rc.1` remains historical evidence for the schema-7 extraction. It is not silently rewritten into rc.2.
 
@@ -57,7 +57,7 @@ See `docs/RELEASE.md` for the candidate contract.
 
 Reusable core includes the hardened runtime, canonical authored state and revisions, repository page sources, canonical CMS-created pages, posts, templates/compositions, media metadata, navigation, branding, SEO, redirects, deterministic projection, portable bootstrap, explicit migrations, portable readiness checks, and deterministic release-candidate mechanics.
 
-Adopter-owned state includes site copy/content seeds, repository page/document registry, theme assets and visual identity, the exact CSS custom properties exposed to Branding, article/site templates, media bytes, configured system redirect aliases, host-specific readiness adapters, custom deterministic projectors, deployment credentials, and provider-specific deployment/interception behavior.
+Reference deployment adapters may ship beside core but do not become CMS authority. Adopter-owned state includes site copy/content seeds, repository page/document registry, theme assets and visual identity, the exact CSS custom properties exposed to Branding, article/site templates, media bytes, configured system redirect aliases, host-specific readiness adapters, custom deterministic projectors, deployment credentials, and provider-specific deployment/interception behavior.
 
 Optional extensions stay outside core when they are not general CMS concerns.
 
@@ -137,6 +137,17 @@ SEO is canonical in `seo_overrides`; custom canonicals stay on the configured pu
 
 `redirect_records` is canonical redirect authority. Manual records use optimistic revision hashes and are editable in Redirects. Adopter-configured system aliases are visible/read-only. Redirect sources and targets remain same-site and are graph-validated before persistence/projection. Core emits deterministic `__redirect-map.php` data and a database-free redirect runtime; interception of unresolved requests belongs to deployment adapters rather than canonical CMS authority.
 
+## Deployment adapters
+
+`docs/DEPLOYMENT-ADAPTERS.md` defines the host-neutral transport contract. A deployment adapter should serve existing files/directories normally, route only unresolved requests to the database-free redirect runtime (or an equivalent projection consumer), prevent direct public access to the generated redirect map, and preserve the original request/query semantics.
+
+The first reference implementation is Apache:
+
+- `adapters/apache/public.htaccess.example` adds redirect interception, one-day CSS/JS caching, 30-day image caching, one-hour discovery-file caching, HTML revalidation, and DEFLATE when available.
+- `adapters/apache/private.htaccess.example` keeps redirect interception/compression while applying `Cache-Control: no-store, private` and omitting public cache lifetimes.
+
+These are mergeable examples, not an instruction to overwrite an adopter’s `.htaccess`. They contain no access-control credentials, provider assumptions, automatic deployment behavior, CDN requirement, or asset-fingerprinting requirement. Equivalent nginx/CDN/edge adapters may implement the same contract later.
+
 ## Reconciliation and rebuild
 
 `php database/reconcile.php <source-ref>` compares repository candidates with canonical hashes and prior source lineage, accepts source changes only when canonical state has not diverged, preserves newer database edits, applies explicit update sets, then runs deterministic public rebuilding.
@@ -155,4 +166,4 @@ Portable checks cover PHP/configuration, production origin/security posture, MyS
 
 See `SECURITY.md` for the administration, secret-handling, sanitization, redirect-routing, and release-artifact security boundaries.
 
-The reusable extraction is on the schema-v8 `0.1.0-rc.2` line. The candidate remains an internal review artifact until cumulative M-009 verification and artifact inspection are recorded. Public distribution still requires deliberate Principal decisions on licensing, visibility, tagging/publication, and production adoption; optional deployment adapters are separate from those decisions.
+The reusable extraction is on the schema-v8 `0.1.0-rc.2` line with optional reference deployment adapters. The candidate remains an internal review artifact until cumulative M-001–M-010 verification and artifact inspection are recorded. Public distribution still requires deliberate Principal decisions on licensing, visibility, tagging/publication, and production adoption.

@@ -4,15 +4,16 @@ from __future__ import annotations
 import json
 from pathlib import Path
 import re
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
+# Build forbidden markers without embedding them contiguously in this test file.
+# That keeps the sanitization scan self-applicable instead of exempting its own source.
 BANNED_TEXT = {
-    "legacy environment prefix": "JUDE_",
-    "personal domain": "judeoneill.com",
-    "private account/repository owner": "jo90-afk",
-    "personal display name": "Jude O",
+    "legacy environment prefix": "JU" + "DE_",
+    "personal domain": "jude" + "oneill.com",
+    "private account/repository owner": "jo90" + "-afk",
+    "personal display name": "Jude" + " O",
 }
 
 TEXT_SUFFIXES = {
@@ -20,7 +21,7 @@ TEXT_SUFFIXES = {
     ".css", ".html", ".txt", ".ini", ".sh",
 }
 
-# Historical/source-analysis material is deliberately not shipped in this repository.
+# Operational Lattice state is project governance, not release product code.
 IGNORED_PARTS = {".git", ".lattice"}
 
 

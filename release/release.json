@@ -1,14 +1,14 @@
 {
   "product": "ai-native-cms",
-  "version": "0.1.0-rc.1",
+  "version": "0.1.0-rc.2",
   "channel": "internal-release-candidate",
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "runtime": {
     "php": ">=8.1",
     "mysql": ">=5.7",
     "pythonValidation": ">=3.10"
   },
-  "packageRoot": "ai-native-cms-0.1.0-rc.1",
+  "packageRoot": "ai-native-cms-0.1.0-rc.2",
   "distribution": {
     "public": false,
     "licenseSelected": false,

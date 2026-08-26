@@ -68,7 +68,13 @@ function redirectDatabaseRecords(bool $activeOnly=false): array {
 }
 function redirectSystemRecords(): array {
     $configured=siteConfigValue('redirects','system_aliases',[]);if(!is_array($configured))return [];$out=[];
-    foreach($configured as $row){if(!is_array($row))continue;$source=redirectNormalizeSource((string)($row['source']??''));$target=redirectNormalizeTarget((string)($row['target']??''),$source);$out[$source]=redirectRow(['source'=>$source,'target'=>$target,'status'=>redirectAllowedStatus((int)($row['status']??301)),'preserveQuery'=>!array_key_exists('preserveQuery',$row)||(bool)$row['preserveQuery'],'active'=>!array_key_exists('active',$row)||(bool)$row['active'],'managedBy'=>(string)($row['managedBy']??'system'),'note'=>(string)($row['note']??'Configured read-only compatibility alias.'),'readOnly'=>true],true);}
+    foreach($configured as $row){
+        if(!is_array($row))continue;
+        $source=redirectNormalizeSource((string)($row['source']??''));$target=redirectNormalizeTarget((string)($row['target']??''),$source);
+        $candidate=redirectRow(['source'=>$source,'target'=>$target,'status'=>redirectAllowedStatus((int)($row['status']??301)),'preserveQuery'=>!array_key_exists('preserveQuery',$row)||(bool)$row['preserveQuery'],'active'=>!array_key_exists('active',$row)||(bool)$row['active'],'managedBy'=>(string)($row['managedBy']??'system'),'note'=>(string)($row['note']??'Configured read-only compatibility alias.'),'readOnly'=>true],true);
+        if(isset($out[$source])&&redirectRevisionPayload($out[$source])!==redirectRevisionPayload($candidate))throw new RuntimeException('Conflicting configured system redirect authorities for '.$source);
+        $out[$source]=$candidate;
+    }
     ksort($out);return array_values($out);
 }
 function redirectAllRecords(): array {
@@ -82,7 +88,11 @@ function redirectSourceToRelativeFile(string $source): string {
     $path=(string)(parse_url(redirectNormalizeSource($source),PHP_URL_PATH)??'/');if($path==='/')return 'index.html';$rel=ltrim($path,'/');return str_ends_with($path,'/')?$rel.'index.html':$rel;
 }
 function redirectSourceCollidesWithPublicFile(string $root,string $source): bool {
-    $rel=redirectSourceToRelativeFile($source);$full=rtrim($root,'/\\').'/'.$rel;return is_file($full);
+    $path=(string)(parse_url(redirectNormalizeSource($source),PHP_URL_PATH)??'/');
+    $root=rtrim($root,'/\\');if($path==='/')return true;
+    $decoded=rawurldecode($path);$requestTarget=$root.'/'.rtrim(ltrim($decoded,'/'),'/');
+    if(is_file($requestTarget)||is_dir($requestTarget))return true;
+    $rel=redirectSourceToRelativeFile($source);return is_file($root.'/'.$rel);
 }
 function redirectHypothetical(array $candidate): array {
     $rows=redirectDatabaseRecords(false);$replaced=false;foreach($rows as &$row)if((int)$row['id']===(int)($candidate['id']??0)&&$row['id']>0){$row=array_merge($row,$candidate);$replaced=true;break;}unset($row);if(!$replaced)$rows[]=$candidate;return array_merge($rows,redirectSystemRecords());
@@ -93,7 +103,7 @@ function redirectFindBySource(string $source,bool $forUpdate=false): ?array {
 function redirectSaveRecord(string $root,array $input,string $expectedHash=''): array {
     redirectRequireSchema();$id=max(0,(int)($input['id']??0));$source=redirectNormalizeSource((string)($input['source']??''));$target=redirectNormalizeTarget((string)($input['target']??''),$source);$status=redirectAllowedStatus((int)($input['status']??301));$preserve=!array_key_exists('preserveQuery',$input)||(bool)$input['preserveQuery'];$active=!array_key_exists('active',$input)||(bool)$input['active'];$note=substr(trim((string)($input['note']??'')),0,1000);
     foreach(redirectSystemRecords() as $system)if($system['source']===$source)throw new RuntimeException('This redirect source is managed by a read-only system alias.');
-    if($active&&redirectSourceCollidesWithPublicFile($root,$source))throw new RuntimeException('Redirect source currently resolves to a public file. Remove or move that page before activating this redirect.');
+    if($active&&redirectSourceCollidesWithPublicFile($root,$source))throw new RuntimeException('Redirect source currently resolves to a public file or directory. Remove or move that route before activating this redirect.');
     $candidate=['id'=>$id,'source'=>$source,'target'=>$target,'status'=>$status,'preserveQuery'=>$preserve,'active'=>$active,'managedBy'=>'manual','note'=>$note];$pdo=db();$lock=redirectAcquireGraphLock($pdo);
     try{
         redirectValidateGraph(redirectHypothetical($candidate));$pdo->beginTransaction();

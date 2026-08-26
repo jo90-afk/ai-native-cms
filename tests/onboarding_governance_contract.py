@@ -31,8 +31,12 @@ def main() -> None:
     license_meta = distribution.get("license", {})
     if metadata.get("version") != "0.1.0-rc.3" or metadata.get("schemaVersion") != 8:
         fail("rc.3 metadata/version/schema boundary is wrong")
-    if distribution.get("public") is not False or distribution.get("licenseSelected") is not True:
-        fail("rc.3 must remain private while carrying selected license terms")
+    if metadata.get("channel") != "public-release-candidate":
+        fail("rc.3 must use the authorized public release-candidate channel")
+    if distribution.get("public") is not True or distribution.get("licenseSelected") is not True:
+        fail("rc.3 public distribution/license state is wrong")
+    if distribution.get("tagRequired") is not True or distribution.get("tag") != "v0.1.0-rc.3":
+        fail("rc.3 public tag contract is wrong")
     expected_license = {
         "base": "Apache-2.0",
         "condition": "Commons Clause License Condition v1.0",
@@ -171,7 +175,7 @@ def main() -> None:
         "Conversation memory is context, not authority",
     ], "repository agent contract")
 
-    print("PASS: licensed rc3 onboarding and governance contract")
+    print("PASS: public licensed rc3 onboarding and governance contract")
 
 
 if __name__ == "__main__":

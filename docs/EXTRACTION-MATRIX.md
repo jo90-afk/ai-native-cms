@@ -20,14 +20,19 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | New-page hierarchy | `api/composition-store.php`, Composer UI | core | extracted | CMS-created root-level routes use trusted shells/templates; validate parents and reject cycles; never feed generated routes back into repository lineage |
 | Navigation | `api/navigation.php`, `api/cms-navigation.php`, `cms/navigation.php` | core | extracted | Ordered canonical SQL state; bounded safe destinations; optimistic hash; hierarchy-aware active projection into `#site-nav` only |
 | Branding | `api/branding.php`, `api/cms-branding.php`, `cms/branding.php` | core + adapter token definitions | extracted | Core stores identity + adopter-declared bounded CSS custom properties, not one site’s CSS vocabulary |
-| Production readiness | `api/cms-readiness.php` | core + adapter checks | next | Separate portable checks from host-specific checks; report actionable blockers without mutating production state |
-| Shared-host bootstrap/setup | `database/bootstrap.php`, `setup/` | deployment adapter | next | Safe first-run schema/owner initialization; generic defaults; no hosting-vendor identity in core |
+| Portable database bootstrap | `database/bootstrap-core.php`, `database/bootstrap.php` | core | extracted | CLI-only schema + first owner; derive schema contract from `schema.sql`; no adopter content seed; no owner overwrite; no implicit migration |
+| Production readiness | `api/readiness.php`, `api/cms-readiness.php`, `database/readiness.php`, `cms/readiness.php` | core + adapter checks | extracted | Read-only actionable report; no mutation or secret/grant-content disclosure; host-specific checks enter only through trusted repository-owned adapters |
+| Browser credential-writing setup | deployment adapter | adapter | excluded from core | Core bootstrap does not write database credentials or expose a provider-specific setup surface |
+| Schema migrations/upgrades | versioned migration layer | core release engineering | next | Bootstrap repairs only current-version incomplete installs; older schemas require explicit versioned migrations and rollback guidance |
+| Release-candidate manifest/package | release tooling | core release engineering | next | Produce a deterministic reviewable candidate without changing visibility, choosing a license, tagging, publishing, or deploying |
 | Host repository updater | deployment adapter | adapter | later | Keep deployment authority explicit and host-specific |
 | Newsletter/subscription | extension | optional extension | later | Generic capability; not required for CMS core readiness |
 | Poetry-specific layout/visual projection | adopter extension | site/content-type adapter | excluded from core | Useful architecture may upstream; authored semantics remain adopter-owned |
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## Immediate frontier after M-006
+## Immediate frontier after M-007
 
-Extract portable bootstrap/setup and production readiness together. They form the final coherent core-operability layer before public-release decisions: a new adopter needs a safe way to initialize schema/owner state, and the product needs to distinguish portable CMS readiness from host-specific deployment checks without embedding one provider’s assumptions.
+Prepare a reproducible release candidate without crossing the release boundary. The next coherent slice is release engineering rather than product-surface expansion: complete installation/upgrade/rollback documentation, define explicit migration mechanics, strengthen residue/package guards, generate a deterministic candidate manifest, and run adversarial packaging review.
+
+Repository visibility, license selection, tag/release creation, package publication, production deployment, and production adoption remain Principal decisions rather than implied consequences of candidate readiness.

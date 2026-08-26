@@ -67,6 +67,19 @@ return [
             // 'content-width' => ['css'=>'--content-width','type'=>'length','default'=>1200,'min'=>640,'max'=>1800,'unit'=>'px'],
         ],
     ],
+    'readiness' => [
+        // Optional trusted repository-owned host checks. Core readiness remains
+        // provider-neutral; adapters receive ($root, $context) and return bounded
+        // check arrays with id, label, status (pass|warn|fail), message, blocking.
+        // Never return credentials or other secrets in adapter messages.
+        'adapters' => [
+            // [
+            //     'id' => 'shared-host',
+            //     'script' => 'adapters/readiness-shared-host.php',
+            //     'callable' => 'sharedHostReadiness',
+            // ],
+        ],
+    ],
     'projection' => [
         'outputs' => [
             'feed.xml',

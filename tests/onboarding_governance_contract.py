@@ -73,7 +73,8 @@ def main() -> None:
         "'article_template' => 'templates/article.html'",
         "'stylesheet' => 'assets/styles.css'",
         "'accent' => [",
-        "'content_width' => [",
+        "'contentWidth' => [",
+        "'css'=>'--content-width'",
     ], "starter configuration")
 
     setup = text("setup/site.php")

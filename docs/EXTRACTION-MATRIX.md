@@ -1,6 +1,6 @@
 # Extraction matrix
 
-This is the bounded frontier for moving the production-proven CMS into the public product. It is a product map, not a backlog; Lattice derives executable work from the active milestone conditions.
+This is the bounded frontier for moving the production-proven CMS into a reusable product. It is a product map, not a backlog; Lattice derives executable work from the active milestone conditions.
 
 | Capability | Public destination | Classification | Status | Extraction rule |
 | --- | --- | --- | --- | --- |
@@ -23,16 +23,17 @@ This is the bounded frontier for moving the production-proven CMS into the publi
 | Portable database bootstrap | `database/bootstrap-core.php`, `database/bootstrap.php` | core | extracted | CLI-only schema + first owner; derive schema contract from `schema.sql`; no adopter content seed; no owner overwrite; no implicit migration |
 | Production readiness | `api/readiness.php`, `api/cms-readiness.php`, `database/readiness.php`, `cms/readiness.php` | core + adapter checks | extracted | Read-only actionable report; no mutation or secret/grant-content disclosure; host-specific checks enter only through trusted repository-owned adapters |
 | Browser credential-writing setup | deployment adapter | adapter | excluded from core | Core bootstrap does not write database credentials or expose a provider-specific setup surface |
-| Schema migrations/upgrades | versioned migration layer | core release engineering | next | Bootstrap repairs only current-version incomplete installs; older schemas require explicit versioned migrations and rollback guidance |
-| Release-candidate manifest/package | release tooling | core release engineering | next | Produce a deterministic reviewable candidate without changing visibility, choosing a license, tagging, publishing, or deploying |
+| Internal release-candidate package | `VERSION`, `release/release.json`, `tools/build_release.py` | release engineering | implemented / verifying | Deterministic source ZIP + manifest + SHA256; exclude governance/runtime/adopter state; keep `public:false` and `licenseSelected:false` until explicit decisions |
+| Installation/backup/rollback guidance | `docs/INSTALLATION.md`, `docs/RELEASE.md` | release engineering | implemented / verifying | Fresh install is schema/owner bootstrap -> explicit canonical import -> readiness; rollback pairs database and code state |
+| Schema migrations/upgrades | future versioned migration layer | post-release compatibility | deferred until needed | This is the first candidate, so no prior public schema exists. Future schema changes must ship explicit source/target migrations; bootstrap must never substitute for them |
 | Host repository updater | deployment adapter | adapter | later | Keep deployment authority explicit and host-specific |
 | Newsletter/subscription | extension | optional extension | later | Generic capability; not required for CMS core readiness |
 | Poetry-specific layout/visual projection | adopter extension | site/content-type adapter | excluded from core | Useful architecture may upstream; authored semantics remain adopter-owned |
 | Project-record/Lattice public views | adopter extension | site integration | excluded from core | Lattice governs development; CMS must not require Lattice as public runtime |
 | Personal portfolio content/theme | adopter repository | site-only | excluded | Never upstream authored content or identity |
 
-## Immediate frontier after M-007
+## M-008 acceptance boundary
 
-Prepare a reproducible release candidate without crossing the release boundary. The next coherent slice is release engineering rather than product-surface expansion: complete installation/upgrade/rollback documentation, define explicit migration mechanics, strengthen residue/package guards, generate a deterministic candidate manifest, and run adversarial packaging review.
+The first release-candidate artifact is a **private internal review artifact**, not a publication mechanism. Acceptance requires cumulative CI on the exact PR head, byte-for-byte reproducibility for a fixed source ref, inspected archive contents, correct reviewed-head provenance, and durable documentation of the installation and release boundaries.
 
-Repository visibility, license selection, tag/release creation, package publication, production deployment, and production adoption remain Principal decisions rather than implied consequences of candidate readiness.
+Repository visibility, license selection, tag/release creation, package publication, production deployment, and production adoption remain Principal decisions. A green M-008 merge may prepare those choices; it may not make them.

@@ -1,0 +1,10 @@
+<?php
+declare(strict_types=1);
+require_once dirname(__DIR__).'/api/runtime.php';
+secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue('site','name','Site');$csrf=cmsCsrfToken();
+?><!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="cms-csrf" content="<?=htmlspecialchars($csrf,ENT_QUOTES|ENT_HTML5,'UTF-8')?>"><title>Branding — AI Native CMS</title><link rel="stylesheet" href="/cms/cms.css"><link rel="stylesheet" href="/cms/editor.css"></head>
+<body data-cms-view="branding">
+<header class="app-header"><div><p class="eyebrow">AI Native CMS</p><strong><?=htmlspecialchars($siteName,ENT_QUOTES|ENT_HTML5,'UTF-8')?></strong></div><nav class="cms-nav" aria-label="CMS"><a href="/cms/pages.php">Pages</a><a href="/cms/composer.php">Composer</a><a href="/cms/media.php">Media</a><a href="/cms/navigation.php">Navigation</a><a href="/cms/branding.php" aria-current="page">Branding</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php">SEO</a></nav><div class="header-actions"><span class="user-label"><?=htmlspecialchars((string)($user['displayName']??$user['username']??'Owner'),ENT_QUOTES|ENT_HTML5,'UTF-8')?></span><button id="logout" class="secondary" type="button">Sign out</button></div></header>
+<main class="workspace"><aside class="workspace-list"><div class="section-card"><h2>Identity</h2><label class="field">Mark<input id="brand-mark" maxlength="8"></label><label class="field">Name<input id="brand-name" maxlength="80"></label></div></aside><section class="workspace-main"><div class="toolbar"><div><p class="eyebrow">Bounded design tokens</p><h1>Branding</h1></div><button id="brand-save" type="button" disabled>Save branding</button></div><p class="muted">The core edits only identity text and CSS custom properties explicitly declared by the adopter. It does not infer or rewrite the site’s design system.</p><div id="brand-tokens" class="field-grid" aria-live="polite"></div><p id="brand-status" class="status" role="status" aria-live="polite"></p></section></main>
+<script src="/cms/branding.js" defer></script></body></html>

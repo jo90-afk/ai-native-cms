@@ -3,11 +3,11 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Baseline branch: `main`
-Baseline commit: `479389c02f9fb2b2a601a08b2678b5cc64d6ef85`
-Working branch: `feat/composer-media`
+Baseline commit: `0d7747819bf7f611e3615771c7f30e907d2136af`
+Working branch: `feat/hierarchy-navigation-branding`
 Runtime: `lattice-app-works-platform-agnostic` 0.1.6 contract
 Principal alias: `Repository Owner`
-Updated: **2026-08-25 (America/New_York)**
+Updated: **2026-08-26 (America/New_York)**
 
 ## Confirmed mandate
 
@@ -24,8 +24,11 @@ Routine reversible implementation, refactoring, tests, documentation, repository
 - Repository source is a portable proposal/fixture; it must not silently overwrite newer accepted database state.
 - Human and agent writers must converge on the same guarded mutation contracts rather than maintaining separate authority systems.
 - Structural HTML is repository/template-owned. Browser and agent composition requests name trusted templates and bounded typed values rather than submitting arbitrary structure.
+- Repository-authored pages and canonical CMS-created pages are distinct source classes: generated pages may consume repository templates but must not become their own Git source lineage or template authority.
 - Media bytes remain adopter-owned files; the CMS may own canonical metadata, validation, catalog identity, and references to those files.
-- Site identity, content, page/document registries, theme, article templates, and deployment secrets are adopter state, not product-core constants.
+- Site-wide navigation and branding are canonical authored objects, not incidental edits to generated HTML.
+- Branding core owns only bounded adopter-declared design tokens and identity text; it must not invent or assume one adopter’s CSS vocabulary.
+- Site identity, content seeds, repository page/document registry, theme assets, article templates, and deployment secrets remain adopter state rather than product-core constants.
 - Path compatibility with the production implementation is valuable because it reduces the cost of upstreaming future general capabilities.
 - Public-release artifacts must contain no personal content, credentials, private repository links, or adopter-specific operational state.
 - Technical readiness and repository merge do not imply public visibility, licensing, tagged release, or production adoption.
@@ -46,38 +49,38 @@ Merged at `8c0c5258e05b6e7f10f6175fc194cbe0c6c13cb3` after GitHub Actions passed
 
 ### M-004 — Long-form content and SEO remain reversible, safe, and deterministic
 
-Merged at `479389c02f9fb2b2a601a08b2678b5cc64d6ef85` after GitHub Actions passed publishing/SEO behavior, structural contracts, syntax checks, and every prior milestone gate. Posts now use canonical MySQL state, optimistic revision hashes, restorable snapshots, bounded Markdown, static publish/unpublish projection, and canonical SEO overrides projected after article generation.
+Merged at `479389c02f9fb2b2a601a08b2678b5cc64d6ef85` after GitHub Actions passed publishing/SEO behavior, structural contracts, syntax checks, and every prior milestone gate. Posts use canonical MySQL state, optimistic revision hashes, restorable snapshots, bounded Markdown, static publish/unpublish projection, and canonical SEO overrides projected after article generation.
+
+### M-005 — Typed composition survives ordinary edits, rebuilds, and repository reconciliation
+
+Merged at `0d7747819bf7f611e3615771c7f30e907d2136af` after the cumulative validation suite passed typed Composer/media contracts, executable primitives, PHP/JavaScript/Python syntax, and every earlier milestone gate. Repository-owned templates expose bounded rich-text/link/media variables; canonical compositions store template identities, instance identities, and normalized typed values with optimistic hashes; surviving leaf edits persist across recomposition; media metadata is canonical while adopter-owned bytes remain in configured public roots; uploads validate bounded raster image bytes.
 
 ## Active objective
 
-**OBJ-005 — Make structural page composition reusable without making HTML a browser-authored authority.**
+**OBJ-006 — Make site-wide structure canonical without collapsing repository source and CMS-generated state.**
 
-Extract the production template/composer pattern and first-party media catalog so operators and agents can build pages from trusted structural blocks, typed values, and adopter-owned assets while preserving canonical leaf editing and deterministic projection.
+Allow operators and agents to create new pages from trusted shells/templates, organize them into a validated hierarchy, control the primary navigation, and apply bounded site identity/design tokens while preserving static deterministic delivery and the source-authority split established by earlier milestones.
 
 ## Active milestone
 
-**M-005 — Typed composition survives ordinary edits, rebuilds, and repository reconciliation.**
+**M-006 — New-page hierarchy, navigation, and branding remain safe and deterministic across rebuilds.**
 
 Readiness conditions:
 
-1. `composer.templates`: configured pages can be harvested into stable repository-owned templates whose exposed variables are bounded rich text, links, and media references.
-2. `composer.authority`: canonical compositions store template identities, instance identities, and normalized typed values in `page_compositions`; stale composition saves are rejected by expected hash.
-3. `composer.leaves`: composition saves namespace editable leaf IDs and preserve surviving canonical page-block values across reorder/recomposition instead of resetting copy.
-4. `composer.integration`: Pages edits reproject composed structure, rebuild reapplies compositions, and repository block reconciliation skips composition-owned leaves while page-source documents continue to reconcile.
-5. `media.catalog`: configured public media roots can be indexed into canonical metadata without moving adopter-owned file bytes into a second store.
-6. `media.upload`: uploads are size/root bounded, verify actual raster image bytes, and accept JPEG/PNG/WebP/GIF only; cataloged existing SVG may be selected but SVG upload is not enabled.
-7. `m005.ui`: native Composer and Media workspaces use the same owner/session/origin/CSRF/rate-limit/audit boundary and do not submit or render browser-authored structural HTML.
-8. `m005.verification`: CI exercises composer/media behavior, integration contracts, PHP/JavaScript/Python syntax, and every earlier milestone invariant.
+1. `pages.source-classes`: repository-configured pages remain the only page-source/template-harvest authority, while canonical composed pages join the broader managed-page graph for editing, SEO, hierarchy, navigation, and projection.
+2. `pages.create`: Composer can create a bounded root-level HTML route from a trusted repository shell and typed templates without accepting browser-authored structural HTML; shell title/canonical/social URL metadata is retargeted to the new route.
+3. `pages.hierarchy`: canonical compositions carry optional parent relationships; invalid parents, self-parenting, and cycles are rejected before persistence/projection.
+4. `navigation.authority`: primary navigation is canonical SQL state with bounded labels/URLs/item count, safe external-link handling, optimistic hashes, revision snapshots, and hierarchy-aware active states.
+5. `branding.authority`: site identity plus only adopter-declared CSS custom properties are canonical SQL state; colors/numbers/lengths are validated and bounded, stale saves are rejected, and arbitrary CSS/HTML is never browser-authored.
+6. `site-wide.projection`: deterministic rebuild order is repository pages -> compositions -> published articles -> SEO -> navigation -> branding -> adopter after-page projectors; navigation parent state is loaded once per projection rather than once per page.
+7. `m006.ui`: Composer new-page controls plus Navigation and Branding workspaces use the same owner/session/origin/CSRF/rate-limit/audit boundary, and every primary CMS workspace exposes the site-wide controls in its header.
+8. `m006.verification`: CI exercises hierarchy/navigation/branding structural and executable behavior, PHP/JavaScript/Python syntax, and every earlier milestone invariant on the final PR head.
 
-Implementation for these conditions is present on `feat/composer-media`; independent PR verification remains the current acceptance boundary.
+Implementation for these conditions is present on `feat/hierarchy-navigation-branding`. PR #6 may merge only after the cumulative validation suite passes on its final head.
 
-## Deliberate M-005 boundary
+## Next frontier after M-006
 
-M-005 composes only pages already declared by the adopter in `config/site.php`. Creating new routes, assigning parent hierarchy, mutating navigation, and applying site-wide branding remain separate work so structural composition can be accepted independently.
-
-## Next frontier after M-005
-
-Add canonical new-page hierarchy plus navigation and bounded site branding. Those capabilities should consume the merged template/composition/media contracts rather than broadening them.
+Build the portable setup/bootstrap and production-readiness layer. The next coherent slice should distinguish core readiness checks from host-specific adapters, provide a safe first-run path for database/schema/owner initialization, and avoid embedding any hosting-provider identity in core.
 
 ## Release boundary
 

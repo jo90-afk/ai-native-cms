@@ -23,12 +23,16 @@ jobs:
         run: python3 tests/publishing_seo_contract.py
       - name: Composer and media contract
         run: python3 tests/composer_media_contract.py
+      - name: Hierarchy navigation and branding contract
+        run: python3 tests/site_wide_contract.py
       - name: Content primitive behavior
         run: php tests/content_core.php
       - name: Publishing and SEO behavior
         run: php tests/publishing_core.php
       - name: Composer and media behavior
         run: php tests/composer_media_core.php
+      - name: Site-wide presentation behavior
+        run: php tests/site_wide_core.php
       - name: PHP syntax
         run: |
           find api cms config database tests -type f -name '*.php' -print0 | xargs -0 -n1 php -l
@@ -36,4 +40,4 @@ jobs:
         run: |
           find cms -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Python syntax
-        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/composer_media_contract.py
+        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/composer_media_contract.py tests/site_wide_contract.py

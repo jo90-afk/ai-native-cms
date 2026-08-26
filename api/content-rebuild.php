@@ -4,6 +4,8 @@ require_once __DIR__.'/content-authority.php';
 require_once __DIR__.'/composition-store.php';
 require_once __DIR__.'/post-renderer.php';
 require_once __DIR__.'/seo.php';
+require_once __DIR__.'/navigation.php';
+require_once __DIR__.'/branding.php';
 
 /** Deterministic rebuild orchestration with bounded adopter projector hooks. */
 
@@ -47,6 +49,8 @@ function contentRebuild(string $root): array {
     $context['core']['compositions']=compositionProjectAll($root);
     $context['core']['publishing']=projectPublishedPosts($root);
     $context['core']['seo']=seoProjectAll($root);
+    $context['core']['navigation']=navigationProject($root);
+    $context['core']['branding']=brandingProject($root);
     foreach(contentRebuildRunHooks($hooks,'after_pages',$root,$context) as $run)$runs[]=$run;
     foreach(contentRebuildRunHooks($hooks,'finalize',$root,$context) as $run)$runs[]=$run;
     $context['finishedAt']=gmdate('c');return ['ok'=>true,'core'=>$context['core'],'hooks'=>$runs,'finishedAt'=>$context['finishedAt']];

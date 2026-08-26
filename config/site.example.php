@@ -37,20 +37,35 @@ return [
         ],
     ],
     'writing' => [
-        // Published posts materialize at <route_root>/<slug>/index.html.
         'route_root' => 'writing',
         'index_path' => 'content/posts/index.json',
-        // Optional repository-owned HTML template. Supported placeholders:
-        // {{site_name}}, {{title}}, {{dek}}, {{category}}, {{date}},
-        // {{canonical}}, {{reading_minutes}}, {{body_html}}.
         'article_template' => '',
     ],
     'media' => [
-        // Existing images inside these public roots may be cataloged and selected
-        // by typed composer variables. Uploads are restricted to raster images.
         'public_roots' => ['assets'],
         'upload_root' => 'assets/uploads',
         'max_upload_bytes' => 8388608,
+    ],
+    'navigation' => [
+        // Leave empty to derive an initial navigation from configured repository pages.
+        // Canonical edits thereafter live in MySQL.
+        'primary' => [],
+    ],
+    'branding' => [
+        // Identity projection targets only these classes when present in public HTML.
+        'mark' => '',
+        'identity_classes' => [
+            'mark' => 'brand-mark',
+            'name' => 'brand-name',
+        ],
+        // Optional stylesheet for adopter-declared CSS custom-property overrides.
+        // Leave blank if the site only wants CMS-managed identity text.
+        'stylesheet' => '',
+        'tokens' => [
+            // 'accent' => ['css'=>'--accent','type'=>'color','default'=>'#3366ff'],
+            // 'radius' => ['css'=>'--radius','type'=>'length','default'=>16,'min'=>0,'max'=>48,'unit'=>'px'],
+            // 'content-width' => ['css'=>'--content-width','type'=>'length','default'=>1200,'min'=>640,'max'=>1800,'unit'=>'px'],
+        ],
     ],
     'projection' => [
         'outputs' => [
@@ -61,10 +76,8 @@ return [
             'llms.txt',
             'llms-full.txt',
         ],
-        // Optional trusted repository-owned PHP projectors. Hooks receive
+        // Optional trusted repository-owned projectors. Hooks receive
         // ($root, $context) and may return an array of deterministic results.
-        // Supported phases: before_documents, after_documents, before_pages,
-        // after_pages, finalize. after_pages runs after core post + SEO projection.
         'hooks' => [
             // 'after_pages' => [
             //     [

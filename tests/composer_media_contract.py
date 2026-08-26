@@ -45,6 +45,7 @@ def main() -> None:
         "composerSafeHref",
         "composerRekeyEditableIds",
         "data-composer-instance",
+        "cmsConfiguredPages($root)",
     ], "typed template core")
 
     require(store, [
@@ -54,7 +55,7 @@ def main() -> None:
         "contentAuthorityBackupPage",
         "compositionSyncCanonicalBlocks",
         "contentAuthorityOverlayBlocks",
-        "Only configured pages can be composed",
+        "Page is not CMS-managed",
         "A composed public page must contain exactly one H1 heading",
         "source_ref",
         "'composition'",

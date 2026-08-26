@@ -4,7 +4,7 @@ require_once __DIR__.'/database.php';
 
 /** Generic filesystem/content primitives shared by the CMS authority layer. */
 
-function cmsManagedPages(string $root): array {
+function cmsConfiguredPages(string $root): array {
     $configured=siteConfigValue('cms','editable_pages',[]);
     if(!is_array($configured)) return [];
     $out=[];
@@ -15,6 +15,21 @@ function cmsManagedPages(string $root): array {
         foreach($parts as $part) if($part===''||$part==='.'||$part==='..'){$valid=false;break;}
         if(!$valid) continue;
         $out[$path]=trim((string)$label)!==''?(string)$label:$path;
+    }
+    ksort($out,SORT_STRING);return $out;
+}
+
+function cmsManagedPages(string $root): array {
+    $out=cmsConfiguredPages($root);
+    if(dbConfigured()){
+        try{
+            $stmt=db()->query('SELECT page_path,label FROM page_compositions ORDER BY page_path');
+            foreach($stmt->fetchAll() as $row){
+                $path=str_replace('\\','/',trim((string)($row['page_path']??'')));if($path===''||str_starts_with($path,'/')||str_contains($path,"\0"))continue;$valid=true;
+                foreach(explode('/',$path) as $part)if($part===''||$part==='.'||$part==='..'){$valid=false;break;}if(!$valid)continue;
+                $label=trim((string)($row['label']??''));$out[$path]=$label!==''?$label:$path;
+            }
+        }catch(Throwable $e){/* Dynamic pages are unavailable until the canonical schema exists. */}
     }
     ksort($out,SORT_STRING);return $out;
 }
@@ -41,13 +56,22 @@ function cmsConfiguredDocuments(string $root): array {
     ksort($out,SORT_STRING);return $out;
 }
 
+function cmsSafeRelativePath(string $path): ?string {
+    $path=str_replace('\\','/',trim($path));if($path===''||str_starts_with($path,'/')||str_contains($path,"\0"))return null;
+    foreach(explode('/',$path) as $part)if($part===''||$part==='.'||$part==='..')return null;
+    return $path;
+}
+
 function cmsSafePublicFile(string $root,string $path): ?string {
-    $path=str_replace('\\','/',$path);
-    if($path===''||str_starts_with($path,'/')||str_contains($path,"\0")) return null;
-    foreach(explode('/',$path) as $part) if($part===''||$part==='.'||$part==='..') return null;
+    $path=cmsSafeRelativePath($path);if($path===null)return null;
     $full=rtrim($root,'/\\').'/'.$path;$real=realpath($full);
     if($real===false||!is_file($real)||!pathInside($real,$root)) return null;
     return $real;
+}
+
+function cmsSafePublicTarget(string $root,string $path): ?string {
+    $path=cmsSafeRelativePath($path);if($path===null)return null;$full=rtrim($root,'/\\').'/'.$path;$parent=realpath(dirname($full));
+    if($parent===false||!is_dir($parent)||!pathInside($parent,$root))return null;return $full;
 }
 
 function cmsAtomicWrite(string $path,string $contents): void {

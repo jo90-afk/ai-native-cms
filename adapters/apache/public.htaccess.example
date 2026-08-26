@@ -1,0 +1,47 @@
+# AI Native CMS — Apache public deployment reference
+#
+# Copy or merge these rules into the public document root only after reviewing
+# them against the adopter's existing host/security configuration. Core CMS
+# authority does not depend on Apache.
+
+Options -Indexes
+
+# Serve real files/directories normally. Only unresolved paths enter the
+# database-free redirect runtime. REQUEST_URI remains the original request, so
+# query-preservation and redirect status semantics stay inside __redirect.php.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+  RewriteRule ^ __redirect.php [L]
+</IfModule>
+
+# The generated map is executable PHP data for the router, not a public asset.
+<Files "__redirect-map.php">
+  Require all denied
+</Files>
+
+# Conservative browser caching for versionless public assets. CSS/JS receive a
+# one-day TTL, durable images one month, discovery text one hour, and HTML must
+# revalidate. Hosts/CDNs may implement an equivalent policy without Apache.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(?:css|js)$">
+    Header set Cache-Control "public, max-age=86400, stale-while-revalidate=604800"
+  </FilesMatch>
+  <FilesMatch "\.(?:avif|gif|ico|jpe?g|png|svg|webp)$">
+    Header set Cache-Control "public, max-age=2592000, stale-while-revalidate=604800"
+  </FilesMatch>
+  <FilesMatch "\.(?:json|xml|txt)$">
+    Header set Cache-Control "public, max-age=3600, stale-while-revalidate=86400"
+  </FilesMatch>
+  <FilesMatch "\.html?$">
+    Header set Cache-Control "public, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>
+
+# Compression is transport-only and does not alter canonical/projected bytes on
+# disk. Apply when mod_deflate is available.
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json application/xml text/xml image/svg+xml
+</IfModule>

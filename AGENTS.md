@@ -19,6 +19,8 @@ When sources disagree, do not guess. Inspect the relevant schema, API/store, tes
 - Do not introduce a second content/state model for agents. Human and agent writers use the same canonical contracts.
 - Do not promote generated/live files back into repository source authority from browser code.
 - Structural HTML/template/CSS changes belong in the repository. CMS content and typed composition values belong in canonical state.
+- SEO quality findings are observational. Page-specific accepted SEO stays canonical in `seo_overrides`; repository projection defaults do not become a second page-level authority.
+- Release update sets may seed missing SEO overrides, but must preserve an existing canonical override unless they supply its exact expected predecessor hash.
 - A schema change requires an explicit migration, tests, current-schema guards, upgrade/rollback documentation, and release metadata review. `bootstrap --repair` is not a migration mechanism.
 - Never request, print, commit, relocate, or synthesize real credentials. Use documented environment variables and example placeholders only.
 - Do not weaken a failing contract just to make CI green. Determine whether the behavior or the historical assertion is wrong and preserve the real invariant.
@@ -56,7 +58,7 @@ Reproduce the violated invariant, fix the narrowest authority layer that owns it
 
 ### Release work
 
-Run the full cumulative gate on the exact candidate head, build the deterministic candidate, inspect provenance/checksum/manifest/residue/license contents, and repeat the production proving-ground parity check before publication.
+Run the full cumulative gate on the exact candidate head, build the deterministic candidate, inspect provenance/checksum/manifest/residue/license contents, run the site-wide SEO audit after projection, and repeat the production proving-ground parity check before publication.
 
 ## LLM collaboration pattern
 
@@ -73,4 +75,4 @@ A strong iteration is:
 
 Conversation memory is context, not authority. The repository, canonical database contracts, tests, migrations, and recorded project state win.
 
-See `docs/LLM-COLLABORATION.md` for operator-facing examples and `docs/ARCHITECTURE.md` for the system model.
+See `docs/LLM-COLLABORATION.md` for operator-facing examples, `docs/SEO-QUALITY.md` for the Search + Social quality/projection boundary, and `docs/ARCHITECTURE.md` for the system model.

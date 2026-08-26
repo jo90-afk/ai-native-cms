@@ -1,0 +1,63 @@
+name: release-rehearsal
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clean-candidate:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_DATABASE: aincms
+          MYSQL_USER: aincms
+          MYSQL_PASSWORD: rehearsal-db-pass
+          MYSQL_ROOT_PASSWORD: rehearsal-root-pass
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h localhost -prehearsal-root-pass"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+    env:
+      AINCMS_DB_HOST: 127.0.0.1
+      AINCMS_DB_PORT: 3306
+      AINCMS_DB_NAME: aincms
+      AINCMS_DB_USER: aincms
+      AINCMS_DB_PASSWORD: rehearsal-db-pass
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install rehearsal runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y php-mysql mysql-client
+          php -m | grep -qi pdo_mysql
+      - name: Clean rc.3 empty-site rehearsal
+        run: bash tests/release_rehearsal.sh "${{ github.event.pull_request.head.sha || github.sha }}"
+      - name: Upload rehearsal evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-native-cms-release-rehearsal-evidence
+          path: |
+            /tmp/aincms-build-a.json
+            /tmp/aincms-build-b.json
+            /tmp/aincms-bootstrap.txt
+            /tmp/aincms-reconcile.json
+            /tmp/aincms-readiness-before.json
+            /tmp/aincms-login.json
+            /tmp/aincms-onboarding.json
+            /tmp/aincms-readiness-after.json
+            /tmp/aincms-canonical-path.txt
+            /tmp/aincms-server.log
+          if-no-files-found: ignore
+          retention-days: 7

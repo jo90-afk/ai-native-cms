@@ -44,7 +44,7 @@ The reusable core extraction includes the production-proven schema-v8 redirect/p
 
 PR #12 merged the M-010/reference-adapter line at `97d72a74491f66726b3c9a28da313d3753c89646` after cumulative run #82 and direct rc.2 artifact inspection. PR #13 then merged directory-aware collision and duplicate configured-system conflict hardening at `7043eeee47bf4b0112957e7e3a6e564c5da1d020`; cumulative run #88 and its rc.2 artifact also passed direct inspection.
 
-A fresh production proving-ground parity check on **2026-08-26** found `judeoneill.com` `main` still exactly at PR #50 merge `113068842a808ed00268892dc6a2ffa51c27ffa6`. No newer source work exists to classify, and the remaining directory-aware behavior within PR #49 was explicitly reconciled by PR #13. There is no unresolved reusable **core** delta at the recorded parity point.
+A fresh production proving-ground parity check on **2026-08-26** found the production source repository still exactly at PR #50 merge `113068842a808ed00268892dc6a2ffa51c27ffa6`. No newer source work exists to classify, and the remaining directory-aware behavior within PR #49 was explicitly reconciled by PR #13. There is no unresolved reusable **core** delta at the recorded parity point.
 
 The extraction frontier is therefore closed for the current candidate and the project has returned to the **Principal release gate**. Any future production release containing a material reusable core capability reopens parity work automatically before publication.
 

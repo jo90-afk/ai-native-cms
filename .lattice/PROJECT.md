@@ -3,8 +3,8 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Baseline branch: `main`
-Baseline commit: `b8ebd1e7b050a1b6a0831cea29e77db884be3240`
-Working branch: `feat/m010-deployment-adapters`
+Baseline commit: `7043eeee47bf4b0112957e7e3a6e564c5da1d020`
+Working branch: `docs/restore-release-gate`
 Runtime: `lattice-app-works-platform-agnostic` 0.1.6 contract
 Principal alias: `Repository Owner`
 Updated: **2026-08-26 (America/New_York)**
@@ -32,6 +32,8 @@ Routine reversible implementation, refactoring, tests, documentation, repository
 - Derived site-wide projection has one explicit finalization boundary so one projector cannot erase another projector's accepted output until the next rebuild.
 - Redirect authority is canonical in SQL, while anonymous redirect requests remain database-free through generated routing data plus a deployment adapter.
 - Redirect graph-changing writes serialize and revalidate globally; optimistic record hashes remain the per-record stale-write boundary.
+- Redirect sources that resolve to existing public files **or directories** cannot become active redirect authorities when deployment adapters serve real filesystem routes first.
+- Conflicting configured read-only system aliases fail closed rather than using order-dependent last-write wins.
 - Readiness is observational and may not initialize, migrate, publish, mail, deploy, invoke shell commands, or expose secret/grant values.
 - Host/provider behavior enters only through bounded adopter/deployment adapters.
 - Reference deployment adapters may ship with the source candidate but never become CMS authority or automatic deployment behavior.
@@ -66,58 +68,67 @@ Merged via PR #7 at `993b3f0a89e6e062a165a6d4ee55a3ce50bac261`; added CLI-only s
 Merged via PR #8 at `b3588304acdfc61faa541a1ffa65c1fb284d4513`; added deterministic internal candidate packaging, exact reviewed-head provenance, package residue guards, installation/rollback documentation, and private CI artifact review. `0.1.0-rc.1` remains historical schema-7 evidence.
 
 ### M-009 — Canonical redirects and schema-v8 projection boundaries are portable, deterministic, and safe
-Implementation entered `main` through PR #10 and verification-closure PR #11. The accepted implementation on PR #12's verification tree includes:
+Implementation entered `main` through PR #10, verification-closure PR #11, M-010 PR #12, and the final directory-aware parity hardening in PR #13. The accepted schema-v8 core now includes:
 
-- schema v8 canonical `redirect_records` plus explicit CLI-only `database/migrations/7-to-8.php`;
-- bounded same-site redirect normalization, reserved-path/encoded-separator/dot-segment/collision/conflict/cycle rejection, allowed 301/302/307/308 statuses, query-preservation state, and optimistic revision hashes;
-- a bounded MySQL advisory lock around graph-changing redirect writes so concurrent new records cannot jointly create an invalid graph after independent preflight;
-- published long-form slug history through redirect authority, including safe post-managed chain collapse while preserving manually governed ownership;
+- canonical `redirect_records` plus explicit CLI-only `database/migrations/7-to-8.php`;
+- bounded same-site redirect normalization, reserved-path/encoded-separator/dot-segment/file-or-directory collision/conflict/cycle rejection, allowed 301/302/307/308 statuses, query-preservation state, and optimistic revision hashes;
+- a bounded MySQL advisory lock around graph-changing redirect writes;
+- published long-form slug history through redirect authority while preserving manually governed ownership;
 - deterministic `__redirect-map.php` plus database-free `__redirect.php` anonymous routing;
-- configured read-only system aliases and a first-party guarded Redirects workspace;
-- current-schema write guards on canonical mutation surfaces and no browser Git/source reconciliation path;
-- one final public-projection boundary with `after_seo` available for sitemap/discovery adapters before navigation, branding, and redirect projection;
-- rc.2 package inclusion of the explicit migration and static redirect runtime.
-
-Cumulative validation run **#76** (`32994215474`) passed M-001 through M-010 contracts, all executable behavior tests, PHP/JavaScript/Python syntax, candidate build, and private artifact upload on verification commit `7f141f06390af75ad8fb47ba6d613cfa106d1372`. That commit has the same source tree as implementation head `ad3055083e746463d0fb0f13f93df5014a0b5fd6` and exists only to force exact-tree verification.
-
-The run #76 `0.1.0-rc.2` artifact was directly inspected: whole-ZIP SHA256 `479ccd558de1f2741e9e92a4150579facbfb78adf404b909515deb30c9ca59be` matches the emitted checksum; embedded and external manifests are identical; manifest source revision is `7f141f06390af75ad8fb47ba6d613cfa106d1372`; schema version is 8; distribution remains `public:false` / `licenseSelected:false`; the 7→8 migration and redirect runtime are present; no excluded operational/adopter path, `LICENSE*`, known reference-adopter marker, private-key marker, GitHub token marker, or AWS access-key marker was found.
+- configured read-only system aliases with conflicting duplicate definitions rejected;
+- current-schema write guards, no browser Git/source reconciliation path, and one final public-projection boundary with `after_seo` discovery/sitemap support.
 
 ### M-010 — Reference deployment adapters encode redirect interception and bounded transport policy without becoming CMS authority
-Technically accepted on the same run #76 verification tree. The source candidate now contains:
+Merged via PR #12 at `97d72a74491f66726b3c9a28da313d3753c89646`. The source candidate contains:
 
 - a host-neutral deployment-adapter contract under `docs/DEPLOYMENT-ADAPTERS.md`;
 - an Apache public reference that serves real files/directories first, routes unresolved requests to the static redirect runtime, denies direct map access, applies conservative cache lifetimes, and enables DEFLATE when available;
-- an Apache private/preview reference that retains the same redirect interception/compression but forces `Cache-Control: no-store, private` and contains no public cache lifetimes;
-- package/residue tests that treat `.example` deployment configuration as text and include adapters in the deterministic candidate;
-- CI branch-push/manual-dispatch fallbacks so same-repository feature/fix/plan heads can still receive exact-head validation if PR event delivery is delayed.
+- an Apache private/preview reference that retains redirect interception/compression but forces `Cache-Control: no-store, private` and contains no public cache lifetimes;
+- package/residue tests that scan `.example` deployment configuration and include adapters in the deterministic candidate;
+- CI branch-push/manual-dispatch fallbacks for exact-head validation when PR event delivery is delayed.
 
-No Apache assumption enters canonical CMS state. No CDN, asset fingerprinting, provider credential, automatic deployment, or access-control invention is part of M-010.
+PR #13 then merged at `7043eeee47bf4b0112957e7e3a6e564c5da1d020`, aligning filesystem collision semantics with the adapter contract and rejecting conflicting duplicate system aliases.
 
-## Production proving-ground parity record
+## Verification and rc.2 artifact evidence
 
-The parity refresh that created M-009/M-010 was based on:
+- Run #76 (`32994215474`) first completed the cumulative M-001–M-010 gate on the implementation tree.
+- Run #82 (`32994522688`) completed the same gate on PR #12's final documented head `5833123c21b4a3394ba8d87f0a3e1b06f24396a7`.
+- The run #82 artifact directly inspected cleanly: whole-ZIP SHA256 `7a22d7a67cddaea7bc6dba88794b873cea3146de8664e360d7d273ef105b5547`; exact manifest provenance `5833123c21b4a3394ba8d87f0a3e1b06f24396a7`; embedded/external manifests identical; schema 8; `public:false`; `licenseSelected:false`; explicit 7→8 migration, redirect runtime, and both Apache reference adapters present; no excluded operational/adopter path, `LICENSE*`, known reference-adopter marker, private-key marker, GitHub-token marker, or AWS access-key marker.
+- Run #88 (`32995003080`) passed the full cumulative gate on directory-aware hardening head `a9a47a14e9189dade11474a970eadf7ca594a188`.
+- The run #88 artifact also inspected cleanly with exact provenance and ZIP SHA256 `57a4cb593e93a2d35c99683a54ec0ef2d5908f5d761470a3152ec1f466f04cad`.
 
-- production PR #49, merged at `15a4f9acb1370ee6b7d979b1dd57767d6dfca31d`, containing reusable schema-v8 redirect/projection hardening plus site/host-specific updater work;
+## Production proving-ground parity
+
+The source refresh was based on:
+
+- production PR #49, merged at `15a4f9acb1370ee6b7d979b1dd57767d6dfca31d`, containing schema-v8 redirect/projection hardening plus site/host-specific updater work;
 - production PR #50, merged at `113068842a808ed00268892dc6a2ffa51c27ffa6`, containing conservative Apache caching/compression policy.
 
-The portable core and reference-adapter portions of those releases are now represented in the public product. Provider-specific updater/deployment machinery remains outside core.
+A fresh post-M-010 parity check on **2026-08-26** found production `judeoneill.com` `main` still at `113068842a808ed00268892dc6a2ffa51c27ffa6`; there are no newer production commits to classify. The directory-aware routing behavior inside PR #49 was explicitly rechecked and the final public-core mismatch was closed by PR #13. No unresolved reusable **core** delta remains at this parity point.
 
-## Current objective
+Provider-specific updater/deployment machinery remains an optional adapter concern and does not block the public-source release decision.
 
-**OBJ-011 — Re-establish the Principal public-release gate from a verified schema-v8 candidate.**
+## Current state — Principal release gate restored
 
-Before restoring the gate, perform one fresh comparison against current production `judeoneill.com` `main`. Classify intervening deltas as core / adapter / site-only. Any material unresolved reusable core delta reopens extraction. Adapter/site-only deltas do not automatically block release.
+The delegated extraction/parity work required for `0.1.0-rc.2` is complete. The project has returned to the **Principal release gate**.
+
+The candidate remains **internal**, schema v8, private, unlicensed, untagged, unpublished, and undeployed. The next actions are not routine implementation choices; they require explicit Principal authorization:
+
+1. select a public license, if public distribution is desired;
+2. change repository visibility, if desired;
+3. authorize a Git tag / GitHub Release / public package or download;
+4. authorize any production deployment or adoption.
+
+Any new production proving-ground release containing a material reusable core capability automatically suspends this gate and reopens parity work before publication.
 
 ## Remaining non-core / post-release frontier
 
-- Host repository updater / automated deployment: optional provider-specific adapter work, not required for core authority.
+- Host repository updater / automated deployment: optional provider-specific adapter work.
 - Browser credential-writing setup: excluded from core; CLI bootstrap remains the portable security boundary.
 - Newsletter/subscription: optional extension.
-- Poetry-specific visual/content projection and portfolio/Lattice public views: adopter extensions, not public-core requirements.
+- Poetry-specific visual/content projection and portfolio/Lattice public views: adopter extensions.
 - Future schema changes after a public release: must ship explicit source/target migrations; bootstrap repair never substitutes for migration.
 
 ## Release boundary
 
-No public-release authorization has been granted. `0.1.0-rc.2` remains an **internal**, schema-v8 candidate. Repository visibility, license selection, tag/GitHub Release creation, package publication, production deployment, credentials, and production adoption remain separate Principal decisions.
-
-After PR #12's final documentation head passes the same cumulative gate, its artifact is inspected, the PR is merged, and the fresh production-parity check finds no unresolved reusable core delta, the project returns to the Principal release gate.
+No public-release authorization has yet been granted. Repository visibility, license selection, tag/GitHub Release creation, package publication, production deployment, credentials, and production adoption remain separate Principal decisions.

@@ -42,7 +42,7 @@ for path in ['cms/pages.php','cms/composer.php','cms/media.php','cms/navigation.
 config=need('config/site.example.php',"'redirects' =>",'system_aliases','after_seo')
 metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'))
 assert metadata['schemaVersion']==8, 'release metadata must remain schema v8'
-assert metadata.get('channel')=='internal-release-candidate', 'redirect contract requires an internal release candidate'
+assert metadata.get('channel') in {'internal-release-candidate','public-release-candidate'}, 'redirect contract requires a release-candidate channel'
 assert metadata.get('version')==(ROOT/'VERSION').read_text().strip(), 'VERSION and release metadata diverged'
 assert metadata.get('version','').startswith('0.1.0-rc.'), 'unexpected release candidate line'
 for path in ['cms/redirects.php','cms/redirects.js','__redirect.php','__redirect-map.php']:

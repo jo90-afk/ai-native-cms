@@ -30,9 +30,12 @@ import json,sys
 m=json.load(open(sys.argv[1],encoding='utf-8'))
 assert m['sourceRevision']==sys.argv[2], (m['sourceRevision'],sys.argv[2])
 assert m['version']=='0.1.0-rc.3'
+assert m['channel']=='public-release-candidate'
 assert m['schemaVersion']==8
-assert m['distribution']['public'] is False
+assert m['distribution']['public'] is True
 assert m['distribution']['licenseSelected'] is True
+assert m['distribution']['tagRequired'] is True
+assert m['distribution']['tag']=='v0.1.0-rc.3'
 paths={r['path'] for r in m['files']}
 for required in ['LICENSE','LICENSE-APACHE-2.0.txt','NOTICE','AGENTS.md','docs/INSTALLATION.md','docs/REPOSITORY-OPERATIONS.md','docs/LLM-COLLABORATION.md','setup/site.php','database/migrations/7-to-8.php','__redirect.php']:
     assert required in paths, required
@@ -167,11 +170,16 @@ import json,sys
 r=json.load(open(sys.argv[1],encoding='utf-8'));assert r['ready'] is True and r['summary']['blockingFailures']==0
 PY
 
-# Final clean-candidate residue and publication-boundary assertions.
+# Final clean-candidate residue and public-distribution assertions.
 ! grep -RIEq 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' "$SITE"
 python3 - "$SITE/RELEASE-MANIFEST.json" "$SOURCE_REF" <<'PY'
 import json,sys
-m=json.load(open(sys.argv[1],encoding='utf-8'));assert m['sourceRevision']==sys.argv[2];assert m['distribution']['public'] is False
+m=json.load(open(sys.argv[1],encoding='utf-8'))
+assert m['sourceRevision']==sys.argv[2]
+assert m['channel']=='public-release-candidate'
+assert m['distribution']['public'] is True
+assert m['distribution']['tagRequired'] is True
+assert m['distribution']['tag']=='v0.1.0-rc.3'
 PY
 
-echo "PASS: clean rc.3 release rehearsal from deterministic candidate"
+echo "PASS: clean public rc.3 release rehearsal from deterministic candidate"

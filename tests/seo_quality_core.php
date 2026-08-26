@@ -40,4 +40,20 @@ try{
     checkSeo(!in_array('schema_missing',$codes,true),'projection did not repair structured data');
 } finally {removeSeoTree($fixture);}
 
+// Managed/noindex pages remain auditable but do not lower the canonical search-surface score.
+$scopeFolder='seo-scope-fixture-'.bin2hex(random_bytes(4));$scope=$root.'/'.$scopeFolder;mkdir($scope,0777,true);
+try {
+    $index='<!doctype html><html><head><title>A complete searchable example page</title><meta name="description" content="A complete and sufficiently descriptive searchable example page used to prove scoped SEO quality scoring behavior."><meta name="robots" content="index,follow"><link rel="canonical" href="https://example.com/"><meta property="og:title" content="A complete searchable example page"><meta property="og:description" content="A complete and sufficiently descriptive searchable example page used to prove scoped SEO quality scoring behavior."><meta property="og:url" content="https://example.com/"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="A complete searchable example page"><meta name="twitter:description" content="A complete and sufficiently descriptive searchable example page used to prove scoped SEO quality scoring behavior."><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebPage","name":"A complete searchable example page"}</script></head><body><h1>Searchable page</h1></body></html>';
+    $hidden='<!doctype html><html><head><title>Tiny</title><meta name="description" content="Short"><meta name="robots" content="noindex,nofollow"><link rel="canonical" href="https://example.com/hidden.html"></head><body><h1>One</h1><h1>Two</h1><img src="x.png"></body></html>';
+    file_put_contents($scope.'/index.html',$index);file_put_contents($scope.'/hidden.html',$hidden);
+    file_put_contents($scope.'/sitemap.txt',"https://example.com/\n");file_put_contents($scope.'/robots.txt',"User-agent: *\nAllow: /\nSitemap: https://example.com/sitemap.xml\n");
+    $report=seoQualitySite($scope,['index.html'=>'Home','hidden.html'=>'Hidden']);
+    checkSeo((int)$report['summary']['pages']===1,'search-surface page count included noindex managed inventory');
+    checkSeo((int)$report['summary']['managedPages']===2,'managed page count lost noindex inventory');
+    checkSeo((int)$report['summary']['errors']===0&&(int)$report['summary']['warnings']===0,'noindex managed findings polluted search-surface findings');
+    checkSeo((int)$report['summary']['score']===100,'noindex managed findings lowered a clean search-surface score');
+    checkSeo((int)$report['summary']['managedErrors']>0||(int)$report['summary']['managedWarnings']>0,'managed inventory findings were discarded instead of retained');
+    checkSeo(count($report['pages']['hidden.html']['issues']??[])>0,'noindex managed page lost its page-level findings');
+} finally {removeSeoTree($scope);}
+
 fwrite(STDOUT,"PASS: site-wide SEO quality and projection primitives\n");

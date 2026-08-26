@@ -33,7 +33,10 @@ def main() -> None:
     setup = read("setup/site.php")
     ui = read("cms/seo.php")
     js = read("cms/seo.js")
+    css = read("cms/editor.css")
     cli = read("database/seo-audit.php")
+    cms_cache = read("adapters/apache/cms.htaccess.example")
+    adapter_docs = read("docs/DEPLOYMENT-ADAPTERS.md")
 
     require(audit, [
         "duplicate_title", "duplicate_description", "broken_internal_link", "orphan_page",
@@ -41,6 +44,7 @@ def main() -> None:
         "image_alt_missing", "sitemap_foreign_url", "robots_sitemap_missing",
         "canonical_target_missing", "canonical_target_noindex", "noncanonical_in_sitemap",
         "presentationPublicHtmlFiles($root)", "siteConfigValue('site','base_url'",
+        "$managedErrors", "$managedWarnings", "$searchPages", "'managedPages'=>count($pages)",
     ], "site-wide SEO audit")
     require(projection, [
         "seoProjectAllPublicPages", "seoProjectEnhancements", "seoProjectionFallbackSchema",
@@ -53,11 +57,14 @@ def main() -> None:
     require(sync_seo, ["expectedHash", "preserved_newer", "SELECT page_path", "FOR UPDATE", "seoCanonicalAllowed"], "SEO compare-and-swap release updates")
     require(config, ["'seo' => [", "'social_image' => '/assets/share-card.svg'", "'locale' => 'en_US'", "'language' => 'en-US'"], "portable SEO defaults")
     require(setup, ["$base['seo']['author']=$display"], "setup SEO identity propagation")
-    require(ui, ["seo-quality-heading", "seo-site-findings", "seo-page-score", "seo-page-findings"], "SEO quality UI")
-    require(js, ["renderSiteQuality", "renderPageQuality", "siteFindings", "SEO saved, projected, and re-audited."], "SEO quality browser client")
+    require(ui, ["seo-quality-heading", "seo-site-findings", "seo-page-score", "seo-page-findings", "seo-filter", "Choose a page"], "SEO quality UI")
+    require(js, ["renderSiteQuality", "renderPageQuality", "filterPages", "managedPages", "not indexed", "SEO saved, projected, and re-audited."], "SEO quality browser client")
+    require(css, ["seo-target-filter", "#seo-list", "max-height:42vh"], "bounded mobile SEO picker")
     if ".innerHTML" in js or "insertAdjacentHTML" in js or "document.write" in js:
         fail("SEO quality browser client introduced an HTML injection rendering path")
     require(cli, ["PHP_SAPI!=='cli'", "seoQualitySite($root)", "--strict", "summary['errors']"], "CLI SEO audit")
+    require(cms_cache, ["no-store, private", "X-Robots-Tag", "noindex", "Options -Indexes"], "Apache CMS no-store adapter")
+    require(adapter_docs, ["CMS operator assets are private state", "adapters/apache/cms.htaccess.example", "no-store, private"], "deployment adapter CMS cache guidance")
 
     combined = "\n".join([audit, projection, sync_seo, config]).lower()
     personal_display = "ju" + "de o"

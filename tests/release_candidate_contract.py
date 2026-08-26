@@ -14,16 +14,23 @@ def load_builder():
 
 def main() -> None:
     version=(ROOT/'VERSION').read_text(encoding='utf-8').strip()
-    if version!='0.1.0-rc.3': fail('unexpected internal release candidate version')
+    if version!='0.1.0-rc.3': fail('unexpected public release candidate version')
     metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'))
     if metadata.get('version')!=version or metadata.get('schemaVersion')!=8: fail('release metadata does not describe schema-v8 rc3')
+    if metadata.get('channel')!='public-release-candidate': fail('rc3 is not marked as a public release candidate')
     distribution=metadata.get('distribution',{})
-    if distribution.get('public') is not False or distribution.get('licenseSelected') is not True: fail('release candidate distribution/license state is wrong')
+    if distribution.get('public') is not True or distribution.get('licenseSelected') is not True: fail('public release candidate distribution/license state is wrong')
+    if distribution.get('tagRequired') is not True or distribution.get('tag')!='v0.1.0-rc.3': fail('public release candidate tag contract is wrong')
     license_meta=distribution.get('license',{})
     if license_meta.get('base')!='Apache-2.0' or license_meta.get('condition')!='Commons Clause License Condition v1.0': fail('release candidate license metadata is wrong')
     if license_meta.get('sourceAvailable') is not True or license_meta.get('osiApproved') is not False or license_meta.get('attributionRequired') is not True: fail('release candidate license classification is wrong')
     workflow=(ROOT/'.github/workflows/ci.yml').read_text(encoding='utf-8')
     if 'github.event.pull_request.head.sha || github.sha' not in workflow: fail('CI release artifact does not record reviewed source revision')
+    publisher=(ROOT/'.github/workflows/publish-release.yml')
+    if not publisher.is_file(): fail('public release publisher workflow is missing')
+    publisher_text=publisher.read_text(encoding='utf-8')
+    for needle in ['contents: write','gh release create','--prerelease','release/release.json']:
+        if needle not in publisher_text: fail('public release publisher is missing: '+needle)
     builder=load_builder();candidates=[path.relative_to(ROOT).as_posix() for path in builder.candidate_files()]
     required={
         'README.md','AGENTS.md','SECURITY.md','VERSION','LICENSE','LICENSE-APACHE-2.0.txt','NOTICE','release/release.json',
@@ -48,7 +55,8 @@ def main() -> None:
         if hashlib.sha256(za).hexdigest()!=a['sha256']: fail('reported release checksum does not match candidate ZIP')
         ma=json.loads(Path(a['manifest']).read_text(encoding='utf-8'));mb=json.loads(Path(b['manifest']).read_text(encoding='utf-8'))
         if ma!=mb or ma.get('sourceRevision')!='release-contract-ref' or ma.get('schemaVersion')!=8: fail('release manifest provenance/schema is wrong')
-        if ma.get('distribution',{}).get('licenseSelected') is not True: fail('release manifest lost selected license state')
+        if ma.get('channel')!='public-release-candidate' or ma.get('distribution',{}).get('public') is not True: fail('release manifest lost public distribution state')
+        if ma.get('distribution',{}).get('tag')!='v0.1.0-rc.3': fail('release manifest lost public tag contract')
         with zipfile.ZipFile(a['zip'],'r') as archive:
             names=archive.namelist();root=metadata['packageRoot'].rstrip('/')+'/'
             if root+'RELEASE-MANIFEST.json' not in names: fail('candidate ZIP does not contain its release manifest')
@@ -67,8 +75,8 @@ def main() -> None:
     installation=(ROOT/'docs/INSTALLATION.md').read_text(encoding='utf-8');release_doc=(ROOT/'docs/RELEASE.md').read_text(encoding='utf-8')
     for needle in ['setup/site.php','database/bootstrap.php','database/migrations/7-to-8.php --apply','database/reconcile.php initial-import','database/readiness.php','/cms/onboarding.php','backup','rollback','migration']:
         if needle.lower() not in installation.lower(): fail('installation/upgrade documentation is missing: '+needle)
-    for needle in ['internal release candidate','not a public release','Commons Clause','Apache 2.0','source-available','tools/build_release.py','sha256','deployment adapter','onboarding']:
-        if needle.lower() not in release_doc.lower(): fail('release-boundary documentation is missing: '+needle)
-    print('PASS: reproducible internal licensed schema-v8 rc3 contract')
+    for needle in ['public release candidate','v0.1.0-rc.3','Commons Clause','Apache 2.0','source-available','tools/build_release.py','sha256','deployment adapter','onboarding']:
+        if needle.lower() not in release_doc.lower(): fail('public release documentation is missing: '+needle)
+    print('PASS: reproducible public licensed schema-v8 rc3 contract')
 
 if __name__=='__main__': main()

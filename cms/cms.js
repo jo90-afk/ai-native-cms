@@ -40,7 +40,12 @@ function initLogin() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login', username: document.getElementById('username').value, password: document.getElementById('password').value }),
       });
-      location.href = '/cms/onboarding.php';
+      let target = '/cms/onboarding.php';
+      try {
+        const state = await request('/api/cms-onboarding.php');
+        if (state.onboarding?.ready) target = '/cms/pages.php';
+      } catch (_) {}
+      location.href = target;
     } catch (error) {
       setStatus(status, error.message, 'error');
       button.disabled = false;

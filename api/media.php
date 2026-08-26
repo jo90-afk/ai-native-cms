@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__.'/runtime.php';
+require_once __DIR__.'/content-core.php';
 
 /** First-party media catalog. File bytes remain adopter-owned; metadata is canonical SQL. */
 
@@ -16,6 +16,7 @@ function mediaAllowedPath(string $path): bool {
 }
 function mediaKey(string $path): string {return 'asset-'.substr(hash('sha256',$path),0,32);}
 function mediaSubstr(string $value,int $length): string {return function_exists('mb_substr')?mb_substr($value,0,$length):substr($value,0,$length);}
+function mediaFilenameSlug(string $value): string {$value=strtolower(trim($value));$value=preg_replace('/[^a-z0-9-]+/','-',$value)??'';$value=preg_replace('/-+/','-',$value)??'';return trim($value,'-');}
 
 function mediaInfo(string $root,string $path): array {
     if(!mediaAllowedPath($path))throw new RuntimeException('Invalid public media path.');$full=realpath(rtrim($root,'/\\').'/'.$path);
@@ -27,7 +28,7 @@ function mediaInfo(string $root,string $path): array {
 }
 
 function mediaUpsertRecord(string $root,string $path,string $title='',string $alt='',string $caption='',string $source='site'): array {
-    $info=mediaInfo($root,$path);$userId=(int)($_SESSION['cms_user_id']??0);$stmt=db()->prepare('INSERT INTO media_library (asset_key,public_path,file_sha256,mime_type,width,height,title,alt_text,caption,source_kind,updated_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,NULLIF(?,0),UTC_TIMESTAMP(),UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE file_sha256=VALUES(file_sha256),mime_type=VALUES(mime_type),width=VALUES(width),height=VALUES(height),title=IF(VALUES(title)="",title,VALUES(title)),alt_text=IF(VALUES(alt_text)="",alt_text,VALUES(alt_text)),caption=IF(VALUES(caption)="",caption,VALUES(caption)),source_kind=VALUES(source_kind),updated_by=VALUES(updated_by),updated_at=UTC_TIMESTAMP()');
+    $info=mediaInfo($root,$path);$userId=(int)($_SESSION['cms_user_id']??0);$stmt=db()->prepare("INSERT INTO media_library (asset_key,public_path,file_sha256,mime_type,width,height,title,alt_text,caption,source_kind,updated_by,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,NULLIF(?,0),UTC_TIMESTAMP(),UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE file_sha256=VALUES(file_sha256),mime_type=VALUES(mime_type),width=VALUES(width),height=VALUES(height),title=IF(VALUES(title)='',title,VALUES(title)),alt_text=IF(VALUES(alt_text)='',alt_text,VALUES(alt_text)),caption=IF(VALUES(caption)='',caption,VALUES(caption)),source_kind=VALUES(source_kind),updated_by=VALUES(updated_by),updated_at=UTC_TIMESTAMP()");
     $stmt->execute([$info['key'],$path,$info['sha256'],$info['mime'],$info['width'],$info['height'],mediaSubstr(trim($title)!==''?trim($title):$info['title'],191),mediaSubstr(trim($alt),1000),trim($caption),substr($source,0,32),$userId]);return mediaByKey($root,$info['key'])??$info;
 }
 
@@ -52,7 +53,7 @@ function mediaUpload(string $root,array $file,array $meta=[]): array {
     $info=@getimagesize($tmp);if(!is_array($info)||($info[0]??0)<1||($info[1]??0)<1)throw new RuntimeException('Uploaded image could not be validated.');
     $uploadRoot=trim(str_replace('\\','/',(string)mediaConfig('upload_root','assets/uploads')),'/');if($uploadRoot===''||!mediaAllowedPath($uploadRoot.'/x.'.$extensions[$mime]))throw new RuntimeException('Configured media upload root is invalid.');
     $dir=rtrim($root,'/\\').'/'.$uploadRoot;if(!is_dir($dir)&&!mkdir($dir,0775,true)&&!is_dir($dir))throw new RuntimeException('Could not create media upload directory.');$realDir=realpath($dir);if($realDir===false||!pathInside($realDir,$root))throw new RuntimeException('Media upload directory escaped the public root.');
-    $base=cleanSlug(pathinfo((string)($file['name']??'image'),PATHINFO_FILENAME))?:'image';$name=$base.'-'.substr(bin2hex(random_bytes(6)),0,10).'.'.$extensions[$mime];$target=$realDir.'/'.$name;
+    $base=mediaFilenameSlug(pathinfo((string)($file['name']??'image'),PATHINFO_FILENAME))?:'image';$name=$base.'-'.substr(bin2hex(random_bytes(6)),0,10).'.'.$extensions[$mime];$target=$realDir.'/'.$name;
     if(!move_uploaded_file($tmp,$target))throw new RuntimeException('Could not store uploaded image.');$relative=$uploadRoot.'/'.$name;
     try{return mediaUpsertRecord($root,$relative,(string)($meta['title']??''),(string)($meta['alt']??''),(string)($meta['caption']??''),'upload');}catch(Throwable $e){@unlink($target);throw $e;}
 }

@@ -37,10 +37,8 @@ function migration78Apply(PDO $pdo): array {
     try{$again=migration78State($pdo);if((int)$again['schemaVersion']>=8)return ['changed'=>false,'before'=>$before,'after'=>$again];if((int)$again['schemaVersion']!==7)throw new RuntimeException('Schema changed while waiting for the migration lock.');$pdo->exec(migration78TableSql());$pdo->exec("UPDATE app_meta SET schema_version=8,updated_at=UTC_TIMESTAMP() WHERE id=1 AND schema_version=7");$after=migration78State($pdo);if((int)$after['schemaVersion']!==8||!$after['redirectTable'])throw new RuntimeException('Schema 7 to 8 migration did not reach the expected state.');return ['changed'=>true,'before'=>$before,'after'=>$after];}
     finally{try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}catch(Throwable $ignored){}}
 }
+function migration78Cli(array $argv): int {
+    try{if(!dbConfigured())throw new RuntimeException('Database credentials are not configured.');$pdo=db();$state=migration78State($pdo);$apply=in_array('--apply',$argv,true);if(!$apply){fwrite(STDOUT,json_encode(['ok'=>true,'applyRequired'=>true,'migration'=>'7-to-8','state'=>$state],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);return 0;}$result=migration78Apply($pdo);fwrite(STDOUT,json_encode(['ok'=>true,'migration'=>'7-to-8']+$result,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);return 0;}catch(Throwable $e){fwrite(STDERR,'Migration failed: '.$e->getMessage().PHP_EOL);return 1;}
+}
 
-if(PHP_SAPI!=='cli'){http_response_code(404);exit;}
-try{
-    if(!dbConfigured())throw new RuntimeException('Database credentials are not configured.');$pdo=db();$state=migration78State($pdo);$apply=in_array('--apply',$argv??[],true);
-    if(!$apply){fwrite(STDOUT,json_encode(['ok'=>true,'applyRequired'=>true,'migration'=>'7-to-8','state'=>$state],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);exit(0);}
-    $result=migration78Apply($pdo);fwrite(STDOUT,json_encode(['ok'=>true,'migration'=>'7-to-8']+$result,JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES).PHP_EOL);exit(0);
-}catch(Throwable $e){fwrite(STDERR,'Migration failed: '.$e->getMessage().PHP_EOL);exit(1);}
+if(realpath((string)($_SERVER['SCRIPT_FILENAME']??''))===__FILE__){if(PHP_SAPI!=='cli'){http_response_code(404);exit;}exit(migration78Cli($argv??[]));}

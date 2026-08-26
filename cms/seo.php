@@ -19,9 +19,13 @@ secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue
 <div class="header-actions"><span class="user-label"><?=htmlspecialchars((string)($user['displayName']??$user['username']??'Owner'),ENT_QUOTES|ENT_HTML5,'UTF-8')?></span><button id="logout" class="secondary" type="button">Sign out</button></div>
 </header>
 <main class="workspace">
-<aside class="workspace-list"><div id="seo-list" aria-label="SEO targets"></div></aside>
+<aside class="workspace-list">
+<section class="section-card" aria-labelledby="seo-quality-heading"><p class="eyebrow">Site-wide quality</p><h2 id="seo-quality-heading">Inspecting…</h2><p id="seo-quality-summary" class="muted"></p><div id="seo-site-findings" class="revision-list" aria-live="polite"></div></section>
+<div id="seo-list" aria-label="SEO targets"></div>
+</aside>
 <section class="workspace-main">
 <div class="toolbar"><div><p class="eyebrow">Search and social metadata</p><h1 id="seo-heading">Choose a page</h1></div><button id="save-seo" type="button" disabled>Save SEO</button></div>
+<section id="seo-page-quality" class="section-card" hidden><div class="toolbar"><div><p class="eyebrow">Page quality</p><h2 id="seo-page-score">Not scored</h2></div></div><div id="seo-page-findings" class="revision-list" aria-live="polite"></div></section>
 <form id="seo-form" class="field-grid" hidden>
 <label class="field wide">Browser title<input id="seo-title" maxlength="512" required></label>
 <label class="field wide">Description<textarea id="seo-description" rows="3" maxlength="4000" required></textarea></label>

@@ -30,32 +30,25 @@ Generated HTML/JSON/XML/indexes/redirect maps are projections. They may live in 
 
 ### Keep outside the public repository
 
-Never commit:
-
-- database passwords;
-- private keys;
-- hosting control-panel credentials;
-- private API tokens;
-- real secret INI files;
-- runtime upload/temp/session state that is not intentionally public content.
+Never commit database passwords, private keys, hosting control-panel credentials, private API tokens, real secret INI files, or runtime/session state that is not intentionally public content.
 
 Use documented environment variables, host secret stores, or a private configuration file outside the public root.
 
 ## Start a site repository
 
-A typical first repository flow is:
+A practical first repository flow is:
 
 ```bash
 git clone <cms-source-or-template> my-site
 cd my-site
-cp config/site.example.php config/site.php
+php setup/site.php --name="My Site" --url=https://example.com --owner="Site Owner"
 ```
 
-Edit `config/site.php` for public structure only: site identity, configured repository pages, writing route/template, media roots, navigation defaults, branding tokens, redirects, readiness adapters, and projection hooks. Do not put credentials in it.
+`setup/site.php` writes public `config/site.php` only. It does not read or write credentials. The generated configuration retains the starter page registry, writing template, media roots, navigation defaults, branding-token definitions, redirect seam, readiness adapters, and projection hooks from `config/site.example.php` while replacing the public site identity/origin.
+
+If you prefer, copy `config/site.example.php` to `config/site.php` manually and edit it. Either way, keep secrets out of the file.
 
 Create your own remote repository and push the baseline according to your Git hosting workflow.
-
-A future onboarding initializer may automate part of this starter structure; the authority split remains the same.
 
 ## Branch and pull-request workflow
 
@@ -88,14 +81,14 @@ Do not make production deployment the automatic side effect of opening a PR unle
 
 ## First host deployment
 
-Before copying code, identify these host facts:
+Before copying code, identify:
 
 - public document root;
 - PHP version (>= the candidate requirement);
 - MySQL version (>= the candidate requirement);
 - database name/user/host and where secrets will live;
 - HTTPS/public origin;
-- rewrite/front-controller capability if using static redirects;
+- rewrite/front-controller capability for static redirects;
 - writable locations for approved uploads/runtime output;
 - backup destination and schedule;
 - deployment method;
@@ -104,13 +97,14 @@ Before copying code, identify these host facts:
 Then:
 
 1. deploy the repository/candidate files;
-2. create secret configuration outside the public root or set the documented environment variables;
-3. run `php database/bootstrap.php ...` for a fresh database and first owner;
-4. run the explicit repository reconciliation/import step for initial canonical source;
-5. log into the CMS and complete onboarding/site build-out;
-6. run `php database/readiness.php` and resolve blocking failures;
-7. apply the appropriate deployment adapter behavior for unresolved redirects/caching;
-8. verify public pages and private CMS no-store behavior.
+2. create `config/site.php` with `php setup/site.php ...` if it is not already part of the adopter repository;
+3. create secret configuration outside the public root or set documented environment variables;
+4. run `php database/bootstrap.php` for a fresh database and first owner;
+5. run `php database/reconcile.php initial-import` for initial canonical repository content;
+6. sign in at `/cms/` and use the resumable Onboarding workspace to build out pages/branding/navigation and inspect remaining readiness work;
+7. run `php database/readiness.php` and resolve blocking failures;
+8. apply the appropriate deployment adapter behavior for unresolved redirects/caching;
+9. verify public pages and private CMS no-store behavior.
 
 Bootstrap does not write credentials for you and does not silently migrate older schemas.
 
@@ -139,25 +133,25 @@ For a schema-changing release:
 
 Do not embed a reusable personal SSH private key in the repository. Use host-level deploy keys or other provider-supported credentials.
 
-## Deployment pattern B — Build/copy artifact
+## Deployment pattern B — reviewed artifact/copy
 
 Use this when the host should not have repository credentials or Git access.
 
 1. choose an exact reviewed source revision;
-2. run the deterministic candidate/site build in a trusted environment;
+2. build the deterministic candidate/site artifact in a trusted environment;
 3. verify checksum and manifest;
 4. copy the approved artifact to the host using SFTP/SCP/provider file deployment or a CI protected environment;
 5. preserve secret files and runtime/upload data outside the replaced artifact tree;
 6. run any explicit migration and readiness checks;
 7. switch/reload only after verification.
 
-The packaged CMS release intentionally excludes `.git`, CI/governance state, tools/tests, adopter-local secrets, and runtime state.
+The packaged CMS release intentionally excludes `.git`, CI/governance state, tools/tests, adopter-local `config/site.php`, populated secrets, and runtime state.
 
 ## Canonical content and Git deployment
 
 A Git deployment updates repository-owned behavior. It does **not** mean database content should be reset from Git on every deploy.
 
-Repository content reconciliation follows the canonical/source lineage rules. If canonical SQL has diverged from the previous repository source, newer canonical content is preserved rather than silently overwritten.
+Repository content reconciliation follows canonical/source lineage rules. If canonical SQL has diverged from the previous repository source, newer canonical content is preserved rather than silently overwritten.
 
 When you intentionally want a repository-authored change to supersede canonical content, use the explicit reconciliation/update-set mechanism rather than deleting or recreating the database.
 
@@ -177,7 +171,7 @@ If the host edit was wrong or temporary, discard it instead. Do not allow a live
 
 Before a migration or destructive maintenance operation:
 
-- create a database backup and verify that it is readable;
+- create a database backup and verify that it is readable/restorable;
 - record the exact code/source revision paired with that database state;
 - review the migration's source version, target version, preflight, and rollback instructions;
 - keep the prior deployable code revision available.
@@ -232,5 +226,7 @@ Provider-specific answers belong in an adapter or deployment note, not in CMS ca
 ## Working with an LLM on the repository
 
 Tell the agent whether you are asking for a repository-owned change, canonical content change, generated-output diagnosis, or host-adapter change. For repository work, require a branch/PR and verification. For canonical content, require the CMS/store contract. Never give an agent production credentials merely to make repository changes.
+
+If the agent makes a structural or feature change, deployment still follows this document: review and merge the Git change first, preserve canonical database state, then deploy the exact verified revision separately.
 
 See `AGENTS.md` and `docs/LLM-COLLABORATION.md` for the full collaboration contract.

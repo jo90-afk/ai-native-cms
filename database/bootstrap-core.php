@@ -60,6 +60,7 @@ function bootstrapConfiguredOwner(): array {
     if(!preg_match('/^[A-Za-z0-9._-]{3,64}$/',$username))throw new RuntimeException('CMS bootstrap username is invalid.');if($hash===''||password_get_info($hash)['algoName']==='unknown')throw new RuntimeException('CMS bootstrap password hash is missing or invalid.');
     return ['username'=>$username,'passwordHash'=>$hash,'displayName'=>substr(trim((string)siteConfigValue('site','owner_display_name','Site Owner')),0,191)?:'Site Owner'];
 }
+function bootstrapValidatePrerequisites(array $state): void {if((int)($state['ownerCount']??0)===0)bootstrapConfiguredOwner();}
 function bootstrapInstallOwner(PDO $pdo): bool {
     $existing=bootstrapExistingTables($pdo);if(!in_array('cms_users',$existing,true))throw new RuntimeException('CMS user table is unavailable after schema installation.');if(bootstrapOwnerCount($pdo,$existing)>0)return false;$owner=bootstrapConfiguredOwner();
     $stmt=$pdo->prepare("INSERT INTO cms_users (username,password_hash,display_name,email,role,session_version,created_at,updated_at) VALUES (?,?,?,'','Owner',1,UTC_TIMESTAMP(),UTC_TIMESTAMP())");$stmt->execute([$owner['username'],$owner['passwordHash'],$owner['displayName']]);$id=(int)$pdo->lastInsertId();
@@ -74,10 +75,10 @@ function bootstrapAssertInstallable(array $state,bool $allowRepair): void {
 }
 function bootstrapInstall(string $root,bool $allowRepair=false): array {
     if(!dbConfigured())throw new RuntimeException('Database credentials are not configured.');if(!extension_loaded('pdo_mysql'))throw new RuntimeException('PHP PDO MySQL support (pdo_mysql) is required.');$pdo=db();$state=bootstrapState($pdo,$root);
-    if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];bootstrapAssertInstallable($state,$allowRepair);
+    if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];bootstrapAssertInstallable($state,$allowRepair);bootstrapValidatePrerequisites($state);
     $lockName='aincms-bootstrap-'.substr(hash('sha256',(string)dbConfig()['name']),0,24);$lock=$pdo->prepare('SELECT GET_LOCK(?,5)');$lock->execute([$lockName]);if((int)$lock->fetchColumn()!==1)throw new RuntimeException('Could not acquire the database bootstrap lock.');
     try{
-        $state=bootstrapState($pdo,$root);if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];bootstrapAssertInstallable($state,$allowRepair);
+        $state=bootstrapState($pdo,$root);if($state['status']==='ready')return ['changed'=>false,'schemaStatements'=>0,'ownerCreated'=>false,'state'=>$state,'message'=>'Database schema and owner are already initialized.'];bootstrapAssertInstallable($state,$allowRepair);bootstrapValidatePrerequisites($state);
         $statements=bootstrapRunSchema($pdo,$root);$ownerCreated=bootstrapInstallOwner($pdo);$final=bootstrapState($pdo,$root);if($final['status']!=='ready')throw new RuntimeException('Database bootstrap did not reach a ready schema-and-owner state.');
         return ['changed'=>true,'schemaStatements'=>$statements,'ownerCreated'=>$ownerCreated,'state'=>$final,'message'=>'Database schema and owner initialized. Run database/reconcile.php to initialize canonical repository content.'];
     }finally{try{$release=$pdo->prepare('SELECT RELEASE_LOCK(?)');$release->execute([$lockName]);}catch(Throwable $ignored){}}

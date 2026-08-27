@@ -44,9 +44,12 @@ assert 'JavaScript-created' in config and 'root-relative' in config
 assert 'RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f' in apache
 assert 'RewriteRule ^(.+)\\.html$ /$1/ [R=301,L,NE]' in apache
 
-assert '>Route<input id="new-path" placeholder="services"' in composer
+assert "require_once dirname(__DIR__).'/api/page-routes.php'" in composer
+assert '$cleanRoutes=pageRoutesEnabled()' in composer
+assert '<?php if($cleanRoutes): ?><label class="field">Route<input id="new-path" placeholder="services"' in composer
+assert 'Filename<input id="new-path" placeholder="services.html"' in composer
 assert 'Publishes at /services/.' in composer
-assert '/cms/clean-routes-ui.js' in composer
+assert '<?php if($cleanRoutes): ?><script src="/cms/clean-routes-ui.js" defer></script><?php endif; ?>' in composer
 assert 'routeForKey' in composer_routes
 assert 'queueMicrotask' in composer_routes
 assert "routeInput.value=`${slug}.html`" in composer_routes

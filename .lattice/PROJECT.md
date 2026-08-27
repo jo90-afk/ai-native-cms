@@ -92,36 +92,43 @@ M-016 remains independently replaceable as a stacked PR above M-015. Its technic
 
 ## M-017 — save edited page block as new preset
 
-**Active candidate on `feat/page-block-save-as-new-port`; stacked on M-016 and not merged, released, or deployed.**
+**Technically satisfied on stacked draft PR #22; not merged, released, or deployed.**
 
 Source proving-ground change: production proving-ground PR #61, merged into the reference implementation on 2026-08-26.
 
-Objective: let a Page Composer user turn the currently edited selected block into a new reusable preset without mutating the original preset or page placement and without promoting browser structural DOM into authority.
-
-Acceptance conditions:
+Accepted implementation:
 
 - Page Composer exposes **Save as new block** for a selected persisted/source-derived instance;
 - browser submits bounded rich-copy leaves, media path/alt pairs, and link href/text pairs only; `outerHTML`, structural HTML, classes, styles, and CSS never enter the payload;
-- the server verifies the selected instance still belongs to the current canonical/source-derived page state and resolves its source preset itself;
-- browser field identities are mapped back through the source preset variable schema; unknown/stale leaf identities and out-of-range media/link indices fail closed;
-- primitive source presets apply typed instance values to a fresh primitive definition and save a new primitive preset;
-- converted source presets apply typed instance values to the original governed converted template and save a new converted preset;
-- the new preset always receives a new key; source preset metadata/definition/template remains unchanged;
+- the server verifies the selected instance still belongs to current canonical/source-derived page state and resolves the source preset itself;
+- browser field identities map back through the source preset variable schema; unknown/stale leaf identities and out-of-range media/link indices fail closed;
+- primitive sources apply typed instance values to a fresh primitive definition and save a new primitive preset;
+- converted sources apply typed instance values to the original governed converted template and save a new converted preset;
+- every clone receives a new preset key; source preset metadata/definition/template remains unchanged;
 - the selected page composition/value snapshot remains unchanged by save-as-new;
-- schema remains v9; no migration is introduced;
-- cumulative validation plus the MySQL rehearsal prove both primitive and converted paths, source/page immutability, sanitation, stale/tamper rejection, deterministic release packaging, and frozen rc.3 compatibility.
+- schema remains v9; no migration is introduced.
 
-Current implementation evidence:
+Accepted verification evidence:
+
+- GitHub Actions validation run **#311** passed the entire cumulative gate, including the independent `page_block_save_as_new_contract.py`, existing authority/security/behavior contracts, PHP/JavaScript/Python syntax checks, and deterministic release-candidate build;
+- MySQL release rehearsal run **#66** passed the frozen rc.3 clean-site rehearsal before schema-v9 work;
+- the same rehearsal passed schema `8→9` migration, archive creation, composition-reference rewrite, and migration idempotence;
+- the M-017 rehearsal created independent primitive and converted presets from edited typed instance snapshots;
+- both source presets remained unchanged, the selected page composition remained unchanged, and an unknown browser leaf identity was rejected;
+- rehearsal result explicitly reported `sourcePreserved: true`, `pagePreserved: true`, and `tamperRejected: true`;
+- evidence artifact: `ai-native-cms-release-rehearsal-evidence` from run #66.
+
+Primary implementation:
 
 - typed snapshot normalization: `api/composition-values.php`;
-- new-preset derivation: `api/block-presets.php`;
-- guarded `saveAsNewPreset` Page Composer action: `api/cms-composer.php`;
+- independent primitive/converted preset derivation: `api/block-presets.php`;
+- guarded `saveAsNewPreset` action: `api/cms-composer.php`;
 - Page Composer affordance: `cms/page-block-save-as-new.js` + `cms/composer.php`;
 - independent static contract: `tests/page_block_save_as_new_contract.py`;
-- MySQL primitive + converted rehearsal coverage: `tests/schema_v9_rehearsal.sh`.
+- MySQL primitive + converted rehearsal: `tests/schema_v9_rehearsal.sh`.
 
-Independent GitHub Actions verification is required before M-017 can be technically accepted.
+M-017 remains independently replaceable as a stacked PR above M-016. Technical acceptance does not authorize merging the stack, migrating an installed site, deployment, or release publication.
 
-## Next frontier after M-017
+## Next frontier
 
-Continue the proving-ground comparison from the current reference implementation after PR #61. Any additional reusable behavior should remain a separate milestone unless it is inseparable from M-017’s typed snapshot contract. The frozen rc.3 public artifact remains unchanged; merge, installed-site migration, deployment, and public release publication remain outside technical milestone acceptance.
+Continue the proving-ground comparison from the current reference implementation after PR #61. Any additional reusable behavior should remain a separate milestone unless inseparable from an already accepted authority contract. The frozen rc.3 public artifact remains unchanged; merge, installed-site migration, deployment, and public release publication remain outside technical milestone acceptance.

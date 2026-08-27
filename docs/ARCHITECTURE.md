@@ -2,122 +2,131 @@
 
 ## Core invariant
 
-Accepted authored state has one authority before publication. Public files are projections, not competing editorial masters.
+Accepted authored and mutable application state has one authority before publication. Public files are projections, not competing masters.
 
-The reference implementation proved this model on a static-first PHP/MySQL site. AI Native CMS keeps the same invariant while removing adopter-specific content, labels, environment names, and deployment assumptions.
-
-The published `0.1.0-rc.3` release remains schema v8. Post-release development adds an explicit schema-v9 migration and does not redefine that release artifact.
+The published `0.1.0-rc.3` artifact remains schema 8. The `0.1.0-rc.4` candidate promotes fresh installations to **schema 10** while preserving explicit 8→9→10 upgrades.
 
 ## Layers
 
 ### 1. Site adapter
 
-`config/site.php` describes adopter-owned public source boundaries: site identity, editable repository pages/documents, generated roots, writing/media paths, navigation defaults, branding tokens, read-only redirect aliases, readiness adapters, and deterministic projection hooks. Core modules must not require a particular site taxonomy, theme, content ledger, host, or web server.
+`config/site.php` describes adopter-owned public, non-secret structure: site identity, editable repository pages/documents, generated roots, writing/media paths, navigation defaults, branding tokens, read-only redirect aliases, readiness adapters, clean-route policy, and bounded projection hooks. Core modules must not require a particular site taxonomy, theme, host, or authored corpus.
 
-Repository pages are the portable Git/source class. They provide reviewed source lineage and shell behavior. After schema v9, Page Composer may deliberately adopt their top-level blocks into canonical composition; doing so does not turn generated public HTML back into source authority.
+Repository pages are portable reviewed source proposals. Page Composer can deliberately adopt their top-level structure into canonical composition; generated public HTML never becomes reverse source authority.
 
 ### 2. Guarded runtime
 
-`api/database.php` and `api/runtime.php` own secret loading, database transport, HTTPS/origin checks, sessions, authentication, CSRF, request limits, rate limits, and audit records.
+`api/database.php` and `api/runtime.php` own private configuration loading, database transport, HTTPS/origin checks, sessions, authentication, CSRF, request/rate limits, and audit records. Human UI and agent-facing operations share these boundaries. Older installed schemas fail closed for mutation surfaces requiring newer authority.
 
-Human UI and agent-facing operations share these boundaries. Canonical mutation endpoints fail closed when the installed schema is older than the code contract. An agent does not gain a second write path.
+### 3. Canonical schema-10 state
 
-### 3. Canonical state
-
-The frozen schema-v8 release stores accepted authored state in MySQL, including `page_block_templates` and `page_compositions`. The explicit 8→9 migration replaces the active template authority with `block_presets`, rewrites composition references from `templateKey` to `presetKey`, and archives the old template table.
-
-Schema-v9 canonical state includes:
+Fresh rc.4 installs contain:
 
 - `page_blocks` and `content_documents` for accepted editable leaves and repository lineage;
-- `block_presets` for converted repository structures and governed semantic primitive definitions;
-- `page_compositions` for page identity, hierarchy, shells, ordered preset instance IDs, and independent typed value snapshots;
+- `block_presets` for converted repository structures, governed semantic primitives, and server-generated trusted presets;
+- `page_compositions` for page identity, hierarchy, shells, ordered preset instances, and independent typed value snapshots;
 - `posts` and `post_revisions` for long-form publishing;
 - `media_library`, `site_navigation`, `site_branding`, and `seo_overrides` for reusable site-wide state;
 - `redirect_records` for canonical manual and post-history redirects;
-- `page_revisions`, `cms_activity`, `content_change_log`, and `content_update_sets` for revision/provenance history.
+- `audience_lists` for stable generic list identity, public/operator labels, confirmation copy, and enabled/disabled state;
+- `audience_subscriptions` for pending/confirmed/unsubscribed membership, consent timestamps, resend state, hashed confirmation tokens, and bounded source provenance;
+- revision/audit/change tables for history and reconciliation evidence.
 
-A preset is a recipe, not a live component. Editing a preset affects future placements. Existing page instances retain their stored typed values until the page itself is edited.
+A preset is a recipe, not a live shared component. Existing page instances retain their typed values when a source preset changes.
 
-Repository-owned `redirects.system_aliases` are a separate read-only compatibility source. They may participate in projection, but browser/API mutations cannot rewrite them.
+`mail_outbox` is only a development/log transport. SMTP credentials are private runtime configuration; neither transport nor cPanel becomes list or content authority.
 
-`api/content-core.php` contains site-neutral filesystem, sanitization, revision, and atomic-write primitives. Canonical object modules own validation/persistence; `/api/cms-*` endpoints expose the same guarded model to human and agent callers.
+### 4. Page and block authoring
 
-### 4. Page authoring boundary
+After schema 9, Page Composer is the sole browser mutation boundary for public page composition. The public page appears in a same-origin sandboxed iframe with site scripts disabled. Browser actions serialize stable preset/instance identities and bounded typed values; structural HTML is generated and validated server-side.
 
-After schema v9, Page Composer is the sole browser mutation boundary for public pages. `/cms/pages.php` is an authenticated compatibility redirect and the former standalone Pages API/client are not shipped.
+For repository pages without a stored composition, the composer derives a candidate structure from reviewed source and hydrates editable leaves from current canonical SQL. First adoption requires absence/source hashes so stale source cannot silently become authority.
 
-The public page is shown inside a same-origin sandboxed iframe with site scripts disabled. That iframe is an interaction surface, not an authority surface. Browser actions resolve to typed preset variables and stable instance identities. Add, duplicate, move, remove, copy, media, link, and primitive-text changes are serialized as `presetKey`, `instanceId`, and bounded typed values. Structural HTML is regenerated and validated on the server.
+Composition saves converge typed composition and canonical page text in the same guarded write path. Rebuilds preserve accepted canonical text while reconstructing structural composition.
 
-For an existing repository page that has never had a composition record, `compositionPayload()` derives candidate preset instances from the reviewed repository blocks and hydrates them from the current canonical visible page. That preserves prior accepted `page_blocks` edits. First adoption requires both the absence hash (`none`) and an `expectedSourceHash`; a stale source/canonical view is rejected rather than silently adopted.
+Block Composer remains the separate design surface for reusable semantic presets. Browser payloads carry governed definitions rather than arbitrary structural HTML/CSS. “Save as new block” snapshots an edited instance into a new independent preset without mutating the source preset or current page instance.
 
-Composition saves deliberately converge the two canonical views of editable page text. The typed composition snapshot is rendered on the server and its editable leaves replace that page's canonical `page_blocks` inside the same composition transaction. Routine rebuilds use the opposite mode: they preserve accepted `page_blocks` while reconstructing structural composition. This distinction prevents either a live edit or a later rebuild from silently undoing the other.
+### 5. Repository reconciliation
 
-Block Composer remains a separate reusable-block design tool but can be embedded inside Page Composer. Its browser payload contains governed semantic definitions, not arbitrary structural HTML/CSS.
+Repository source is a portable seed/code-reviewed proposal and database-free fixture. It never silently outranks newer accepted SQL.
 
-### 5. Repository-source boundary and reconciliation
+`api/content-sync.php` performs three-way reconciliation using current canonical hashes and prior effective source hashes. Changed source advances SQL only when canonical state still matches its predecessor; divergent accepted SQL is preserved. Immutable compare-and-swap update sets express deliberate supersession.
 
-Repository source is a portable seed, code-reviewed proposal, and database-free fixture. It never silently outranks newer accepted SQL.
-
-`api/content-sync.php` implements three-way reconciliation using both canonical hashes and the last effective source hashes. A changed repository candidate advances SQL only when canonical state still matches the previous effective source; divergent accepted SQL is preserved and source lineage advances instead. Immutable compare-and-swap update sets express deliberate supersession.
-
-Repository reconciliation is intentionally **not a browser action**. `database/reconcile.php` is CLI/deployment-adapter-only. Schema-v8 installs remain read-compatible during the explicit upgrade seam so they can reconcile and reach a safe backup point before 8→9 migration. New block/preset/Page Composer mutations require schema v9.
+Reconciliation is CLI/deployment-adapter-only through `database/reconcile.php`. Browser CMS pages do not fetch/pull Git, migrate, or reconcile source into canonical state.
 
 ### 6. Schema evolution
 
-`database/bootstrap.php` is a fresh/current-release initializer. `--repair` only completes interrupted installs already stamped with the bootstrap schema; it never upgrades an older schema.
+`database/bootstrap.php` initializes the **current fresh schema** only. In rc.4 that is schema 10. `--repair` completes interrupted current-schema installs; it does not upgrade older databases.
 
-Version transitions use explicit migration files. Schema 7→8 adds canonical redirects. Schema 8→9 creates `block_presets`, converts prior structural templates, rewrites composition references, archives the retired template authority, and advances `app_meta.schema_version` only after guarded work succeeds. Both migrations acquire database locks and are idempotent where required by their contract.
+Versioned migrations preserve historical upgrade boundaries:
 
-Rollback means restoring the paired pre-migration database backup and code revision, not trying to reverse accepted canonical writes piecemeal.
+- 7→8 establishes canonical redirects;
+- 8→9 creates `block_presets`, converts prior trusted templates, rewrites composition references, and archives `page_block_templates`;
+- 9→10 creates Audience authority, preserves valid legacy subscription membership into disabled generic lists when present, archives the retired `subscribers` table, and advances to schema 10.
 
-### 7. Redirect authority and anonymous routing
+Core read/rebuild paths that must support a safe pre-migration backup/reconciliation seam remain schema-8 compatible. New composition mutation requires schema 9; Audience mutation requires schema 10.
 
-`api/redirects.php` owns canonical redirect semantics. Source/target paths are same-site and bounded; reserved application paths, control characters, ambiguous encoded separators, dot segments, self-resolution, unsafe status codes, conflicting authorities, public-file collisions, and graph cycles are rejected.
+Rollback restores the paired pre-migration database and code revision rather than trying to reverse accepted writes piecemeal.
 
-Manual records carry optimistic revision hashes. Published post slug changes are preflighted against the redirect graph and persist their old route as post-managed history; manually governed ownership is not silently taken over. Safe post-managed chains can collapse to the newest target.
+### 7. Redirect and clean-route projection
 
-`redirectProject()` merges active canonical SQL records with configured read-only system aliases and emits deterministic `__redirect-map.php`. `__redirect.php` consumes only that map. Anonymous redirects therefore remain static-first and never query MySQL.
+`api/redirects.php` owns canonical redirect semantics. Redirects are bounded to same-site safe paths, reject reserved/control/ambiguous/cyclic states, use optimistic revisions, and project to deterministic `__redirect-map.php`. `__redirect.php` is database-free.
 
-Routing unresolved web requests into `__redirect.php` is a deployment concern. Apache/Nginx/CDN/host-specific interception belongs in adapters; the core owns the map/runtime semantics, not one server configuration.
+Managed pages retain stable internal `.html` identity while `api/page-routes.php` and `api/page-projection.php` may materialize reader-facing `/slug/` directories. Relocated HTML references, managed links, canonical/social URL metadata, and known discovery outputs are rewritten deterministically. JavaScript-created runtime URLs are outside HTML parsing and should be root-relative when pages may relocate.
 
-### 8. Projection and finalization
+Request interception remains a deployment-adapter concern.
 
-Canonical content is projected first; site-wide derived state converges through one explicit finalization boundary so one projector cannot silently erase another projector's output until the next rebuild.
+### 8. Public discovery
 
-`api/content-rebuild.php` preserves bounded adopter hooks and defines this order:
+Rc.4 adds site-neutral core discovery rather than requiring every adopter to hand-maintain indexes.
 
-1. repository documents/pages and canonical compositions;
+After public HTML, SEO, navigation, branding, redirects, and clean routes converge:
+
+1. `api/discovery-projection.php` scans public HTML only;
+2. `noindex` pages and external canonicals are excluded;
+3. duplicate legacy/clean files collapse onto their same-site canonical URL;
+4. `site-index.json`, `sitemap.xml`, and `sitemap.txt` are emitted from that public surface;
+5. `api/llms-projection.php` builds a compact `llms.txt` routing index from `site-index.json`;
+6. an optional existing `llms-full.txt` expanded-public-context body can be synchronized beneath the compact index;
+7. public HTML receives an idempotent `rel="describedby"` link to `/llms.txt`.
+
+These outputs never read private CMS state, subscriber records, credentials, drafts, or host-only operational markers. They are replaceable public projections, not content authority.
+
+### 9. Projection/finalization order
+
+`api/content-rebuild.php` converges public state in this order:
+
+1. configured documents/pages and canonical compositions;
 2. published posts;
 3. `after_pages` adopter hooks;
-4. canonical SEO projection;
-5. `after_seo` adopter hooks for sitemap/discovery/feed work that must consume final SEO state;
+4. canonical SEO;
+5. `after_seo` adopter hooks;
 6. canonical navigation;
 7. canonical branding;
 8. deterministic redirect map;
-9. `finalize` adopter hooks.
+9. `finalize` adopter hooks;
+10. managed clean-route materialization;
+11. core public discovery index/sitemaps;
+12. `llms.txt` and public discovery-link injection.
 
-The public core does not impose one sitemap/discovery implementation, but it guarantees an `after_seo` phase so those adapters can honor noindex/canonical decisions instead of racing SEO.
-
-Anonymous public delivery remains database-free. A static host or CDN may serve public files while the private authoring plane uses MySQL.
+Hooks remain available for adopter-specific derived surfaces; they may not replace canonical authority. Anonymous delivery remains static-first/database-free.
 
 ## Core versus adopter code
 
-The extraction intentionally preserves the reference implementation’s top-level paths:
-
-- `api/` — reusable runtime and canonical operations;
+- `api/` — reusable runtime, authority, and projection operations;
 - `cms/` — reusable administration UI;
-- `database/` — schema, migrations, bootstrap, reconciliation;
-- `tests/` — product/security/regression contracts;
-- `config/` — adopter-owned public source/configuration and bounded adapter registry.
+- `database/` — current schema, migrations, bootstrap, reconciliation;
+- `tests/` — product/security/release contracts;
+- `config/` — adopter-owned public source/configuration and bounded adapters.
 
-This path compatibility lets general work developed first inside an adopter repository move upstream as reviewable diffs while personal/site-specific state remains behind configuration or adapters.
+Path compatibility lets general mechanisms developed in a proving-ground repository move upstream as reviewable behavior while site identity/content/private host state remain behind configuration or adapters.
 
 ## AI-native operation contract
 
-AI-native does not mean an LLM owns truth. Automation mutates explicit durable objects under the same constraints as a human operator. A mature operation therefore identifies a typed target, supplies expected revisions/source hashes when replacing state, records provenance, validates authority/consequences, writes canonical state atomically where practical, returns the resulting revision/projection work, and rejects stale replay.
-
-Browser automation is an adapter of last resort, not the CMS architecture.
+AI-native operation does not give an LLM special authority. Automation names a durable target, supplies expected revisions/source hashes when replacing state, records provenance, validates consequences, writes through guarded contracts, runs deterministic projection, and rejects stale replay. Conversation history and generated output do not outrank repository or canonical state.
 
 ## Deployment boundary
 
-The core must remain deployable on ordinary PHP/MySQL hosting without encoding credentials, a host vendor, Git provider, or server implementation. Deployment adapters may perform repository synchronization, unresolved-route interception, cache/compression policy, or other transport work. Repository visibility, licensing, publication, and production deployment remain explicit operator decisions.
+The core remains deployable on ordinary PHP/MySQL hosting without encoding credentials, a host vendor, Git provider, or private filesystem layout. Deployment adapters may perform repository synchronization, unresolved-route interception, cache/compression policy, or host-specific operational provenance. Missing host provenance should be represented as unknown/unobserved—not fabricated evidence that canonical SQL is stale.
+
+Repository visibility, installed-site migration, provider credentials, production deployment, and public release publication remain explicit operator consequences.

@@ -50,72 +50,40 @@ def main() -> None:
 
     license_text = text("LICENSE")
     notice = text("NOTICE")
-    require(license_text, [
-        "Commons Clause",
-        "Apache License, Version 2.0",
-        "right to Sell the Software",
-        "commercial",
-    ], "source-available license")
+    require(license_text, ["Commons Clause", "Apache License, Version 2.0", "right to Sell the Software", "commercial"], "source-available license")
     require(notice, ["AI Native CMS", "attribution"], "attribution notice")
 
-    starter_files = [
-        "index.html",
-        "about.html",
-        "writing.html",
-        "assets/styles.css",
-        "assets/site.js",
-        "templates/article.html",
-    ]
-    for path in starter_files:
-        text(path)
+    starter_files = ["index.html", "about.html", "writing.html", "assets/styles.css", "assets/site.js", "templates/article.html"]
+    for path in starter_files: text(path)
     for path in ["index.html", "about.html", "writing.html"]:
         page = text(path)
         require(page, ["id=\"site-nav\"", "brand-mark", "brand-name", "data-cms-id="], f"starter page {path}")
 
     config = text("config/site.example.php")
-    require(config, [
-        "'article_template' => 'templates/article.html'",
-        "'stylesheet' => 'assets/styles.css'",
-        "'accent' => [",
-        "'contentWidth' => [",
-        "'css'=>'--content-width'",
-    ], "starter configuration")
+    require(config, ["'article_template' => 'templates/article.html'", "'stylesheet' => 'assets/styles.css'", "'accent' => [", "'contentWidth' => [", "'css'=>'--content-width'"], "starter configuration")
 
     setup = text("setup/site.php")
-    require(setup, [
-        "PHP_SAPI==='cli'",
-        "siteSetupUrl",
-        "siteSetupConfig",
-        "siteSetupWrite",
-        "config/site.php already exists",
-        "never reads or writes credentials",
-    ], "safe public site initializer")
+    require(setup, ["PHP_SAPI==='cli'", "siteSetupUrl", "siteSetupConfig", "siteSetupWrite", "config/site.php already exists", "never reads or writes credentials"], "safe public site initializer")
     for forbidden in ["$_POST", "$_GET", "REQUEST_METHOD", "db()", "siteSecret("]:
-        if forbidden in setup:
-            fail(f"site initializer crossed the browser/secret/database boundary: {forbidden}")
+        if forbidden in setup: fail(f"site initializer crossed the browser/secret/database boundary: {forbidden}")
 
     onboarding = text("api/onboarding.php")
     onboarding_api = text("api/cms-onboarding.php")
     onboarding_ui = text("cms/onboarding.php")
     onboarding_js = text("cms/onboarding.js")
     require(onboarding, [
-        "onboardingStarterFiles",
-        "onboardingSiteIdentity",
-        "readinessReport($root)",
-        "brandingState()",
-        "navigationState($root)",
-        "content.authority",
-        "$identity['customized']&&$starterReady",
-        "Repository-owned structure and code change through Git branches/review.",
+        "onboardingStarterFiles", "onboardingSiteIdentity", "readinessReport($root)", "brandingState()", "navigationState($root)", "content.authority", "$identity['customized']&&$starterReady",
+        "Repository-owned code, rendering behavior, and configuration change through Git branches/review.",
+        "Accepted page composition, reusable block definitions, and authored content stay canonical in MySQL.",
+        "'/cms/composer.php'", "Open Composer", "schemaVersion",
     ], "state-derived onboarding model")
     for forbidden in ["INSERT INTO", "UPDATE ", "DELETE FROM", "file_put_contents", "cmsAtomicWrite", "$_POST"]:
-        if forbidden in onboarding:
-            fail(f"onboarding state model became mutating: {forbidden}")
+        if forbidden in onboarding: fail(f"onboarding state model became mutating: {forbidden}")
     require(onboarding_api, ["requireCmsAuth(true)", "$method!=='GET'", "onboardingState($root)"], "read-only authenticated onboarding API")
     require(onboarding_ui, [
         "/cms/onboarding.js",
         "Start with a working site. Make it specific.",
-        "Structure lives in Git. Accepted content lives in the CMS.",
+        "Source configuration lives in Git. Accepted page composition and content live in the CMS.",
         "Keep iterating without losing the source of truth.",
     ], "onboarding workspace")
     require(onboarding_js, ["/api/cms-onboarding.php", "replaceChildren", "progress"], "onboarding browser client")
@@ -124,59 +92,33 @@ def main() -> None:
 
     cms_index = text("cms/index.php")
     cms_js = text("cms/cms.js")
-    require(cms_index, ["/cms/onboarding.php", "onboardingState($root)", "/cms/pages.php"], "state-aware authenticated CMS entry")
+    require(cms_index, ["/cms/onboarding.php", "onboardingState($root)", "/cms/composer.php"], "state-aware authenticated CMS entry")
     require(cms_js, [
         "let target = '/cms/onboarding.php'",
         "await request('/api/cms-onboarding.php')",
         "state.onboarding?.ready",
-        "target = '/cms/pages.php'",
+        "target = '/cms/composer.php'",
         "location.href = target",
     ], "state-aware post-login handoff")
+    if "/api/cms-pages.php" in cms_js: fail("retired Pages client is still present after onboarding handoff")
 
     workspace_paths = [
-        "cms/pages.php", "cms/composer.php", "cms/media.php", "cms/navigation.php", "cms/branding.php",
+        "cms/composer.php", "cms/blocks.php", "cms/media.php", "cms/navigation.php", "cms/branding.php",
         "cms/writing.php", "cms/seo.php", "cms/redirects.php", "cms/readiness.php",
     ]
     for path in workspace_paths:
-        require(text(path), ['href="/cms/onboarding.php"'], f"shared onboarding navigation in {path}")
+        source=text(path);require(source, ['href="/cms/onboarding.php"','href="/cms/composer.php"','href="/cms/blocks.php"'], f"shared unified navigation in {path}")
+        if 'href="/cms/pages.php"' in source: fail(f"retired Pages navigation returned in {path}")
+    require(text('cms/pages.php'), ["header('Location: /cms/composer.php',true,302)"], "Pages compatibility redirect")
 
     repo_ops = text("docs/REPOSITORY-OPERATIONS.md")
     llm = text("docs/LLM-COLLABORATION.md")
     agents = text("AGENTS.md")
-    require(repo_ops, [
-        "Commit to Git",
-        "Keep in canonical MySQL state",
-        "Generated public output",
-        "Branch and pull-request workflow",
-        "SSH pull-to-host",
-        "reviewed artifact/copy",
-        "Database backups and migrations",
-        "Rollback",
-        "Working with an LLM on the repository",
-    ], "repository/hosting operations guide")
-    require(llm, [
-        "The four kinds of state",
-        "Repository-owned state",
-        "Canonical CMS state",
-        "Generated public projection",
-        "Host/provider state",
-        "Interface / design iteration",
-        "Content iteration",
-        "Feature work",
-        "Bug fix",
-        "Schema / migration work",
-        "Release work",
-        "conversation history",
-    ], "LLM collaboration guide")
-    require(agents, [
-        "Source-of-truth order",
-        "Human and agent writers use the same canonical contracts",
-        "Change packets",
-        "Conversation memory is context, not authority",
-    ], "repository agent contract")
+    require(repo_ops, ["Commit to Git", "Keep in canonical MySQL state", "Generated public output", "Branch and pull-request workflow", "SSH pull-to-host", "reviewed artifact/copy", "Database backups and migrations", "Rollback", "Working with an LLM on the repository"], "repository/hosting operations guide")
+    require(llm, ["The four kinds of state", "Repository-owned state", "Canonical CMS state", "Generated public projection", "Host/provider state", "Interface / design iteration", "Content iteration", "Feature work", "Bug fix", "Schema / migration work", "Release work", "conversation history"], "LLM collaboration guide")
+    require(agents, ["Source-of-truth order", "Human and agent writers use the same canonical contracts", "Change packets", "Conversation memory is context, not authority"], "repository agent contract")
 
-    print("PASS: public licensed rc3 onboarding and governance contract")
+    print("PASS: public licensed rc3 onboarding and unified page-authority governance contract")
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

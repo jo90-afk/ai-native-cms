@@ -26,6 +26,8 @@ This file distinguishes the frozen `0.1.0-rc.3` release baseline from post-relea
 | Retired separate Pages mutation surface | `/cms/pages.php` compatibility redirect | compatibility UX | technically satisfied — M-016 | One browser page-authoring concept; old API/client are removed, route remains as authenticated redirect |
 | Embedded Block Composer | Page Composer + `cms/block-composer-embed.js` | core UX | technically satisfied — M-016 | Block design can be summoned in context without changing preset snapshot semantics |
 | Incremental repository-preset import | `blockPresetBootstrap` + Page Composer | compatibility core | technically satisfied — M-016 | Import creates only missing converted presets using canonical keys and never overwrites existing saved presets |
+| Save selected block as new preset | Page Composer + `blockPresetSaveAsNew` | core UX/authority | candidate — M-017 | Selected typed instance values can create a new reusable recipe without mutating the source preset or page placement |
+| Typed save-as-new snapshot mapping | `compositionTypedSnapshotValues` | core authority | candidate — M-017 | Browser submits bounded copy/media/link values only; unknown leaf identity or indexed-field drift fails closed |
 | Media library | media APIs/UI | core | released | Canonical metadata + adopter-owned bytes; bounded validated uploads |
 | Page hierarchy, navigation, branding | respective stores/APIs/UI | core | released | Trusted shells, parent validation, safe navigation, bounded branding tokens |
 | Database bootstrap | `database/bootstrap*.php` | core | released | CLI-only schema + first owner; no content seed, credential overwrite, or implicit migration |
@@ -62,6 +64,16 @@ Accepted evidence:
 
 Technical acceptance does not authorize merging the stacked PRs, migrating an installed site, deploying to production, or publishing a new release.
 
+## M-017 — save edited page block as new preset
+
+The current production proving ground added this behavior in `judeoneill.com` PR #61. The portable candidate keeps the user capability but uses the public CMS's stronger typed-preset boundary: Page Composer submits rich-copy leaves, image path/alt pairs, and link href/text pairs rather than any structural block HTML.
+
+The server verifies the selected instance against current canonical/source-derived page state, maps the browser snapshot through the source preset's variable schema, and then derives a new preset. Primitive origins hydrate a fresh governed primitive definition. Converted origins apply typed values to the original governed converted template. Both paths create a new key; neither path mutates the source preset or the selected page instance.
+
+Unknown/stale browser leaf IDs and out-of-range media/link indices fail closed. There is no schema change: `block_presets` remains the sole reusable-block authority under schema v9.
+
+Acceptance requires the new independent static contract plus cumulative validation and MySQL evidence for primitive/converted cloning, typed edit preservation, source preset immutability, page-instance immutability, tamper rejection, deterministic packaging, and frozen rc.3 compatibility.
+
 ## Next release frontier
 
-Before a schema-v9 public release line is cut, compare the reusable core against the current production proving ground again and extract any additional portable parity gaps as independently verifiable milestones. Then integrate M-015 followed by M-016 in dependency order, rerun clean installation/migration/rebuild/release rehearsal on the integrated line, and only then prepare new release metadata. Public publication and production adoption remain explicit operator boundaries.
+After M-017 verification, continue comparing the reusable core against the current production proving ground after PR #61 and extract additional portable gaps as separate milestones. The M-015 → M-016 → M-017 stack remains unmerged while technical extraction continues. Public publication and production adoption remain explicit operator boundaries.

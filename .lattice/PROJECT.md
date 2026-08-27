@@ -32,6 +32,7 @@ Routine reversible implementation, tests, documentation, parity refreshes, relea
 - Page Composer is the sole browser mutation boundary for public page copy and page composition after schema v9.
 - A repository page may be adopted into canonical composition only from a source-state hash; stale first adoption fails closed.
 - Rebuild may preserve canonical `page_blocks`; an intentional live Composer save synchronizes its typed rendered leaves into canonical `page_blocks` atomically with composition state.
+- Once a repository block is adopted into composition, editable leaf identity is namespaced to the stable composition instance while the accepted value is preserved.
 - Repository source may propose canonical content but may not silently overwrite newer accepted database state.
 - Database bootstrap owns schema structure and the first persisted owner only; migrations remain explicit CLI operations.
 - Browser onboarding/readiness/maintenance may not migrate, deploy, publish, or expose secrets.
@@ -60,26 +61,35 @@ M-015 remains independently replaceable because its PR is not collapsed into M-0
 
 ## M-016 — unified live Page Composer
 
-**Active candidate on `feat/live-page-composer-port`; stacked on M-015 and not merged, released, or deployed.**
+**Technically satisfied on stacked draft PR #21; not merged, released, or deployed.**
 
 Objective: port the production proving-ground consolidation that makes one live Page Composer the sole browser page-authoring workflow while preserving the public CMS’s typed preset authority, optimistic hashes, and source/repository boundary.
 
-Acceptance conditions:
+Accepted implementation:
 
 - public pages render in a same-origin sandboxed iframe with site scripts disabled;
 - direct rich-text edits map to typed preset variables rather than browser-submitted structural HTML;
 - media, link, and text fields remain typed and bounded; first-party media selection is shared with Block Composer;
 - block add/duplicate/move/remove operations submit only preset identities, instance identities, and typed values; server rendering remains structural authority;
-- repository pages can be adopted into canonical composition without losing prior accepted `page_blocks` edits;
+- repository pages can be adopted into canonical composition without losing prior accepted `page_blocks` values;
 - first adoption is guarded by both composition hash (`none`) and a canonical source-state hash;
 - live typed saves synchronize composition snapshots and canonical editable leaves; later rebuilds preserve those accepted values;
+- adopted editable IDs move into the stable composition-instance namespace rather than retaining repository-source identity;
 - Block Composer can open inside Page Composer and saved preset edits remain future-placement-only;
-- `/cms/pages.php` becomes authenticated compatibility redirect only; `api/cms-pages.php` and its browser client are removed;
+- `/cms/pages.php` is an authenticated compatibility redirect only; `api/cms-pages.php` and its browser mutation client are removed;
 - onboarding and CMS navigation teach Blocks + Composer rather than competing Pages/Composer concepts;
-- schema-v8 read/reconcile compatibility from M-015 remains intact;
-- static contracts, PHP/JS syntax, deterministic package build, clean rc.3 rehearsal, v9 migration rehearsal, and live-state convergence rehearsal are green.
+- Page Composer can import missing repository-derived presets without overwriting existing saved presets;
+- schema-v8 read/reconcile compatibility from M-015 remains intact.
 
-Current implementation evidence:
+Accepted verification evidence:
+
+- GitHub Actions validation run **#291** passed every cumulative static/security contract, behavior suite, PHP/JavaScript/Python syntax check, and deterministic release-candidate build;
+- MySQL release rehearsal run **#61** passed the frozen rc.3 clean-site rehearsal before exercising post-release schema work;
+- the same rehearsal passed schema `8→9` migration, archive creation, composition-reference rewrite, and migration idempotence;
+- the M-016 convergence proof preserved a pre-adoption canonical copy value, rejected a stale source hash, adopted into namespaced canonical leaf identity, committed a live typed copy edit into composition state + canonical `page_blocks` + public projection, and preserved that edit through a later full rebuild;
+- evidence artifact: `ai-native-cms-release-rehearsal-evidence` from run #61.
+
+Primary implementation:
 
 - typed visible-state hydration: `api/composition-values.php`;
 - live save/source-adoption convergence: `api/composition-store.php`;
@@ -89,4 +99,8 @@ Current implementation evidence:
 - Pages compatibility redirect and retired mutation API/client;
 - updated onboarding/authority contracts and MySQL rehearsal coverage.
 
-Independent verification is required before M-016 is accepted or its stacked draft PR is promoted from technical candidate.
+M-016 remains independently replaceable as a stacked PR above M-015. Its technical acceptance does not authorize merging, migration of an installed site, deployment, or release publication.
+
+## Next frontier
+
+Keep the frozen rc.3 public artifact unchanged. Before cutting a schema-v9 public release line, recompare the reusable core against the current production proving ground, resolve any additional portable parity gaps as independently verifiable milestones, then integrate the M-015 → M-016 stack in dependency order and run a fresh release-line rehearsal. Public release publication and production adoption remain explicit operator boundaries.

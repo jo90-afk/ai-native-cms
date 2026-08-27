@@ -1,0 +1,4 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/audience.php';
+secureCmsHeaders();requireCmsAuth(false);audienceRequireSchema();$key=audienceNormalizeKey((string)($_GET['list']??''));$status=(string)($_GET['status']??'confirmed');if(!in_array($status,['all','pending','confirmed','unsubscribed'],true))$status='confirmed';$rows=audienceSubscriptions($key,$status,1000);header('Content-Type: text/csv; charset=utf-8');header('Content-Disposition: attachment; filename="audience-'.$key.'-'.$status.'.csv"');$out=fopen('php://output','wb');fputcsv($out,['email','status','requested_at','confirmed_at','unsubscribed_at','source']);foreach($rows as $row)fputcsv($out,[$row['email'],$row['status'],$row['requestedAt'],$row['confirmedAt']??'',$row['unsubscribedAt']??'',$row['source']]);fclose($out);exit;

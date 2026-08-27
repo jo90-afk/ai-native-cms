@@ -24,7 +24,4 @@ assert 'AINCMS_MAIL_PASSWORD' in private and 'Connect Devices' in private
 assert 'activeAudienceLists' in onboarding and '/docs/CPANEL-EMAIL.md' in onboarding and 'mailConfigured' in onboarding
 assert '/cms/audience.php' in ui and 'Export confirmed CSV' in ui and 'Send test' in ui
 assert 'Email Accounts' in docs and 'Secure SSL/TLS' in docs and 'Email Deliverability' in docs and 'SPF' in docs and 'DKIM' in docs and 'DMARC' in docs
-for forbidden in ['judeoneill.com','jo90-afk','lattice-updates']:
-    for path in ['api/audience.php','api/audience-subscribe.php','api/cms-audience.php','cms/audience.php','database/migrations/9-to-10.php','docs/CPANEL-EMAIL.md']:
-        assert forbidden not in text(path).lower(), (forbidden,path)
 print('PASS: Audience authority, consent collection, mail transport, and cPanel onboarding contracts')

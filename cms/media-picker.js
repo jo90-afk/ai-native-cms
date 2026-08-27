@@ -1,0 +1,10 @@
+(()=>{
+'use strict';
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+let dialog=null;
+function close(){dialog?.remove();dialog=null;}
+function open({items=[],value='',onSelect}){close();dialog=document.createElement('div');dialog.className='media-picker-backdrop';dialog.innerHTML=`<section class="media-picker" role="dialog" aria-modal="true" aria-label="Choose image"><header><div><strong>Choose image</strong><p>First-party media only</p></div><button type="button" data-close aria-label="Close">×</button></header><input type="search" placeholder="Filter media" data-filter><div class="media-picker-grid" data-grid></div></section>`;document.body.append(dialog);const grid=dialog.querySelector('[data-grid]'),filter=dialog.querySelector('[data-filter]');
+function render(){const term=(filter.value||'').toLowerCase();const rows=items.filter(x=>`${x.title||''} ${x.path||''} ${x.alt||''}`.toLowerCase().includes(term));grid.innerHTML=`<button type="button" class="media-picker-item ${value===''?'selected':''}" data-path=""><span class="media-picker-none">No image</span><strong>None</strong></button>`+rows.map(x=>`<button type="button" class="media-picker-item ${x.path===value?'selected':''}" data-path="${esc(x.path)}"><img src="/${esc(x.path).replace(/^\/+/, '')}" alt=""><strong>${esc(x.title||x.path)}</strong><span>${x.width&&x.height?`${x.width}×${x.height}`:''}</span></button>`).join('');grid.querySelectorAll('[data-path]').forEach(btn=>btn.addEventListener('click',()=>{const path=btn.dataset.path||'';const item=items.find(x=>x.path===path)||null;onSelect?.(item,path);close();}));}
+filter.addEventListener('input',render);dialog.querySelector('[data-close]').addEventListener('click',close);dialog.addEventListener('click',e=>{if(e.target===dialog)close();});document.addEventListener('keydown',function key(e){if(e.key==='Escape'){document.removeEventListener('keydown',key);close();}});render();filter.focus();}
+window.AINCMSMediaPicker={open,close};
+})();

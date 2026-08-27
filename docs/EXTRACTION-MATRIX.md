@@ -1,106 +1,85 @@
 # Extraction and release matrix
 
-This file distinguishes the frozen `0.1.0-rc.3` public release from development integrated to `main` and later governed milestones.
+This file distinguishes the frozen published `0.1.0-rc.3` artifact from integrated development and the current `0.1.0-rc.4` release-preparation milestone.
 
 | Capability | Public destination | Classification | Status | Product rule |
 | --- | --- | --- | --- | --- |
-| MySQL transport and secret loading | `api/database.php` | core | released | Generic `AINCMS_*` configuration; secrets stay outside public root |
-| HTTPS/origin/session/auth/CSRF/rate limits/audit | `api/runtime.php` | core | released | Fail closed in production |
-| Published release schema | `database/schema.sql` at rc.3 | core | released — rc.3 / v8 | Frozen package remains schema v8 and is not redefined by development `main` |
-| Explicit schema upgrades | `database/migrations/` | compatibility core | v7→8 released; v8→9 integrated; v9→10 candidate M-019 | Versioned CLI migrations; bootstrap repair/browser requests are never migration |
-| Repository page/document registry | `config/site.php` | adopter config | released | Repository pages remain bounded source-lineage entries even when adopted into canonical composition |
-| Canonical content reconciliation | content authority/sync + CLI reconcile | core | released | Three-way source/canonical reconciliation; browser never promotes repository source silently |
-| Deterministic public projection | rebuild/projector pipeline | core + adapter hooks | released; clean routes integrated M-018 | Accepted state projects deterministically; anonymous page delivery stays static-first |
-| Posts/drafts/revisions/publishing | writing store/API/UI | core | released | Canonical SQL, bounded Markdown, static projection, slug-history redirects |
-| SEO controls and site-wide quality | SEO APIs/UI + audit/projection | core | released | Canonical overrides; same-origin canonicals; deterministic projection |
-| Canonical redirects + static runtime | redirect APIs/UI + `__redirect*` | core | released | Graph safety in SQL; anonymous routing remains database-free |
-| Governed saved block presets | schema-v9 `block_presets` + renderer | core | integrated — M-015 / PR #20 | Browser never submits arbitrary structural HTML/CSS |
-| Preset instance composition | composition store | core | integrated — M-015 / PR #20 | Stable preset/instance identity with independent typed values |
-| Standalone Block Composer | `cms/blocks.php` + API/client | core UX | integrated — M-015 / PR #20 | Governed preset design; in-use presets cannot be deleted |
-| Shared thumbnail media picker | `cms/media-picker.*` | core UX | integrated — M-015 / PR #20 | First-party media catalog shared across composition surfaces |
-| Unified live Page Composer | `cms/composer.php`, typed composition APIs | core UX | integrated — M-016 / PR #21 | Public iframe is interaction state; server remains structural authority |
-| Source-derived page adoption/convergence | composition store + Page Composer | compatibility/core | integrated — M-016 / PR #21 | Accepted copy survives adoption/rebuild; stale first adoption fails closed |
-| Retired separate Pages mutation surface | `/cms/pages.php` compatibility redirect | compatibility UX | integrated — M-016 / PR #21 | One browser page-authoring concept |
-| Embedded Block Composer + incremental preset import | Page Composer | core/compatibility UX | integrated — M-016 / PR #21 | In-context block design without overwriting existing presets |
-| Save selected block as new preset | Page Composer + typed derivation | core UX/authority | integrated — M-017 / PR #22 | New recipe from typed instance values without mutating source/page placement |
-| Clean managed-page public routes | `api/page-routes.php`, `api/page-projection.php` | projection core | integrated — M-018 / PR #23 | Stable internal page keys project to clean `/slug/` routes; only managed pages participate |
-| Conditional legacy-route canonicalization | deployment adapters | adapter | integrated — M-018 / PR #23 | Redirect `*.html` only when the matching clean projection exists |
-| Route-first Composer presentation | Page Composer | core UX | integrated — M-018 / PR #23 | Clean-route adopters see/enter slugs while API authority remains stable `*.html` keys; feature-off adopters retain filename UI |
-| Media library | media APIs/UI | core | released | Canonical metadata + adopter-owned bytes; bounded validated uploads |
-| Page hierarchy, navigation, branding | respective stores/APIs/UI | core | released; clean-route aware after M-018 | Trusted shells, parent validation, safe navigation, bounded branding tokens |
-| Database bootstrap | `database/bootstrap*.php` | core | released | CLI-only schema + first owner; no content seed, credential overwrite, or implicit migration |
-| Production readiness | readiness API/CLI/UI | core + adapter checks | released | Read-only actionable evidence; never deploys/migrates/publishes/exposes secrets |
-| Starter site, onboarding, repo/hosting ops, LLM governance | root/config/docs/CMS | product + governance | released; evolving | Adopters can initialize, operate, deploy, and collaborate without bypassing authority boundaries |
-| Audience list authority | `audience_lists` + `audience_subscriptions` | core canonical state | implementation candidate — M-019 / PR #24 | Generic lists/memberships are SQL authority; latent legacy subscriber state migrates into disabled generic lists instead of a parallel store |
-| Audience CMS + CSV | `/cms/audience.php`, Audience API/export | core UX | implementation candidate — M-019 / PR #24 | Authenticated list management, bounded inspection/export, resend/unsubscribe, no token hashes/internal IDs/bulk sends |
-| Governed Signup block | generated Audience `block_presets` entries | core composition UX | implementation candidate — M-019 / PR #24 | Server owns fixed form/list structure; Page Composer places the generated preset |
-| Public double-opt-in collection | `/api/audience-subscribe.php` | core public interaction | implementation candidate — M-019 / PR #24 | Non-enumerating, same-origin/rate-limited, scanner-safe GET review + explicit POST confirmation |
-| Outgoing transactional mail | `api/mail-transport.php` | provider adapter | implementation candidate — M-019 / PR #24 | Replaceable SMTP/mail/log transport; private credentials never become Audience authority or browser-visible state |
-| cPanel email onboarding | `docs/CPANEL-EMAIL.md`, private-config example, onboarding/Audience UI | provider documentation/UX | implementation candidate — M-019 / PR #24 | Use exact Connect Devices secure settings, explicit test send, Email Deliverability SPF/DKIM/DMARC review |
-| Deterministic release package | release metadata + builder | release engineering | released — rc.3 | Published tag remains tied to its released SHA; development `main` does not redefine it |
-| License and attribution | license files | distribution governance | released — rc.3 | Apache 2.0 + Commons Clause v1.0; source-available, not OSI open source |
-| Site-specific themes/content/integrations | adopter repository | site-only | excluded | Reusable mechanisms may upstream; identity/authored semantics do not |
+| MySQL transport + private secret loading | `api/database.php` | core | released | Generic `AINCMS_*`; secrets stay outside public root |
+| Auth/origin/CSRF/session/rate limits/audit | `api/runtime.php` | core | released | Fail closed in production |
+| Published predecessor schema | rc.3 `database/schema.sql` | compatibility truth | frozen — schema 8 | Tag/artifact remain unchanged and are the rc.4 upgrade fixture |
+| Current fresh-install schema | `database/schema.sql` | core | rc.4 candidate — schema 10 | Fresh rc.4 installs current authority directly |
+| Explicit upgrades | `database/migrations/` | compatibility core | rc.4 candidate — 7→8→9→10 | Bootstrap repair/browser requests are never migration |
+| Canonical reconciliation | content authority/sync + CLI | core | released/evolved | Three-way source/canonical reconciliation; browser never silently promotes repository source |
+| Reusable block presets | schema-9+ `block_presets` | core | integrated M-015 | Browser never submits arbitrary structural HTML/CSS |
+| Page Composer + source adoption | composition store/CMS | core UX/authority | integrated M-016 | Typed/server-owned structure; stale first adoption fails closed |
+| Save edited block as new preset | Page Composer | core UX | integrated M-017 | New independent recipe without mutating source/page instance |
+| Clean managed routes | page route/projection core | projection core | integrated M-018 | Stable internal keys project to reader-facing `/slug/` routes |
+| Canonical redirects + static router | redirect APIs + `__redirect*` | core | released | Graph safety in SQL; anonymous routing database-free |
+| Audience lists/subscriptions | schema-10 tables | core canonical state | integrated M-019; rc.4 candidate | Generic SQL authority; migrated legacy lists start disabled |
+| Audience CMS + CSV | `/cms/audience.php` + APIs | core UX | integrated M-019; rc.4 candidate | Bounded operations; no token hashes/internal IDs/bulk sending |
+| Governed Signup block | generated Audience preset | composition UX | integrated M-019; rc.4 candidate | Server owns form/list structure |
+| Public double opt-in | `/api/audience-subscribe.php` | public core | integrated M-019; rc.4 candidate | Scanner-safe GET review + explicit POST confirmation |
+| Transactional mail | `api/mail-transport.php` | provider adapter | integrated M-019; rc.4 candidate | SMTP/mail/log replaceable; credentials remain private |
+| cPanel mail onboarding | docs/private-config/onboarding | provider docs/UX | integrated M-019; rc.4 candidate | Exact Connect Devices settings + explicit test + deliverability review |
+| Deterministic public discovery | `api/discovery-projection.php` | projection core | M-020 candidate | Derived only from indexable same-site public HTML after clean routes |
+| Compact LLM discovery | `api/llms-projection.php` | projection core | M-020 candidate | `llms.txt` routes to public state; optional expanded context; private state excluded |
+| Public discovery relation | projected public HTML | projection metadata | M-020 candidate | Idempotent `rel="describedby"` to `/llms.txt` |
+| Deterministic release package | release metadata + builder | release engineering | rc.4 candidate | Exact source provenance, reproducible ZIP, manifest/SHA256 |
+| Version-driven GitHub publisher | publish workflow | release engineering | M-020 candidate | Exact version/tag/notes/assets; existing tag never silently repointed |
+| License and attribution | license files | distribution governance | unchanged | Apache 2.0 + Commons Clause v1.0; source-available |
+| Site identity/content/private host mechanics | adopter/proving-ground repo | site-only/adapter | excluded | Reusable mechanism may upstream; identity/private operations do not |
 
-## Frozen public release
+## Frozen predecessor
 
-`0.1.0-rc.3` remains the published schema-v8 release. Its tag, release metadata, installation contract, package provenance, and release notes are not rewritten by later development.
-
-Development `main` can contain merged post-release capabilities without implying that an installed rc.3 site has migrated or that a schema-v9/v10 public release exists.
+`0.1.0-rc.3` remains the published schema-v8 release. Its tag, package, notes, schema, and provenance are historical truth. Rc.4 uses the actual `v0.1.0-rc.3:database/schema.sql` file in release rehearsal to prove the supported upgrade rather than reconstructing v8 from current source.
 
 ## Integrated post-release milestones
 
-### M-015 — governed saved-block composition
+- **M-015 / PR #20** — schema-v9 governed presets, Block Composer, typed composition.
+- **M-016 / PR #21** — unified live Page Composer, source adoption/convergence, retired separate Pages mutation concept.
+- **M-017 / PR #22** — save edited instance as a new independent preset.
+- **M-018 / PR #23** — clean managed public routes and conditional legacy-route adapter behavior.
+- **M-019 / PR #24** — schema-v10 Audience authority, double opt-in, CMS operations/export, transactional mail boundary, cPanel onboarding; merged to development `main` as `53ebe3960e87a4f7732392a1bf2689569bc31412` after exact-head validate #377 and release-rehearsal #91.
 
-PR #20 merged on 2026-08-27 after cumulative validation #246 and MySQL release rehearsal #57. It introduced the explicit v8→v9 migration, canonical `block_presets`, governed primitive rendering, Block Composer, typed preset-instance composition, shared media picker, and schema-v8 read-compatibility seam.
+None of those repository integrations by themselves authorize installed-site migration, provider credentials, public activation, deployment, or a new public release.
 
-### M-016 — unified live Page Composer
+## M-020 — reusable discovery parity + rc.4
 
-PR #21 merged after validation #291 and release rehearsal #61. It consolidated page copy/composition, added source-derived adoption/convergence rules, retired the competing Pages mutation surface, embedded Block Composer, and preserved typed/server-owned structure.
+PR #25 is the bounded release-preparation surface.
 
-### M-017 — save edited page block as new preset
+### Reusable proving-ground extraction
 
-PR #22 merged after validation #311 and release rehearsal #66. It derives a new independent preset from bounded edited typed values while preserving the source preset and selected page composition.
+The last material proving-ground reusable delta was merged PR #68: deterministic LLM-oriented discovery. The public-core implementation deliberately generalizes the mechanism instead of copying site identity/taxonomy:
 
-### M-018 — clean managed-page routes
+- discovery starts from indexable same-site **public HTML** and canonical URLs;
+- legacy and clean-route files collapse onto the same public canonical;
+- `site-index.json`, `sitemap.xml`, and `sitemap.txt` are deterministic projections;
+- compact `llms.txt` is generated from that public index;
+- an optional existing `llms-full.txt` may retain an expanded public-context body below the synchronized compact index;
+- public HTML receives one idempotent `rel="describedby"` relation;
+- CMS state, subscriber data, credentials, drafts, private APIs, and host-only operational markers are excluded.
 
-PR #23 merged to development `main` as `d0e4edadc4ea367c2865b3f91355ffe22ee57ffb` after exact-final-head validation #351 and release rehearsal #80 passed.
+Proving-ground PR #67 is classified as host-specific implementation at the marker/path layer. Its reusable rule is documented: failure to observe deployment provenance is an unknown state, not evidence that canonical SQL is stale.
 
-M-018 keeps canonical internal managed keys such as `about.html` while projecting `/about/`, scopes projection to the authoritative managed-page set, rewrites managed references/discovery metadata, rebases relocated HTML references, rejects route collisions, and leaves provider request canonicalization in adapters. Runtime URLs created by JavaScript remain a page-implementation responsibility and must be root-relative/base-aware when relocation is possible.
+### Fresh parity result
 
-The Page Composer route presentation follows the same feature flag: new clean-route adopters use slugs while configurations that omit/disable the setting retain established filename behavior.
+A fresh proving-ground commit sweep on 2026-08-27 found **no commits after merged PR #68 (`e1b1d5eb99edd3da4f909ada19def9ab6b7bc12d`)**. Therefore M-020 has no unresolved later proving-ground reusable-core delta at this handoff stage.
 
-Repository integration still does not imply installed-site adoption, production deployment, or release publication.
+### Rc.4 release contract
 
-## M-019 — Audience lists and mail-provider onboarding
+Rc.4 is `0.1.0-rc.4`, schema 10, tag `v0.1.0-rc.4`.
 
-PR #24 is the implementation candidate for the generic Audience capability previously absent from the public core.
+Fresh installation bootstraps schema 10. Upgrade rehearsal resets the database to the exact published rc.3 schema-v8 tag, then proves 8→9 composition conversion and 9→10 Audience/legacy-preservation/double-opt-in/mail behavior. The package includes all historical migrations 7→8→9→10.
 
-### Canonical promotion, not parallel state
+The publisher resolves version/tag/release-note/asset names dynamically. The release-preparation PR merge is intentionally the Principal publication boundary because release metadata reaching `main` triggers the publisher.
 
-The schema-v9→v10 migration creates `audience_lists` and `audience_subscriptions`. If the earlier latent `subscribers` primitive contains data, the migration validates and copies each list/membership into Audience authority, creates imported list definitions as **disabled**, and archives the old table as `subscribers_legacy_archive`. This preserves earlier state without silently opening a public collection surface or maintaining two writable authorities.
+## Assurance boundary
 
-### Consent collection
+M-020 is ready only when the **exact final PR #25 head** has:
 
-The generic endpoint accepts a list key and email through a same-site/rate-limited POST, returns non-enumerating success semantics, stores confirmation token hashes only, throttles resend, expires pending confirmations, and separates GET review from explicit POST confirmation so link scanners cannot create consent.
+1. cumulative `validate` green, including public sanitization, discovery, Audience, schema evolution, behavior/syntax, and reproducible candidate build;
+2. `release-rehearsal` green, including clean schema-10 package install plus the actual published rc.3 upgrade chain;
+3. no unresolved review thread;
+4. no unresolved proving-ground reusable-core delta.
 
-Unsubscribed rows remain suppression state. A later explicit new signup may begin a fresh pending double-opt-in cycle rather than silently reactivating membership.
-
-### CMS composition and operations
-
-Audience list saves generate/refresh a trusted Signup block preset in the **Audience** category. Page Composer places the preset while server code owns structural form HTML and fixed list identity.
-
-The Audience CMS provides list settings/status, membership counts and bounded inspection, pending resend, operator unsubscribe, confirmed CSV export, safe mail-configuration status, explicit test send, and handoffs to Page Composer/provider documentation.
-
-### Provider boundary
-
-Transactional delivery supports authenticated SMTP with verified encryption, deliberate host-local PHP `mail`, and development/CI log transport. Provider credentials are read only from private `AINCMS_MAIL_*` runtime configuration and are never returned by mail status.
-
-The cPanel path documents **Email Accounts → Connect Devices → Secure SSL/TLS Settings (Recommended)**, exact provider hostname/port/security values, CMS test sending, and **Email Deliverability** review for SPF/DKIM/DMARC.
-
-### Assurance
-
-The exact final PR head must pass the cumulative `validate` workflow and the release rehearsal containing all three paths: frozen rc.3 clean installation, schema-v9 composition upgrade, and schema-v10 Audience/legacy-preservation/double-opt-in/fake-SMTP rehearsal. Passing earlier candidate heads remains evidence but does not replace exact-final-head verification.
-
-## Next release frontier
-
-If PR #24 reaches green exact-final-head Quality/Assurance, it is ready for the Principal pre-merge handoff. Integration still does not authorize installed-site migration, production provider credentials, enabling public collection, deployment, campaign/bulk mail, or public release publication.
+Technical satisfaction authorizes only the pre-publication candidate. Merge/publication, installed-site migrations, production credentials, public collection activation, and deployment remain explicit Principal/operator consequences.

@@ -3,9 +3,9 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Published release baseline: `0.1.0-rc.3` (schema v8, frozen artifact)
-Current development baseline: `main` after merged M-015 → M-018
-Working branch: `plan/audience-lists-cpanel-mail`
-Active milestone: M-019 — Audience lists, collection, and mail-provider onboarding
+Current development baseline: `main` through merged M-019 (`53ebe3960e87a4f7732392a1bf2689569bc31412`)
+Working branch: `release/0.1.0-rc.4`
+Active milestone: M-020 — `0.1.0-rc.4` release-preparation candidate
 Runtime contract: `lattice-app-works-platform-agnostic` 0.1.6
 Principal alias: `Repository Owner`
 Updated: **2026-08-27 (America/New_York)**
@@ -14,94 +14,88 @@ Updated: **2026-08-27 (America/New_York)**
 
 Maintain a site-neutral AI-native CMS with canonical SQL authority, repository-owned application behavior, deterministic/static public projection where practical, explicit migrations, bounded provider adapters, friendly onboarding, reversible repository operations, and governed human/LLM collaboration.
 
-Routine reversible implementation, tests, documentation, parity refreshes, release-candidate preparation, and release assurance are delegated. Production deployment/adoption, credentials, public release publication, private-data import, bulk messaging, and destructive data actions remain explicit operator/Principal boundaries.
+Routine reversible implementation, tests, documentation, parity refreshes, release-candidate preparation, and release assurance are delegated. Production deployment/adoption, credentials, public release publication, private-data import, bulk messaging, destructive data actions, and any merge that directly triggers public release publication remain explicit operator/Principal boundaries.
 
-## Frozen release truth
+## Frozen predecessor truth
 
-`0.1.0-rc.3` remains the published schema-v8 artifact. Later merged development does not redefine its tag, package, installation contract, or provenance. A later public release requires its own release decision and rehearsal.
+`0.1.0-rc.3` remains the published schema-v8 artifact. M-020 does not redefine its tag, package, schema, installation contract, notes, or provenance. Rc.4 release rehearsal reads the actual `v0.1.0-rc.3:database/schema.sql` file as the supported upgrade origin.
 
-## Current development truth
+## Integrated development truth
 
-M-015 through M-018 are integrated to development `main`.
+M-015 through M-019 are integrated to development `main`:
 
 - M-015 / PR #20 — schema-v9 governed saved-block composition;
 - M-016 / PR #21 — unified live Page Composer;
 - M-017 / PR #22 — save edited page block as a new independent preset;
-- M-018 / PR #23 — clean managed public routes, merged as `d0e4edadc4ea367c2865b3f91355ffe22ee57ffb` after exact-head validate #351 and release-rehearsal #80 passed.
+- M-018 / PR #23 — clean managed public routes;
+- M-019 / PR #24 — schema-v10 Audience authority, governed double opt-in, authenticated Audience CMS, transactional mail adapters, and cPanel onboarding; merged as `53ebe3960e87a4f7732392a1bf2689569bc31412` after exact-head validate #377 and release-rehearsal #91.
 
-Those repository merges do not imply installed-site migration, production deployment, or a new published release.
+Repository integration never implies installed-site migration, production credentials, deployment, public collection activation, or release publication.
 
 ## Durable product truths
 
 - MySQL owns accepted authored and other mutable canonical application state.
 - Git owns code, rendering behavior, schema/migrations, tests, docs, adapters, and non-secret adopter configuration.
-- Generated public files are outputs, not reverse source authority.
+- Generated public files are replaceable projections, not reverse source authority.
+- Anonymous delivery remains static-first/database-free where practical.
 - Human and agent writers converge on guarded mutation contracts.
-- Browser clients never submit arbitrary structural HTML/CSS for governed composition.
+- Browser clients do not submit arbitrary structural HTML/CSS for governed composition.
 - Secrets remain outside canonical SQL, public configuration, generated output, and browser-visible state.
 - Database migrations are explicit CLI operations; bootstrap repair is not migration.
-- Provider-specific transport is an adapter concern and may not become application authority.
-- Before a future release line is cut, a fresh proving-ground comparison and clean rehearsal are required.
+- Provider-specific transport/deployment integration remains adapter state and may not become application authority.
+- Before a release is accepted, exact-head Quality/Assurance and fresh proving-ground parity are required.
 
-## M-019 — Audience lists, collection, and cPanel mail onboarding
+## M-020A — deterministic public/LLM discovery
 
-**Implementation candidate on PR #24. Exact-final-head workflow evidence remains the technical acceptance surface; merge, installed-site migration, deployment, credentials, and release publication remain separate boundaries.**
+The reusable mechanism demonstrated by proving-ground PR #68 has been generalized into public core without importing site identity or authored taxonomy:
 
-The proving ground’s subscriber/admin behavior is treated as evidence, not copy authority. M-019 generalizes the reusable mechanism around an explicit public-core Audience authority.
+- `api/discovery-projection.php` derives `site-index.json`, `sitemap.xml`, and `sitemap.txt` from indexable same-site projected HTML;
+- duplicate legacy and clean-route files collapse on canonical public URLs;
+- discovery runs after managed clean-route materialization;
+- `api/llms-projection.php` emits a compact absolute-link `llms.txt` from the public index;
+- an optional `llms-full.txt` can retain expanded public context beneath a synchronized compact index;
+- public HTML receives one idempotent `rel="describedby"` link;
+- private CMS state, Audience member data, credentials, drafts, private APIs, and host-only operational markers are excluded;
+- executable regression proves shape, deduplication, privacy exclusions, absolute URLs, synchronization, and idempotence.
 
-### Canonical authority and migration
+Proving-ground PR #67 remains host-specific at its private marker/path implementation layer. Its reusable principle is preserved in architecture/deployment guidance: unavailable operational provenance is unknown, not proof that canonical SQL is stale.
 
-M-019 advances development schema v9 → v10 with explicit CLI migration.
+## M-020B — rc.4 / schema v10 release line
 
-- `audience_lists` owns stable list identity, operator/public labels, purpose/confirmation copy, and active/disabled state.
-- `audience_subscriptions` owns normalized list membership, pending/confirmed/unsubscribed state, consent timestamps, resend state, hashed confirmation tokens, and bounded source provenance.
-- the latent legacy `subscribers` primitive is copied into the generic authority and renamed to `subscribers_legacy_archive`; imported lists start disabled so historical membership is preserved without silently activating a new public collection surface.
-- `mail_outbox` remains a development/log transport rather than campaign or subscriber authority.
+The implementation candidate now defines:
 
-No parallel audience store is introduced.
+- `VERSION` `0.1.0-rc.4`;
+- `release/release.json` schema 10 and tag `v0.1.0-rc.4`;
+- fresh schema 10 containing current `block_presets` and generic Audience authority without retired active `page_block_templates` or `subscribers` tables;
+- explicit packaged migrations 7→8, 8→9, and 9→10;
+- updated README, architecture, installation, release notes, release process, public release contracts, onboarding governance, and bootstrap behavior;
+- a version-driven publication workflow rather than rc.3-specific notes/assets;
+- a clean rc.4 packaged-candidate rehearsal that proves schema-10 bootstrap/readiness/onboarding, generated discovery, canonical mutation, redirect projection, deterministic builds, and paired restore;
+- an upgrade rehearsal that resets the database to the exact published rc.3 schema-v8 tag, proves 8→9 preset/composition conversion, then leaves schema 9 for the existing 9→10 Audience/consent/mail rehearsal.
 
-### CMS and public collection
+## Fresh proving-ground parity
 
-The candidate provides an authenticated **Audience** workspace with list configuration, membership counts/inspection, pending resend, operator unsubscribe, bounded CSV export, transactional-mail status, and explicit test send.
+The proving-ground commit sweep performed during M-020 found no commit after merged PR #68 (`e1b1d5eb99edd3da4f909ada19def9ab6b7bc12d`). There is therefore **no unresolved later reusable-core delta** at this candidate stage.
 
-Each Audience list creates or refreshes a server-generated governed Signup preset in the **Audience** block category. Page Composer can place that preset without browser-submitted structural form HTML.
+## Quality / Assurance status
 
-The generic public collection endpoint:
+Required gates remain authoritative and are not weakened for release promotion. Early M-020 runs correctly exposed rc.3/schema-8 assumptions in onboarding-governance and bootstrap behavior tests; those tests were advanced to current rc.4/schema-10 truth while preserving their underlying security/authority assertions.
 
-1. accepts same-site, rate-limited POST signup requests;
-2. normalizes list/email input and uses a honeypot plus non-enumerating responses;
-3. stores only SHA-256 of cryptographically random confirmation bearer tokens;
-4. enforces a 15-minute resend cooldown and 30-day pending expiry;
-5. lets confirmation-link GET render a noindex review screen but never create consent;
-6. confirms only through explicit POST;
-7. preserves unsubscribed rows as suppression state until a new explicit signup starts another double-opt-in cycle.
+M-020 is technically satisfied only on the exact final PR head when:
 
-### Mail/provider boundary
+1. cumulative `validate` is green through all structural/behavior/syntax/reproducible-build checks;
+2. `release-rehearsal` is green through clean schema-10 install plus published rc.3 8→9→10 upgrade evidence;
+3. no unresolved review thread exists; and
+4. the recorded proving-ground parity result remains current.
 
-`api/mail-transport.php` provides bounded transactional adapters:
+A green candidate is a pre-publication handoff only.
 
-- `smtp` with certificate/peer verification, implicit TLS or STARTTLS, and authenticated delivery;
-- deliberate local PHP `mail` for hosts that choose it;
-- `log` for development/CI unless an explicit private override is configured.
+## Explicit exclusions and consequence boundary
 
-The CMS never stores SMTP credentials in canonical SQL or public config and never returns the password through browser-visible status. The cPanel guide is `docs/CPANEL-EMAIL.md`: use **Email Accounts → Connect Devices → Secure SSL/TLS Settings (Recommended)**, copy the exact provider hostname/port/security values into private `AINCMS_MAIL_*` configuration, send one explicit CMS test message, and inspect **Email Deliverability** for SPF/DKIM/DMARC issues.
+M-020 does not authorize production deployment, installed-site migration, real mail credentials, enabling live collection, private-list import, bulk/campaign messaging, destructive state mutation, or publication of `0.1.0-rc.4`.
 
-Browser onboarding derives only safe mail readiness state and never writes or echoes provider passwords.
-
-### Verification contract
-
-PR #24 must pass on its exact final head:
-
-- the full cumulative `validate` workflow, including public sanitization, all existing contracts/behavior suites, Audience/mail structural checks, pure behavior checks, PHP/JavaScript/Python syntax, and deterministic rc.3 construction;
-- the full `release-rehearsal` workflow, preserving the frozen rc.3 empty-site path, the schema-v9 composition upgrade path, and the new schema-v10 Audience migration/legacy-preservation/double-opt-in/fake-SMTP path;
-- PR review-thread inspection with no unresolved technical findings.
-
-Earlier passing candidate runs are evidence during remediation but do not substitute for exact-final-head assurance.
-
-### Explicit exclusions
-
-M-019 does not authorize campaign composition, bulk sends, CRM/segmentation, tracking pixels, automatic private-list imports, production provider credentials, installed-site migration, deployment, or public release publication.
+Because release metadata reaching `main` triggers the public publisher, **merging PR #25 is itself the Principal publication boundary**. Director execution stops with a green, mergeable PR and exact-head evidence unless the Principal separately authorizes that merge/publication consequence.
 
 ## Next action
 
-Complete exact-final-head Quality/Assurance on PR #24. If green, move the PR to the Principal pre-merge handoff. A repository merge would authorize integration only; installed-site schema migration, enabling real collection, provider credentials, production deployment, and public release publication remain explicit operator/Principal actions.
+Run exact-final-head Quality/Assurance on PR #25, remediate any required failure without weakening the gate, confirm review threads remain clear, then mark the PR ready for Principal publication handoff. Do not merge from Director authority alone.

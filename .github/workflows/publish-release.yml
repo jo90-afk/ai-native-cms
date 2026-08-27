@@ -6,8 +6,8 @@ on:
       - main
     paths:
       - VERSION
-      - release/release.json
-      - release/RELEASE-NOTES-0.1.0-rc.3.md
+      - release/**
+      - database/schema.sql
       - tools/build_release.py
       - .github/workflows/publish-release.yml
   workflow_dispatch:
@@ -31,13 +31,16 @@ jobs:
           meta=json.loads(Path('release/release.json').read_text(encoding='utf-8'))
           version=Path('VERSION').read_text(encoding='utf-8').strip()
           dist=meta.get('distribution',{})
+          notes=Path(f'release/RELEASE-NOTES-{version}.md')
           assert meta.get('version')==version
           assert meta.get('channel')=='public-release-candidate'
           assert dist.get('public') is True
           assert dist.get('tagRequired') is True
           assert dist.get('tag')==f'v{version}'
+          assert notes.is_file()
           print(f"version={version}")
           print(f"tag={dist['tag']}")
+          print(f"notes={notes.as_posix()}")
           PY
 
       - name: Verify public release contract
@@ -73,6 +76,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
           VERSION: ${{ steps.release.outputs.version }}
+          NOTES: ${{ steps.release.outputs.notes }}
         run: |
           if gh release view "$TAG" >/dev/null 2>&1; then
             TAG_SHA="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')"
@@ -83,7 +87,7 @@ jobs:
               dist/*.zip dist/*.manifest.json dist/*.sha256 \
               --target "$GITHUB_SHA" \
               --title "AI Native CMS $VERSION" \
-              --notes-file release/RELEASE-NOTES-0.1.0-rc.3.md \
+              --notes-file "$NOTES" \
               --prerelease
           fi
 
@@ -91,18 +95,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release.outputs.tag }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
           gh release view "$TAG" --json tagName,isPrerelease,assets > /tmp/published-release.json
-          python3 - "$TAG" <<'PY'
+          python3 - "$TAG" "$VERSION" <<'PY'
           import json,sys
           release=json.load(open('/tmp/published-release.json',encoding='utf-8'))
-          assert release.get('tagName')==sys.argv[1]
+          tag,version=sys.argv[1:3]
+          assert release.get('tagName')==tag
           assert release.get('isPrerelease') is True
           names=sorted(asset['name'] for asset in release.get('assets',[]))
-          expected=sorted([
-              'ai-native-cms-0.1.0-rc.3.manifest.json',
-              'ai-native-cms-0.1.0-rc.3.sha256',
-              'ai-native-cms-0.1.0-rc.3.zip',
-          ])
+          base=f'ai-native-cms-{version}'
+          expected=sorted([f'{base}.manifest.json',f'{base}.sha256',f'{base}.zip'])
           assert names==expected,(names,expected)
           PY

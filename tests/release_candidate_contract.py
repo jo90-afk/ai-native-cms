@@ -16,13 +16,13 @@ def main()->None:
     if metadata.get('channel')!='public-release-candidate': fail('rc4 is not marked as a public release candidate')
     distribution=metadata.get('distribution',{})
     if distribution.get('public') is not True or distribution.get('licenseSelected') is not True or distribution.get('tagRequired') is not True or distribution.get('tag')!=f'v{version}': fail('public release candidate distribution/tag state is wrong')
-    license_meta=distribution.get('license',{})
-    expected={'base':'Apache-2.0','condition':'Commons Clause License Condition v1.0','sourceAvailable':True,'osiApproved':False,'attributionRequired':True}
+    license_meta=distribution.get('license',{});expected={'base':'Apache-2.0','condition':'Commons Clause License Condition v1.0','sourceAvailable':True,'osiApproved':False,'attributionRequired':True}
     if any(license_meta.get(k)!=v for k,v in expected.items()): fail('release candidate license metadata is wrong')
     workflow=(ROOT/'.github/workflows/ci.yml').read_text(encoding='utf-8');publisher=(ROOT/'.github/workflows/publish-release.yml').read_text(encoding='utf-8')
     if 'github.event.pull_request.head.sha || github.sha' not in workflow: fail('CI release artifact does not record reviewed source revision')
-    for needle in ['contents: write','gh release create','--prerelease','release/release.json','RELEASE-NOTES-${VERSION}.md']:
+    for needle in ['contents: write','gh release create','--prerelease','release/release.json','RELEASE-NOTES-','steps.release.outputs.version']:
         if needle not in publisher: fail('version-driven public release publisher is missing: '+needle)
+    if '0.1.0-rc.3.manifest.json' in publisher or '--notes-file release/RELEASE-NOTES-0.1.0-rc.3.md' in publisher: fail('publisher still hard-codes rc3 publication assets')
     builder=load_builder();candidates=[p.relative_to(ROOT).as_posix() for p in builder.candidate_files()]
     required={
         'README.md','AGENTS.md','SECURITY.md','VERSION','LICENSE','LICENSE-APACHE-2.0.txt','NOTICE','release/release.json',
@@ -52,9 +52,8 @@ def main()->None:
             if any(name.startswith(root+prefix) for prefix in forbidden_prefixes for name in names): fail('candidate ZIP contains an excluded operational path')
             if root+'config/site.php' in names: fail('candidate ZIP contains adopter-local config/site.php')
             for path in required:
-                if path.startswith('release/'): continue
-                if path in {'SECURITY.md'} or path.startswith('.'): continue
-                if root+path not in names and path in candidates: fail('rc4 candidate omitted '+path)
+                if path.startswith('release/') or path=='SECURITY.md' or path.startswith('.'): continue
+                if path in candidates and root+path not in names: fail('rc4 candidate omitted '+path)
     installation=(ROOT/'docs/INSTALLATION.md').read_text(encoding='utf-8');release_doc=(ROOT/'docs/RELEASE.md').read_text(encoding='utf-8')
     for needle in ['database/migrations/8-to-9.php --apply','database/migrations/9-to-10.php --apply','schema 10','backup','rollback','/cms/onboarding.php']:
         if needle.lower() not in installation.lower(): fail('installation/upgrade documentation is missing: '+needle)

@@ -5,7 +5,7 @@ enforceCmsHttps(false);secureCmsHeaders();
 $root=dirname(__DIR__);
 if(cmsCurrentUser($root)){
     $target='/cms/onboarding.php';
-    try{require_once $root.'/api/onboarding.php';if((bool)(onboardingState($root)['ready']??false))$target='/cms/pages.php';}catch(Throwable $e){}
+    try{require_once $root.'/api/onboarding.php';if((bool)(onboardingState($root)['ready']??false))$target='/cms/composer.php';}catch(Throwable $e){}
     header('Location: '.$target);exit;
 }
 $siteName=(string)siteConfigValue('site','name','Site');

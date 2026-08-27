@@ -1,25 +1,23 @@
 # Release process
 
-AI Native CMS `0.1.0-rc.3` is the first **public release candidate**, schema version 8. Its required Git tag is `v0.1.0-rc.3`.
+AI Native CMS `0.1.0-rc.4` is the current **public release candidate**, schema version 10. Its required Git tag is `v0.1.0-rc.4`. The published `0.1.0-rc.3` tag remains a frozen schema-v8 predecessor and upgrade fixture; rc.4 does not redefine it.
 
-The release is source-available under **Apache License 2.0 subject to Commons Clause License Condition v1.0**. It is not OSI-approved open source. Use, modification, derivative works, attribution-preserving redistribution, and commercial use are permitted subject to the Commons Clause restriction on selling the CMS itself or a product/service whose value derives entirely or substantially from the CMS functionality.
-
-The binding files are `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE`.
+The release is source-available under **Apache License 2.0 subject to Commons Clause License Condition v1.0**. It is not OSI-approved open source. The binding files are `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE`.
 
 ## Release identity
 
-`VERSION` defines the release-candidate version. `release/release.json` defines product/channel/schema/runtime metadata, license state, public-distribution authorization, and the required version tag.
+`VERSION` defines the candidate version. `release/release.json` defines product/channel/schema/runtime metadata, license state, public-distribution authorization, package root, and required version tag.
 
-For rc.3 the contract is:
+For rc.4:
 
-- version: `0.1.0-rc.3`;
+- version: `0.1.0-rc.4`;
 - channel: `public-release-candidate`;
-- schema: 8;
+- schema: 10;
 - public distribution: authorized;
-- tag required: `v0.1.0-rc.3`;
-- license selected: Apache 2.0 + Commons Clause v1.0.
+- required tag: `v0.1.0-rc.4`;
+- license: Apache 2.0 + Commons Clause v1.0.
 
-`tools/build_release.py` refuses a mismatch between `VERSION`, schema, channel, public-distribution state, tag, or license metadata.
+`tools/build_release.py` refuses disagreement between `VERSION`, `database/schema.sql`, release metadata, channel, tag, or license state.
 
 ## Deterministic build
 
@@ -29,21 +27,21 @@ Build from an exact Git revision:
 python3 tools/build_release.py --source-ref <git-sha>
 ```
 
-The builder emits:
+For rc.4 the builder emits:
 
-- `dist/ai-native-cms-0.1.0-rc.3.zip`
-- `dist/ai-native-cms-0.1.0-rc.3.manifest.json`
-- `dist/ai-native-cms-0.1.0-rc.3.sha256`
+- `dist/ai-native-cms-0.1.0-rc.4.zip`
+- `dist/ai-native-cms-0.1.0-rc.4.manifest.json`
+- `dist/ai-native-cms-0.1.0-rc.4.sha256`
 
-Sorted file order, fixed ZIP metadata, deterministic compression, and exact source-ref provenance make repeated builds byte-for-byte comparable.
+Sorted paths, fixed ZIP metadata, deterministic compression, and exact source-ref provenance make repeated builds byte-for-byte comparable.
 
 ## Public package contents
 
-The package contains the reusable CMS/runtime, starter Home/About/Writing site, onboarding, public site initializer, canonical schema/bootstrap/migration/reconciliation/readiness tools, SEO audit/projection support, redirect runtime, deployment-adapter examples, operator documentation, `AGENTS.md`, license/NOTICE files, and release metadata.
+The package contains the reusable CMS/runtime; neutral Home/About/Writing starter; Page Composer and Block Composer; clean-route projection; Audience list/double-opt-in surfaces; transactional mail adapters and cPanel onboarding; deterministic public discovery (`site-index.json`, sitemaps, `llms.txt` projection code); schema-10 bootstrap plus explicit historical migrations; reconciliation/readiness/onboarding; SEO/redirect behavior; deployment-adapter examples; repository/LLM collaboration documentation; and license/release metadata.
 
 It excludes `.git/`, `.github/`, `.lattice/`, tests, release tooling, generated `dist/`, runtime/upload state, adopter-local `config/site.php`, populated INI files, symlinks, credentials, and known proving-ground/adopter residue.
 
-Schema-v8 packages include the explicit `database/migrations/7-to-8.php` migration and the generated-map redirect runtime (`__redirect.php` / `__redirect-map.php`). Reference deployment adapters remain examples, not automatic deployment or CMS authority. See `docs/DEPLOYMENT-ADAPTERS.md`.
+The package preserves `database/migrations/7-to-8.php`, `8-to-9.php`, and `9-to-10.php` so existing installations can advance sequentially while fresh installs bootstrap directly at schema 10.
 
 ## Manifest and checksum
 
@@ -51,41 +49,48 @@ The embedded/external `RELEASE-MANIFEST.json` records product/version/channel, e
 
 ## Required verification
 
-Before creating or replacing the GitHub prerelease:
+Before creating the rc.4 GitHub prerelease:
 
 1. cumulative CI is green on the exact reviewed head;
-2. the clean packaged-candidate rehearsal is green on the exact reviewed head;
+2. the clean packaged rc.4 rehearsal is green on that same head;
 3. two candidate builds are byte-identical;
 4. ZIP SHA256 matches the emitted checksum;
 5. embedded and external manifests are identical and record the exact source revision;
-6. schema is 8 and the explicit migration + redirect runtime are packaged;
-7. `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE` are packaged;
-8. starter/onboarding, repository operations, LLM collaboration, and deployment adapter docs are packaged;
-9. no adopter-local configuration, personal residue, private repository identifiers, or secret material exists in the package;
-10. repository-visible governance files are reviewed for public suitability;
-11. a fresh production proving-ground parity check shows no unresolved reusable core delta.
+6. fresh installation reaches schema 10 and current canonical tables without retired active authorities;
+7. the published rc.3/schema-8 upgrade fixture successfully traverses 8 → 9 → 10, including composition and Audience/mail behavior;
+8. current Composer, clean-route, Audience/mail, discovery, onboarding, repository-operation, LLM-collaboration, and deployment-adapter surfaces are packaged;
+9. `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE` are packaged;
+10. no adopter-local configuration, personal residue, private repository identifiers, secret material, subscriber data, or host-only operational state enters the package;
+11. repository-visible governance files are reviewed for public suitability;
+12. a fresh proving-ground parity check shows no unresolved reusable-core delta.
 
-M-014 completed the clean release rehearsal from the packaged rc.3 candidate with a fresh MySQL 8 database, authenticated onboarding, canonical content/redirect mutation, deterministic projection, governed agent/repository change, and paired filesystem/database restore.
+A green release candidate is evidence and a pre-publication handoff, not publication authorization.
+
+## Proving-ground parity
+
+The proving ground is an implementation source and validation environment, not public-core copy authority. Material reusable mechanisms found there reopen extraction before a new release candidate is accepted. Site-authored content, identity, and host-specific operational details do not.
+
+For M-020, deterministic LLM discovery from the proving ground was generalized into site-neutral core projection. A separate deployment-provenance repair was classified as host-specific at the path/marker level; its reusable principle remains that missing operational provenance must not be falsely represented as canonical SQL staleness.
 
 ## GitHub publication
 
-`.github/workflows/publish-release.yml` is the authorized rc.3 publisher. On the publication merge to `main` it:
+`.github/workflows/publish-release.yml` is version-driven. On an authorized publication merge to `main` it:
 
-1. resolves and validates the public release metadata;
-2. runs the public/release-candidate contracts;
+1. resolves `VERSION`, `release/release.json`, and `release/RELEASE-NOTES-<version>.md`;
+2. validates the public and release-candidate contracts;
 3. builds artifacts from the exact `main` SHA;
-4. attempts to set repository visibility to public using the workflow token;
-5. creates or verifies tag `v0.1.0-rc.3`;
-6. creates the GitHub prerelease or refreshes its assets;
-7. verifies the ZIP, manifest, and SHA256 are the release assets.
+4. attempts public repository visibility with the workflow token;
+5. creates or verifies the exact metadata tag without repointing an existing tag;
+6. creates the prerelease or refreshes assets for that same tag/SHA;
+7. verifies the version-derived ZIP, manifest, and SHA256 asset names.
 
-GitHub's normal workflow token may not have repository-administration permission. If the visibility step cannot change a private repository, the tag and prerelease can still be created privately; an owner must then change repository visibility to **Public** in GitHub settings. The release becomes visible with the repository.
+The normal workflow token may not have repository-administration permission. If visibility cannot be changed, release/tag creation may still succeed while repository visibility remains an owner action.
 
-The publisher is idempotent for the same tag/SHA and refuses to silently repoint an existing release tag to a different commit.
+Because release metadata on `main` triggers this publisher, the rc.4 release-preparation PR merge is a **Principal publication consequence boundary**. Technical readiness does not authorize that merge.
 
 ## Installation and upgrades
 
-Fresh install path:
+Fresh rc.4 installation:
 
 ```bash
 php setup/site.php --name="My Site" --url=https://example.com --owner="Site Owner"
@@ -94,20 +99,23 @@ php database/reconcile.php initial-import
 php database/readiness.php
 ```
 
-Then sign in at `/cms/` and use the state-derived Onboarding workspace.
+Fresh bootstrap is schema 10.
 
-An existing schema-7 installation must back up and test restore, then use:
+Published rc.3 is schema 8 and upgrades explicitly:
 
 ```bash
-php database/migrations/7-to-8.php --apply
+php database/migrations/8-to-9.php --apply
+php database/migrations/9-to-10.php --apply
+php database/readiness.php
+php database/reconcile.php post-migration
 ```
 
-`database/bootstrap.php --repair` is not a migration path.
+Schema 7 first applies `database/migrations/7-to-8.php --apply`. `database/bootstrap.php --repair` is never a migration path. Back up and prove restore before migration.
 
-See `docs/INSTALLATION.md` for onboarding, backup, migration, readiness, and paired rollback; `docs/REPOSITORY-OPERATIONS.md` for GitHub-to-host operation; and `docs/LLM-COLLABORATION.md` for governed iterative work with an LLM.
+See `docs/INSTALLATION.md` for the detailed sequence, `docs/REPOSITORY-OPERATIONS.md` for repository-to-host operation, `docs/CPANEL-EMAIL.md` for mail-provider setup, and `docs/LLM-COLLABORATION.md` for governed iterative work.
 
 ## Prerelease status
 
-`0.1.0-rc.3` is intentionally a prerelease. It is ready for public evaluation and site builds, but adopters should keep tested backups and review migrations/deployment changes before production use.
+`0.1.0-rc.4` remains a prerelease. It is intended for evaluation, site builds, and governed production trials with tested backups and explicit review of migrations, deployment, and provider configuration before consequential actions.
 
-Future release candidates must repeat the production proving-ground parity gate. Material reusable core changes reopen extraction; site-only or governance-only changes do not.
+Future release candidates repeat the proving-ground parity and packaged-candidate gates. Material reusable core changes reopen extraction; site-only or governance-only changes do not.

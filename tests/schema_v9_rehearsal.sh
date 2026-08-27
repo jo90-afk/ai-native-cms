@@ -12,11 +12,16 @@ php setup/site.php --name="RC3 Upgrade Rehearsal" --url=http://localhost:8080 --
 export AINCMS_DB_HOST="${AINCMS_DB_HOST:-127.0.0.1}" AINCMS_DB_PORT="${AINCMS_DB_PORT:-3306}" AINCMS_DB_NAME="${AINCMS_DB_NAME:-aincms}" AINCMS_DB_USER="${AINCMS_DB_USER:-aincms}" AINCMS_DB_PASSWORD="${AINCMS_DB_PASSWORD:-rehearsal-db-pass}"
 export AINCMS_CMS_ENABLED=1 AINCMS_CMS_USER=rehearsal-owner AINCMS_CMS_PASSWORD_HASH="$(php -r 'echo password_hash("rehearsal-owner-password", PASSWORD_DEFAULT);')" AINCMS_RATE_LIMIT_SECRET=0123456789abcdef0123456789abcdef AINCMS_ENV=development AINCMS_CMS_REQUIRE_HTTPS=0 AINCMS_PUBLIC_ORIGIN=http://localhost:8080
 
-# Reset the shared fixture to the exact schema shipped by the published rc.3 tag.
+# Reset only the dedicated rehearsal database, using the same scoped application
+# account the service provisions. No server/root privilege is required.
 git -C "$ROOT" show v0.1.0-rc.3:database/schema.sql > "$WORK/schema-v8.sql"
 grep -q 'VALUES (1, 8)' "$WORK/schema-v8.sql"
-mysql -h "$AINCMS_DB_HOST" -P "$AINCMS_DB_PORT" -uroot -p"${AINCMS_REHEARSAL_ROOT_PASSWORD:?missing rehearsal root password}" -e "DROP DATABASE IF EXISTS \\`$AINCMS_DB_NAME\\`; CREATE DATABASE \\`$AINCMS_DB_NAME\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL PRIVILEGES ON \\`$AINCMS_DB_NAME\\`.* TO '$AINCMS_DB_USER'@'%'; FLUSH PRIVILEGES;"
-mysql -h "$AINCMS_DB_HOST" -P "$AINCMS_DB_PORT" -u "$AINCMS_DB_USER" -p"$AINCMS_DB_PASSWORD" "$AINCMS_DB_NAME" < "$WORK/schema-v8.sql"
+MYSQL=(mysql -h "$AINCMS_DB_HOST" -P "$AINCMS_DB_PORT" -u "$AINCMS_DB_USER" -p"$AINCMS_DB_PASSWORD" "$AINCMS_DB_NAME")
+while IFS= read -r table; do
+  [[ -n "$table" ]] || continue
+  "${MYSQL[@]}" -e "SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS \\`$table\\`; SET FOREIGN_KEY_CHECKS=1;"
+done < <("${MYSQL[@]}" -Nse 'SHOW TABLES')
+"${MYSQL[@]}" < "$WORK/schema-v8.sql"
 php -r 'require "api/runtime.php"; if((dbHealth()["schemaVersion"]??0)!==8) throw new RuntimeException("published rc.3 fixture is not schema 8");'
 
 cat > "$WORK/seed-v8.php" <<'PHP'

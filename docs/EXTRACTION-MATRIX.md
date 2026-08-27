@@ -66,7 +66,7 @@ Technical acceptance does not authorize merging the stacked PRs, migrating an in
 
 ## M-017 — save edited page block as new preset
 
-The current production proving ground added this behavior in `judeoneill.com` PR #61. The portable candidate keeps the user capability but uses the public CMS's stronger typed-preset boundary: Page Composer submits rich-copy leaves, image path/alt pairs, and link href/text pairs rather than any structural block HTML.
+The current production proving ground added this behavior in reference-implementation PR #61. The portable candidate keeps the user capability but uses the public CMS's stronger typed-preset boundary: Page Composer submits rich-copy leaves, image path/alt pairs, and link href/text pairs rather than any structural block HTML.
 
 The server verifies the selected instance against current canonical/source-derived page state, maps the browser snapshot through the source preset's variable schema, and then derives a new preset. Primitive origins hydrate a fresh governed primitive definition. Converted origins apply typed values to the original governed converted template. Both paths create a new key; neither path mutates the source preset or the selected page instance.
 
@@ -76,4 +76,4 @@ Acceptance requires the new independent static contract plus cumulative validati
 
 ## Next release frontier
 
-After M-017 verification, continue comparing the reusable core against the current production proving ground after PR #61 and extract additional portable gaps as separate milestones. The M-015 → M-016 → M-017 stack remains unmerged while technical extraction continues. Public publication and production adoption remain explicit operator boundaries.
+After M-017 verification, continue comparing the reusable core against the current production proving ground after reference-implementation PR #61 and extract additional portable gaps as separate milestones. The M-015 → M-016 → M-017 stack remains unmerged while technical extraction continues. Public publication and production adoption remain explicit operator boundaries.

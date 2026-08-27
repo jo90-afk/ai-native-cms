@@ -34,24 +34,27 @@ jobs:
       AINCMS_DB_NAME: aincms
       AINCMS_DB_USER: aincms
       AINCMS_DB_PASSWORD: rehearsal-db-pass
+      AINCMS_REHEARSAL_ROOT_PASSWORD: rehearsal-root-pass
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Install rehearsal runtime dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y php-mysql mysql-client
           php -m | grep -qi pdo_mysql
-      - name: Clean rc.3 empty-site rehearsal
+      - name: Clean rc.4 schema-v10 candidate rehearsal
         run: bash tests/release_rehearsal.sh "${{ github.event.pull_request.head.sha || github.sha }}"
-      - name: Schema v9 upgrade and composition rehearsal
+      - name: Published rc.3 schema-v8 to v9 composition rehearsal
         run: bash tests/schema_v9_rehearsal.sh
-      - name: Schema v10 Audience and mail rehearsal
+      - name: Schema v9 to v10 Audience and mail rehearsal
         run: bash tests/schema_v10_rehearsal.sh
       - name: Upload rehearsal evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ai-native-cms-release-rehearsal-evidence
+          name: ai-native-cms-rc4-release-rehearsal-evidence
           path: |
             /tmp/aincms-build-a.json
             /tmp/aincms-build-b.json
@@ -62,6 +65,7 @@ jobs:
             /tmp/aincms-onboarding.json
             /tmp/aincms-readiness-after.json
             /tmp/aincms-canonical-path.txt
+            /tmp/aincms-discovery-summary.json
             /tmp/aincms-server.log
             /tmp/aincms-v9-site-setup.txt
             /tmp/aincms-v9-migration.json

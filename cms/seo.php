@@ -15,7 +15,7 @@ secureCmsHeaders();$user=requireCmsAuth(false);$siteName=(string)siteConfigValue
 <body data-cms-view="seo">
 <header class="app-header">
 <div><p class="eyebrow">AI Native CMS</p><strong><?=htmlspecialchars($siteName,ENT_QUOTES|ENT_HTML5,'UTF-8')?></strong></div>
-<nav class="cms-nav" aria-label="CMS"><a href="/cms/onboarding.php">Onboarding</a><a href="/cms/pages.php">Pages</a><a href="/cms/composer.php">Composer</a><a href="/cms/media.php">Media</a><a href="/cms/navigation.php">Navigation</a><a href="/cms/branding.php">Branding</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php" aria-current="page">Search + Social</a><a href="/cms/redirects.php">Redirects</a><a href="/cms/readiness.php">Readiness</a></nav>
+<nav class="cms-nav" aria-label="CMS"><a href="/cms/onboarding.php">Onboarding</a><a href="/cms/blocks.php">Blocks</a><a href="/cms/composer.php">Composer</a><a href="/cms/media.php">Media</a><a href="/cms/navigation.php">Navigation</a><a href="/cms/branding.php">Branding</a><a href="/cms/writing.php">Writing</a><a href="/cms/seo.php" aria-current="page">Search + Social</a><a href="/cms/redirects.php">Redirects</a><a href="/cms/readiness.php">Readiness</a></nav>
 <div class="header-actions"><span class="user-label"><?=htmlspecialchars((string)($user['displayName']??$user['username']??'Owner'),ENT_QUOTES|ENT_HTML5,'UTF-8')?></span><button id="logout" class="secondary" type="button">Sign out</button></div>
 </header>
 <main class="workspace seo-workspace">

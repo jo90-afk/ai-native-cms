@@ -54,10 +54,11 @@ def main() -> None:
     if 'http://' in readiness_js or 'https://' in readiness_js: fail('readiness UI contains a third-party active runtime dependency')
 
     for path in [
-        'cms/pages.php','cms/composer.php','cms/media.php','cms/navigation.php',
-        'cms/branding.php','cms/writing.php','cms/seo.php','cms/readiness.php',
+        'cms/onboarding.php','cms/blocks.php','cms/composer.php','cms/media.php','cms/navigation.php',
+        'cms/branding.php','cms/writing.php','cms/seo.php','cms/redirects.php','cms/readiness.php',
     ]:
         require(text(path),['href="/cms/readiness.php"'],f'{path} readiness navigation')
+    require(text('cms/pages.php'),["header('Location: /cms/composer.php',true,302)"],'retired Pages compatibility route')
 
     print('PASS: bootstrap and readiness contract')
 

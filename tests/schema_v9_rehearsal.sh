@@ -79,11 +79,12 @@ $staleRejected=false;try{compositionSave($root,'index.html',$payload['blocks'],'
 if(!$staleRejected)throw new RuntimeException('first-adoption stale source guard did not reject a bad hash');
 $adopted=compositionSave($root,'index.html',$payload['blocks'],'none',['label'=>$payload['label'],'title'=>$payload['title'],'shellPath'=>$payload['shellPath'],'parentPath'=>$payload['parentPath'],'expectedSourceHash'=>$payload['sourceHash']]);
 $live=compositionPayload($root,'index.html');$live['blocks'][$titleBlock]['values'][$titleKey]='Live composer canonical edit';$saved=compositionSave($root,'index.html',$live['blocks'],$adopted['hash'],['label'=>$live['label'],'title'=>$live['title'],'shellPath'=>$live['shellPath'],'parentPath'=>$live['parentPath']]);
-$canonical=contentAuthorityPageBlocks('index.html');if(($canonical['home-title']['html']??'')!=='Live composer canonical edit')throw new RuntimeException('live typed copy did not become canonical page_blocks state');
-$public=(string)file_get_contents($root.'/index.html');if(!str_contains($public,'Live composer canonical edit'))throw new RuntimeException('live typed copy did not reach public projection');
+$canonicalId=compositionValueRenderedCmsId((string)$live['blocks'][$titleBlock]['instanceId'],'home-title');
+$canonical=contentAuthorityPageBlocks('index.html');if(($canonical[$canonicalId]['html']??'')!=='Live composer canonical edit')throw new RuntimeException('live typed copy did not become namespaced canonical page_blocks state');
+$public=(string)file_get_contents($root.'/index.html');if(!str_contains($public,'Live composer canonical edit')||!str_contains($public,'data-cms-id="'.$canonicalId.'"'))throw new RuntimeException('live typed copy did not reach its namespaced public projection');
 $stored=compositionRecord('index.html');if(!$stored||($stored['blocks'][$titleBlock]['values'][$titleKey]??'')!=='Live composer canonical edit')throw new RuntimeException('live typed copy did not persist in composition snapshot');
-contentRebuild($root);$canonical=contentAuthorityPageBlocks('index.html');$public=(string)file_get_contents($root.'/index.html');if(($canonical['home-title']['html']??'')!=='Live composer canonical edit'||!str_contains($public,'Live composer canonical edit'))throw new RuntimeException('later rebuild overwrote live canonical copy');
-echo json_encode(['ok'=>true,'preset'=>$key,'schema'=>9,'sourceGuard'=>true,'liveCopy'=>'preserved'],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES),PHP_EOL;
+contentRebuild($root);$canonical=contentAuthorityPageBlocks('index.html');$public=(string)file_get_contents($root.'/index.html');if(($canonical[$canonicalId]['html']??'')!=='Live composer canonical edit'||!str_contains($public,'Live composer canonical edit'))throw new RuntimeException('later rebuild overwrote live canonical copy');
+echo json_encode(['ok'=>true,'preset'=>$key,'schema'=>9,'sourceGuard'=>true,'canonicalId'=>$canonicalId,'liveCopy'=>'preserved'],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES),PHP_EOL;
 PHP
 php "$WORK/verify-v9.php" "$SITE" | tee /tmp/aincms-v9-composition.json
 python3 - /tmp/aincms-v9-migration.json /tmp/aincms-v9-migration-second.json <<'PY'

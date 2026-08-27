@@ -18,10 +18,12 @@ router=need('__redirect.php','__redirect-map.php','preserveQuery','Location: ');
 need('api/cms-redirects.php','requireCmsAuth(true)','redirectRequireSchema()','requireCmsCsrf()','enforceRateLimit','expectedHash','redirectProject')
 need('api/cms-writing.php','dbRequireSchemaVersion(8)','redirectPostPreflight','redirectUpsertPostSlug','removePostProjection','contentFinalizePublicProjections')
 pages=need('api/cms-pages.php','dbRequireSchemaVersion(8)','database/reconcile.php','contentFinalizePublicProjections');assert 'contentAuthorityImport(' not in pages,'browser Pages endpoint must not import repository source'
-need('database/reconcile.php','dbRequireSchemaVersion(8)','contentSyncRepository')
+need('database/reconcile.php','dbRequireSchemaVersion(8)','contentSyncRepository','contentRebuild')
 rebuild=need('api/content-rebuild.php','after_seo','contentFinalizePublicProjections','seoProjectAll','navigationProject','brandingProject','redirectProject')
 assert 'function contentFinalizePublicProjections(string $root,?array $hooks=null,?array $seedContext=null): array {dbRequireSchemaVersion(8);' in rebuild,'schema-v8 sites must be able to reconcile/finalize immediately before the explicit v9 migration'
-assert 'function contentRebuild(string $root): array {dbRequireSchemaVersion(9);' in rebuild,'full preset-aware rebuild must require schema v9'
+assert 'function contentRebuild(string $root): array {dbRequireSchemaVersion(8);' in rebuild,'full rebuild must remain read-compatible with schema-v8 compositions during the upgrade seam'
+presets=need('api/block-presets.php','blockPresetLegacyRecord','page_block_templates','blockPresetSchemaVersion()<9','dbRequireSchemaVersion(9)')
+composition=need('api/composition-store.php',"$item['presetKey']??$item['templateKey']??''",'blockPresetRender')
 order=[rebuild.index(x) for x in ["$context['core']['seo']=seoProjectAll","contentRebuildRunHooks($hooks,'after_seo'","$context['core']['navigation']=navigationProject","$context['core']['branding']=brandingProject","$context['core']['redirects']=redirectProject"]];assert order==sorted(order),'site-wide finalization order regressed'
 for path in ['api/cms-pages.php','api/cms-media.php','api/cms-navigation.php','api/cms-branding.php','api/cms-writing.php','api/cms-seo.php']: need(path,'dbRequireSchemaVersion(8)')
 need('api/cms-composer.php','dbRequireSchemaVersion(9)');need('api/cms-blocks.php','dbRequireSchemaVersion(9)')
@@ -29,4 +31,4 @@ for path in ['cms/pages.php','cms/composer.php','cms/media.php','cms/navigation.
 need('config/site.example.php',"'redirects' =>",'system_aliases','after_seo')
 metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'));assert metadata['schemaVersion']==8,'published rc.3 metadata must remain schema v8 while v9 is under development';assert metadata.get('channel') in {'internal-release-candidate','public-release-candidate'};assert metadata.get('version')==(ROOT/'VERSION').read_text().strip();assert metadata.get('version','').startswith('0.1.0-rc.')
 for path in ['cms/redirects.php','cms/redirects.js','__redirect.php','__redirect-map.php','cms/blocks.php','cms/block-composer.js']: assert (ROOT/path).is_file(),f'missing {path}'
-print('PASS: rc.3 schema-v8 release plus schema-v9 development upgrade boundary')
+print('PASS: rc.3 schema-v8 read compatibility plus explicit schema-v9 mutation boundary')

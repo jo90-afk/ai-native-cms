@@ -6,6 +6,8 @@ routes = (ROOT / 'api/page-routes.php').read_text()
 projection = (ROOT / 'api/page-projection.php').read_text()
 rebuild = (ROOT / 'api/content-rebuild.php').read_text()
 navigation = (ROOT / 'api/navigation.php').read_text()
+composer = (ROOT / 'cms/composer.php').read_text()
+composer_routes = (ROOT / 'cms/clean-routes-ui.js').read_text()
 config = (ROOT / 'config/site.example.php').read_text()
 apache = (ROOT / 'adapters/apache/public.htaccess.example').read_text()
 
@@ -42,7 +44,15 @@ assert 'JavaScript-created' in config and 'root-relative' in config
 assert 'RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f' in apache
 assert 'RewriteRule ^(.+)\\.html$ /$1/ [R=301,L,NE]' in apache
 
-for text in (routes, projection):
+assert '>Route<input id="new-path" placeholder="services"' in composer
+assert 'Publishes at /services/.' in composer
+assert '/cms/clean-routes-ui.js' in composer
+assert 'routeForKey' in composer_routes
+assert 'queueMicrotask' in composer_routes
+assert "routeInput.value=`${slug}.html`" in composer_routes
+assert '#composer-pages button[data-path] span' in composer_routes
+
+for text in (routes, projection, composer_routes):
     lowered = text.lower()
     assert 'judeoneill' not in lowered
     assert 'lattice' not in lowered

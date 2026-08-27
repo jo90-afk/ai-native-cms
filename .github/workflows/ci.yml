@@ -44,7 +44,7 @@ jobs:
         run: python3 tests/site_wide_contract.py
       - name: Bootstrap and readiness contract
         run: python3 tests/bootstrap_readiness_contract.py
-      - name: Schema v8 redirects contract
+      - name: Schema evolution and redirects contract
         run: python3 tests/schema_v8_redirects_contract.py
       - name: Deployment adapter contract
         run: python3 tests/deployment_adapters_contract.py
@@ -87,6 +87,6 @@ jobs:
       - name: Upload release candidate
         uses: actions/upload-artifact@v4
         with:
-          name: ai-native-cms-rc3-candidate
+          name: ai-native-cms-rc4-candidate
           path: dist/*
           retention-days: 7

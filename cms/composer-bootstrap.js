@@ -1,5 +1,6 @@
 (()=>{
 'use strict';
+const nav=document.querySelector('.cms-nav');if(nav&&!nav.querySelector('a[href="/cms/audience.php"]')){const link=document.createElement('a');link.href='/cms/audience.php';link.textContent='Audience';const seo=nav.querySelector('a[href="/cms/seo.php"]');nav.insertBefore(link,seo||null);}
 const button=document.getElementById('bootstrap-presets'),status=document.getElementById('composer-status'),csrf=document.querySelector('meta[name="cms-csrf"]')?.content||'';
 if(!button)return;
 button.addEventListener('click',async()=>{

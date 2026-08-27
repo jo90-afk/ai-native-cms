@@ -7,7 +7,7 @@ This file distinguishes the frozen `0.1.0-rc.3` public release from development 
 | MySQL transport and secret loading | `api/database.php` | core | released | Generic `AINCMS_*` configuration; secrets stay outside public root |
 | HTTPS/origin/session/auth/CSRF/rate limits/audit | `api/runtime.php` | core | released | Fail closed in production |
 | Published release schema | `database/schema.sql` at rc.3 | core | released — rc.3 / v8 | Frozen package remains schema v8 and is not redefined by development `main` |
-| Explicit schema upgrades | `database/migrations/` | compatibility core | v7→8 released; v8→9 integrated; v9→10 planned M-019 | Versioned CLI migrations; bootstrap repair/browser requests are never migration |
+| Explicit schema upgrades | `database/migrations/` | compatibility core | v7→8 released; v8→9 integrated; v9→10 candidate M-019 | Versioned CLI migrations; bootstrap repair/browser requests are never migration |
 | Repository page/document registry | `config/site.php` | adopter config | released | Repository pages remain bounded source-lineage entries even when adopted into canonical composition |
 | Canonical content reconciliation | content authority/sync + CLI reconcile | core | released | Three-way source/canonical reconciliation; browser never promotes repository source silently |
 | Deterministic public projection | rebuild/projector pipeline | core + adapter hooks | released; clean routes integrated M-018 | Accepted state projects deterministically; anonymous page delivery stays static-first |
@@ -31,11 +31,12 @@ This file distinguishes the frozen `0.1.0-rc.3` public release from development 
 | Database bootstrap | `database/bootstrap*.php` | core | released | CLI-only schema + first owner; no content seed, credential overwrite, or implicit migration |
 | Production readiness | readiness API/CLI/UI | core + adapter checks | released | Read-only actionable evidence; never deploys/migrates/publishes/exposes secrets |
 | Starter site, onboarding, repo/hosting ops, LLM governance | root/config/docs/CMS | product + governance | released; evolving | Adopters can initialize, operate, deploy, and collaborate without bypassing authority boundaries |
-| Audience list authority | planned `audience_lists` + `audience_subscriptions` | core canonical state | planned — M-019A | Generic lists/memberships replace one-off site signup stores; consent state is SQL authority |
-| Audience CMS + CSV | planned `/cms/audience.php` | core UX | planned — M-019A | Authenticated scoped list management/export; no token hashes/internal IDs/bulk sends |
-| Public double-opt-in collection | planned audience API + Signup primitive | core public interaction | planned — M-019B | Non-enumerating, rate-limited, scanner-safe explicit confirmation |
-| Outgoing mail adapter | planned mail interface | provider adapter | planned — M-019C | Transport is replaceable; SMTP/provider credentials never become audience authority |
-| cPanel email onboarding | `docs/CPANEL-EMAIL.md` + onboarding/readiness | provider documentation/UX | planned — M-019C | Use exact cPanel Connect Devices secure SMTP settings; secrets remain private runtime config |
+| Audience list authority | `audience_lists` + `audience_subscriptions` | core canonical state | implementation candidate — M-019 / PR #24 | Generic lists/memberships are SQL authority; latent legacy subscriber state migrates into disabled generic lists instead of a parallel store |
+| Audience CMS + CSV | `/cms/audience.php`, Audience API/export | core UX | implementation candidate — M-019 / PR #24 | Authenticated list management, bounded inspection/export, resend/unsubscribe, no token hashes/internal IDs/bulk sends |
+| Governed Signup block | generated Audience `block_presets` entries | core composition UX | implementation candidate — M-019 / PR #24 | Server owns fixed form/list structure; Page Composer places the generated preset |
+| Public double-opt-in collection | `/api/audience-subscribe.php` | core public interaction | implementation candidate — M-019 / PR #24 | Non-enumerating, same-origin/rate-limited, scanner-safe GET review + explicit POST confirmation |
+| Outgoing transactional mail | `api/mail-transport.php` | provider adapter | implementation candidate — M-019 / PR #24 | Replaceable SMTP/mail/log transport; private credentials never become Audience authority or browser-visible state |
+| cPanel email onboarding | `docs/CPANEL-EMAIL.md`, private-config example, onboarding/Audience UI | provider documentation/UX | implementation candidate — M-019 / PR #24 | Use exact Connect Devices secure settings, explicit test send, Email Deliverability SPF/DKIM/DMARC review |
 | Deterministic release package | release metadata + builder | release engineering | released — rc.3 | Published tag remains tied to its released SHA; development `main` does not redefine it |
 | License and attribution | license files | distribution governance | released — rc.3 | Apache 2.0 + Commons Clause v1.0; source-available, not OSI open source |
 | Site-specific themes/content/integrations | adopter repository | site-only | excluded | Reusable mechanisms may upstream; identity/authored semantics do not |
@@ -72,22 +73,34 @@ Repository integration still does not imply installed-site adoption, production 
 
 ## M-019 — Audience lists and mail-provider onboarding
 
-The earlier proving-ground signup/admin work is now evidence for an intentionally generic core capability rather than a feature to copy literally.
+PR #24 is the implementation candidate for the generic Audience capability previously absent from the public core.
 
-M-019 plan: `docs/AUDIENCE-LISTS-PLAN.md`.
+### Canonical promotion, not parallel state
 
-Provider/onboarding guide: `docs/CPANEL-EMAIL.md`.
+The schema-v9→v10 migration creates `audience_lists` and `audience_subscriptions`. If the earlier latent `subscribers` primitive contains data, the migration validates and copies each list/membership into Audience authority, creates imported list definitions as **disabled**, and archives the old table as `subscribers_legacy_archive`. This preserves earlier state without silently opening a public collection surface or maintaining two writable authorities.
 
-The milestone is intentionally split into three reviewable concerns:
+### Consent collection
 
-1. **M-019A — canonical authority:** schema v9→v10, `audience_lists`, `audience_subscriptions`, authenticated Audience UI, scoped export/operator actions;
-2. **M-019B — public consent collection:** governed Signup primitive, generic public endpoint, honeypot/rate limit, non-enumeration, pending expiry/resend throttle, confirmation GET screen + explicit confirmation POST;
-3. **M-019C — mail transport/onboarding:** development log transport, authenticated SMTP production adapter, cPanel setup documentation, readiness state, and an explicit redacted test-send action.
+The generic endpoint accepts a list key and email through a same-site/rate-limited POST, returns non-enumerating success semantics, stores confirmation token hashes only, throttles resend, expires pending confirmations, and separates GET review from explicit POST confirmation so link scanners cannot create consent.
 
-Campaign composition, bulk mail, CRM behavior, tracking pixels, and automatic import of private subscriber data remain outside M-019.
+Unsubscribed rows remain suppression state. A later explicit new signup may begin a fresh pending double-opt-in cycle rather than silently reactivating membership.
+
+### CMS composition and operations
+
+Audience list saves generate/refresh a trusted Signup block preset in the **Audience** category. Page Composer places the preset while server code owns structural form HTML and fixed list identity.
+
+The Audience CMS provides list settings/status, membership counts and bounded inspection, pending resend, operator unsubscribe, confirmed CSV export, safe mail-configuration status, explicit test send, and handoffs to Page Composer/provider documentation.
+
+### Provider boundary
+
+Transactional delivery supports authenticated SMTP with verified encryption, deliberate host-local PHP `mail`, and development/CI log transport. Provider credentials are read only from private `AINCMS_MAIL_*` runtime configuration and are never returned by mail status.
+
+The cPanel path documents **Email Accounts → Connect Devices → Secure SSL/TLS Settings (Recommended)**, exact provider hostname/port/security values, CMS test sending, and **Email Deliverability** review for SPF/DKIM/DMARC.
+
+### Assurance
+
+The exact final PR head must pass the cumulative `validate` workflow and the release rehearsal containing all three paths: frozen rc.3 clean installation, schema-v9 composition upgrade, and schema-v10 Audience/legacy-preservation/double-opt-in/fake-SMTP rehearsal. Passing earlier candidate heads remains evidence but does not replace exact-final-head verification.
 
 ## Next release frontier
 
-Review and accept the M-019 plan, then begin M-019A at the schema-v9→v10 authority boundary. Keep migration, public consent, and provider transport independently testable even if they later ship in one release line.
-
-Public release publication, production migration/deployment, real provider credentials, private-list imports, and bulk messaging remain explicit operator/Principal boundaries.
+If PR #24 reaches green exact-final-head Quality/Assurance, it is ready for the Principal pre-merge handoff. Integration still does not authorize installed-site migration, production provider credentials, enabling public collection, deployment, campaign/bulk mail, or public release publication.

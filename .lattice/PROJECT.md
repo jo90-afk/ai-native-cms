@@ -45,73 +45,63 @@ Those repository merges do not imply installed-site migration, production deploy
 
 ## M-019 — Audience lists, collection, and cPanel mail onboarding
 
-**Planning frontier. Implementation has not started.**
+**Implementation candidate on PR #24. Exact-final-head workflow evidence remains the technical acceptance surface; merge, installed-site migration, deployment, credentials, and release publication remain separate boundaries.**
 
-The proving ground’s subscriber/admin work demonstrated useful behavior but depended on a site-specific `subscribers` authority and one fixed list. The Principal has now authorized a generic public-core mandate rather than a one-off port.
+The proving ground’s subscriber/admin behavior is treated as evidence, not copy authority. M-019 generalizes the reusable mechanism around an explicit public-core Audience authority.
 
-### Goal
+### Canonical authority and migration
 
-Add an authenticated **Audience** CMS area where adopters can define lists and inspect/export membership, plus a governed page-block/public endpoint for double-opt-in collection. Confirmation mail uses a generic private transport boundary; cPanel authenticated SMTP is the first documented provider path.
+M-019 advances development schema v9 → v10 with explicit CLI migration.
 
-### Planned authority
+- `audience_lists` owns stable list identity, operator/public labels, purpose/confirmation copy, and active/disabled state.
+- `audience_subscriptions` owns normalized list membership, pending/confirmed/unsubscribed state, consent timestamps, resend state, hashed confirmation tokens, and bounded source provenance.
+- the latent legacy `subscribers` primitive is copied into the generic authority and renamed to `subscribers_legacy_archive`; imported lists start disabled so historical membership is preserved without silently activating a new public collection surface.
+- `mail_outbox` remains a development/log transport rather than campaign or subscriber authority.
 
-M-019 advances development schema v9 → v10 with explicit migration and introduces canonical list/subscription state rather than a parallel site-specific table.
+No parallel audience store is introduced.
 
-Planned canonical objects:
+### CMS and public collection
 
-- `audience_lists` — stable list key, operator/public labels, bounded confirmation copy, active/disabled state, audit ownership;
-- `audience_subscriptions` — list-scoped normalized email, pending/confirmed/unsubscribed state, consent timestamps, one-time hashed confirmation token, resend timestamp and bounded provenance;
-- development-only mail outbox/log transport where needed for tests.
+The candidate provides an authenticated **Audience** workspace with list configuration, membership counts/inspection, pending resend, operator unsubscribe, bounded CSV export, transactional-mail status, and explicit test send.
 
-Mail credentials remain private runtime configuration and never enter those tables.
+Each Audience list creates or refreshes a server-generated governed Signup preset in the **Audience** block category. Page Composer can place that preset without browser-submitted structural form HTML.
 
-### Planned user flow
+The generic public collection endpoint:
 
-1. Create an Audience list in the CMS.
-2. Add a governed Signup form block and select an active canonical list.
-3. Public visitor submits an email; response does not reveal prior membership state.
-4. CMS stores/renews pending membership and sends confirmation through the configured mail adapter.
-5. Confirmation-link GET displays a noindex confirmation screen; only explicit POST confirms, preventing link scanners from creating consent.
-6. Operator sees All / Pending / Confirmed / Unsubscribed membership and may export a scoped CSV without token hashes/internal IDs.
-
-No campaign composer or bulk-send capability is authorized in M-019.
+1. accepts same-site, rate-limited POST signup requests;
+2. normalizes list/email input and uses a honeypot plus non-enumerating responses;
+3. stores only SHA-256 of cryptographically random confirmation bearer tokens;
+4. enforces a 15-minute resend cooldown and 30-day pending expiry;
+5. lets confirmation-link GET render a noindex review screen but never create consent;
+6. confirms only through explicit POST;
+7. preserves unsubscribed rows as suppression state until a new explicit signup starts another double-opt-in cycle.
 
 ### Mail/provider boundary
 
-Planned transports:
+`api/mail-transport.php` provides bounded transactional adapters:
 
-- `log` for development/CI;
-- authenticated `smtp` for production provider integration;
-- optional deliberate local PHP `mail` adapter, never the only production path.
+- `smtp` with certificate/peer verification, implicit TLS or STARTTLS, and authenticated delivery;
+- deliberate local PHP `mail` for hosts that choose it;
+- `log` for development/CI unless an explicit private override is configured.
 
-The cPanel guide is `docs/CPANEL-EMAIL.md`. Onboarding will tell operators to create/choose a mailbox, use cPanel **Connect Devices** to obtain the exact Secure SSL/TLS outgoing settings, place credentials in private `AINCMS_MAIL_*` configuration, recheck readiness, send one explicit test email, and review cPanel **Email Deliverability** for SPF/DKIM/DMARC issues.
+The CMS never stores SMTP credentials in canonical SQL or public config and never returns the password through browser-visible status. The cPanel guide is `docs/CPANEL-EMAIL.md`: use **Email Accounts → Connect Devices → Secure SSL/TLS Settings (Recommended)**, copy the exact provider hostname/port/security values into private `AINCMS_MAIL_*` configuration, send one explicit CMS test message, and inspect **Email Deliverability** for SPF/DKIM/DMARC issues.
 
-Browser onboarding remains state-derived and may not save or echo SMTP passwords.
+Browser onboarding derives only safe mail readiness state and never writes or echoes provider passwords.
 
-### Implementation plan
+### Verification contract
 
-Detailed design and acceptance contract: `docs/AUDIENCE-LISTS-PLAN.md`.
+PR #24 must pass on its exact final head:
 
-Preferred tranches:
+- the full cumulative `validate` workflow, including public sanitization, all existing contracts/behavior suites, Audience/mail structural checks, pure behavior checks, PHP/JavaScript/Python syntax, and deterministic rc.3 construction;
+- the full `release-rehearsal` workflow, preserving the frozen rc.3 empty-site path, the schema-v9 composition upgrade path, and the new schema-v10 Audience migration/legacy-preservation/double-opt-in/fake-SMTP path;
+- PR review-thread inspection with no unresolved technical findings.
 
-- M-019A — schema v10 + list/subscription authority + Audience admin;
-- M-019B — public double-opt-in collection + governed Signup form primitive;
-- M-019C — SMTP/mail adapter + cPanel documentation + onboarding/readiness + explicit test-send.
+Earlier passing candidate runs are evidence during remediation but do not substitute for exact-final-head assurance.
 
-Use stacked PRs if necessary to keep migration, public consent flow, and transport independently reviewable.
+### Explicit exclusions
 
-### Security/consent invariants
-
-- same-origin/rate-limit/honeypot controls on public collection;
-- generic non-enumerating responses;
-- confirmation tokens are random, stored only as hashes, expire after 30 days, and resend no more often than every 15 minutes;
-- GET does not confirm subscription;
-- disabled lists refuse new collection without deleting historical consent state;
-- provider secrets are redacted from diagnostics and logs;
-- list exports are authenticated/audited and exclude secrets/internal IDs;
-- unsubscribed state is preserved as suppression/consent history rather than silently deleted;
-- no private proving-ground subscribers/list names are imported automatically.
+M-019 does not authorize campaign composition, bulk sends, CRM/segmentation, tracking pixels, automatic private-list imports, production provider credentials, installed-site migration, deployment, or public release publication.
 
 ## Next action
 
-Review the M-019 planning PR. If accepted, implementation begins with M-019A and the schema-v9→v10 migration boundary. Production migration, provider credentials, enabling public collection, private-list imports, and bulk email remain outside technical milestone acceptance.
+Complete exact-final-head Quality/Assurance on PR #24. If green, move the PR to the Principal pre-merge handoff. A repository merge would authorize integration only; installed-site schema migration, enabling real collection, provider credentials, production deployment, and public release publication remain explicit operator/Principal actions.

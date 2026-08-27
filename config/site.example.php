@@ -74,6 +74,12 @@ return [
     ],
     'projection' => [
         'outputs' => ['feed.xml','sitemap.xml','sitemap.txt','site-index.json','llms.txt','llms-full.txt'],
+        // New installs project CMS-managed *.html keys to clean /slug/ routes.
+        // Existing adopters without this key retain their prior flat-route behavior.
+        'clean_managed_routes' => true,
+        // Relocated HTML URLs are rebased by the projector. JavaScript-created
+        // runtime URLs are not parsed; make those root-relative (for example
+        // /assets/app.js or /api/action.php) when a page may live at /slug/.
         // Hooks are deterministic presentation/integration only. after_seo is the
         // correct phase for sitemap/discovery adapters that must consume final SEO.
         'hooks' => [

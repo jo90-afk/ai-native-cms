@@ -2,12 +2,13 @@
 
 Project ID: `ai-native-cms-001`
 Product repository: this repository
-Release baseline: `main` at public `0.1.0-rc.3`
-Working branch: `feat/page-block-save-as-new-port`
-Stacked base: `feat/live-page-composer-port` / draft PR #21
+Published release baseline: `0.1.0-rc.3` (schema v8, frozen artifact)
+Current development baseline: `main` after merged M-015 → M-017
+Working branch: `feat/clean-managed-routes-port`
+Active milestone: M-018 / draft PR #23
 Runtime contract: `lattice-app-works-platform-agnostic` 0.1.6
 Principal alias: `Repository Owner`
-Updated: **2026-08-26 (America/New_York)**
+Updated: **2026-08-27 (America/New_York)**
 
 ## Confirmed mandate
 
@@ -17,7 +18,19 @@ Routine reversible implementation, tests, documentation, parity refreshes, relea
 
 ## Frozen release truth
 
-`0.1.0-rc.3` is already published and remains a schema-v8 artifact tied to its released main SHA. Post-release development may not silently redefine that tag, package, release metadata, or installation contract.
+`0.1.0-rc.3` remains the published schema-v8 artifact tied to its released main SHA. Later merged development does not redefine that tag, package, release metadata, installation contract, or provenance. A later public release requires its own release decision and rehearsal.
+
+## Current development truth
+
+M-015, M-016, and M-017 were merged to `main` on 2026-08-27 after their independent verification gates. Development `main` therefore contains schema-v9 saved block presets, the unified live Page Composer, and typed **Save as new block** behavior, while the published rc.3 artifact remains schema v8.
+
+Merged development sequence:
+
+- M-015 / PR #20 — schema-v9 governed saved-block composition; merge `16d2571b18f1f404233140aea315cbd205575b51`;
+- M-016 / PR #21 — unified live Page Composer; merge `e7b91a1df138c8fdbf6fbecfdaba7342b94a7ee3`;
+- M-017 / PR #22 — save edited page block as a new independent preset; merge `b5e384f0d58057fa650caeb3dffc430f3764b3ca`.
+
+Those merges authorize repository integration only. They do not imply an installed-site migration, production deployment, or a new published release.
 
 ## Durable product truths
 
@@ -28,107 +41,47 @@ Routine reversible implementation, tests, documentation, parity refreshes, relea
 - Human and agent writers converge on guarded mutation contracts.
 - Browser clients never submit arbitrary structural HTML or CSS.
 - Structural HTML is generated server-side from repository-derived converted presets or canonical governed semantic primitive definitions.
-- A saved block preset is a recipe, not a live shared component. Each page placement owns an independent typed value snapshot.
+- A saved block preset is a recipe, not a live shared component. Each placement owns an independent typed value snapshot.
 - Page Composer is the sole browser mutation boundary for public page copy and page composition after schema v9.
-- A repository page may be adopted into canonical composition only from a source-state hash; stale first adoption fails closed.
-- Rebuild may preserve canonical `page_blocks`; an intentional live Composer save synchronizes its typed rendered leaves into canonical `page_blocks` atomically with composition state.
-- Once a repository block is adopted into composition, editable leaf identity is namespaced to the stable composition instance while the accepted value is preserved.
-- Saving an edited page block as a new reusable preset derives a new recipe from bounded typed values; it never mutates the source preset or selected page instance.
 - Repository source may propose canonical content but may not silently overwrite newer accepted database state.
 - Database bootstrap owns schema structure and the first persisted owner only; migrations remain explicit CLI operations.
 - Browser onboarding/readiness/maintenance may not migrate, deploy, publish, or expose secrets.
 - Redirect authority remains canonical in SQL while anonymous routing consumes generated static state only.
+- Public route shape is a projection concern; canonical managed-page identity remains stable behind that boundary.
+- Provider-specific request interception/canonicalization remains an adapter concern.
 - Before a future release line is cut, a fresh production proving-ground comparison and clean rehearsal are required.
 
-## Satisfied release milestones
+## M-018 — clean public routes for managed pages
 
-M-001 through M-014 and SEO parity closure are satisfied for public `0.1.0-rc.3`.
+**Technically verified on draft PR #23; not merged, deployed, adopted, or released.**
 
-## M-015 — governed saved-block composition
+Source evidence:
 
-**Technically satisfied on draft PR #20; not merged, released, or deployed.**
+- proving-ground PR #63 established the reusable goal: stable internal managed `*.html` keys with clean reader-facing `/slug/` static projections;
+- proving-ground PR #65 exposed a relocation hazard: JavaScript-created document-relative runtime URLs are outside HTML projection and must be root-relative when a page can move beneath `/slug/`;
+- proving-ground PR #66 is not part of this milestone. Its Lattice-specific subscriber pane depends on a site authority that does not exist in the public core and is not being invented merely to chase parity.
 
-Accepted evidence:
+Accepted M-018 implementation:
 
-- explicit CLI-only schema `8→9` migration creates `block_presets`, converts former template rows, rewrites `templateKey→presetKey`, archives the old table, and is idempotent;
-- bounded semantic primitive renderer and standalone Block Composer never accept arbitrary browser structural HTML/CSS;
-- Page Composer stores `presetKey`, `instanceId`, and typed value snapshots;
-- shared first-party thumbnail media picker is reused across composition surfaces;
-- schema-v8 installed sites remain read-compatible immediately before migration;
-- cumulative validation run #246 passed contracts, behavior, PHP/JS/Python syntax, and deterministic candidate build;
-- MySQL release rehearsal run #57 passed clean rc.3 bootstrap/reconcile plus the v8→v9 conversion, archive, idempotence, sanitation, and single-H1 composition invariants.
+- `api/page-routes.php` translates stable canonical page keys to clean public routes, resolves clean routes back to managed keys, preserves query/fragment components, preserves external URLs, and rejects public-route collisions;
+- `api/page-projection.php` writes `/slug/index.html` only for the authoritative managed-page set, rebases relocated HTML references, rewrites references to managed pages, and normalizes discovery metadata where present;
+- `api/content-rebuild.php` runs the clean-route pass at the final public projection boundary without changing SQL authority or schema;
+- `api/navigation.php` emits clean managed-page destinations while still resolving active state against canonical page keys;
+- `config/site.example.php` enables clean managed routes for new installs, while an absent setting remains backward-compatible/off for existing adopters;
+- the Apache adapter conditionally canonicalizes legacy `*.html` only when a corresponding clean projection exists, preserving unmanaged HTML behavior;
+- runtime URLs created dynamically by JavaScript are explicitly outside projector parsing and are documented as root-relative implementation responsibilities;
+- the extraction contains no proving-ground identity, Lattice page assets, private endpoints, or authored site content.
 
-M-015 remains independently replaceable because its PR is not collapsed into M-016.
+Accepted evidence on candidate head `0e432ab5aebe415bf0227660964b21dc75e5d2d8`:
 
-## M-016 — unified live Page Composer
+- validation run #331 / workflow `33104318665` passed the full cumulative contract and behavior suite, the new clean-route structural and PHP behavior gates, PHP/JavaScript/Python syntax, and deterministic release-candidate construction;
+- release-rehearsal run #70 / workflow `33104318671` passed the frozen rc.3 empty-site rehearsal and the schema-v9 upgrade/composition rehearsal and uploaded rehearsal evidence;
+- no schema migration or irreversible canonical-state mutation is introduced by M-018.
 
-**Technically satisfied on stacked draft PR #21; not merged, released, or deployed.**
-
-Accepted implementation:
-
-- public pages render in a same-origin sandboxed iframe with site scripts disabled;
-- direct rich-text edits map to typed preset variables rather than browser-submitted structural HTML;
-- media, link, and text fields remain typed and bounded; first-party media selection is shared with Block Composer;
-- block add/duplicate/move/remove operations submit only preset identities, instance identities, and typed values; server rendering remains structural authority;
-- repository pages can be adopted into canonical composition without losing prior accepted `page_blocks` values;
-- first adoption is guarded by both composition hash (`none`) and a canonical source-state hash;
-- live typed saves synchronize composition snapshots and canonical editable leaves; later rebuilds preserve those accepted values;
-- adopted editable IDs move into the stable composition-instance namespace rather than retaining repository-source identity;
-- Block Composer can open inside Page Composer and saved preset edits remain future-placement-only;
-- `/cms/pages.php` is an authenticated compatibility redirect only; `api/cms-pages.php` and its browser mutation client are removed;
-- onboarding and CMS navigation teach Blocks + Composer rather than competing Pages/Composer concepts;
-- Page Composer can import missing repository-derived presets without overwriting existing saved presets;
-- schema-v8 read/reconcile compatibility from M-015 remains intact.
-
-Accepted verification evidence:
-
-- GitHub Actions validation run **#291** passed every cumulative static/security contract, behavior suite, PHP/JavaScript/Python syntax check, and deterministic release-candidate build;
-- MySQL release rehearsal run **#61** passed the frozen rc.3 clean-site rehearsal before exercising post-release schema work;
-- the same rehearsal passed schema `8→9` migration, archive creation, composition-reference rewrite, and migration idempotence;
-- the M-016 convergence proof preserved a pre-adoption canonical copy value, rejected a stale source hash, adopted into namespaced canonical leaf identity, committed a live typed copy edit into composition state + canonical `page_blocks` + public projection, and preserved that edit through a later full rebuild;
-- evidence artifact: `ai-native-cms-release-rehearsal-evidence` from run #61.
-
-M-016 remains independently replaceable as a stacked PR above M-015. Its technical acceptance does not authorize merging, migration of an installed site, deployment, or release publication.
-
-## M-017 — save edited page block as new preset
-
-**Technically satisfied on stacked draft PR #22; not merged, released, or deployed.**
-
-Source proving-ground change: production proving-ground PR #61, merged into the reference implementation on 2026-08-26.
-
-Accepted implementation:
-
-- Page Composer exposes **Save as new block** for a selected persisted/source-derived instance;
-- browser submits bounded rich-copy leaves, media path/alt pairs, and link href/text pairs only; `outerHTML`, structural HTML, classes, styles, and CSS never enter the payload;
-- the server verifies the selected instance still belongs to current canonical/source-derived page state and resolves the source preset itself;
-- browser field identities map back through the source preset variable schema; unknown/stale leaf identities and out-of-range media/link indices fail closed;
-- primitive sources apply typed instance values to a fresh primitive definition and save a new primitive preset;
-- converted sources apply typed instance values to the original governed converted template and save a new converted preset;
-- every clone receives a new preset key; source preset metadata/definition/template remains unchanged;
-- the selected page composition/value snapshot remains unchanged by save-as-new;
-- schema remains v9; no migration is introduced.
-
-Accepted verification evidence:
-
-- GitHub Actions validation run **#311** passed the entire cumulative gate, including the independent `page_block_save_as_new_contract.py`, existing authority/security/behavior contracts, PHP/JavaScript/Python syntax checks, and deterministic release-candidate build;
-- MySQL release rehearsal run **#66** passed the frozen rc.3 clean-site rehearsal before schema-v9 work;
-- the same rehearsal passed schema `8→9` migration, archive creation, composition-reference rewrite, and migration idempotence;
-- the M-017 rehearsal created independent primitive and converted presets from edited typed instance snapshots;
-- both source presets remained unchanged, the selected page composition remained unchanged, and an unknown browser leaf identity was rejected;
-- rehearsal result explicitly reported `sourcePreserved: true`, `pagePreserved: true`, and `tamperRejected: true`;
-- evidence artifact: `ai-native-cms-release-rehearsal-evidence` from run #66.
-
-Primary implementation:
-
-- typed snapshot normalization: `api/composition-values.php`;
-- independent primitive/converted preset derivation: `api/block-presets.php`;
-- guarded `saveAsNewPreset` action: `api/cms-composer.php`;
-- Page Composer affordance: `cms/page-block-save-as-new.js` + `cms/composer.php`;
-- independent static contract: `tests/page_block_save_as_new_contract.py`;
-- MySQL primitive + converted rehearsal: `tests/schema_v9_rehearsal.sh`.
-
-M-017 remains independently replaceable as a stacked PR above M-016. Technical acceptance does not authorize merging the stack, migrating an installed site, deployment, or release publication.
+M-018 remains independently replaceable as PR #23. Technical verification does not authorize merge, installed-site adoption, production deployment, or release publication.
 
 ## Next frontier
 
-Continue the proving-ground comparison from the current reference implementation after PR #61. Any additional reusable behavior should remain a separate milestone unless inseparable from an already accepted authority contract. The frozen rc.3 public artifact remains unchanged; merge, installed-site migration, deployment, and public release publication remain outside technical milestone acceptance.
+After M-018 handoff, continue comparing the public core with newer proving-ground work. Port mechanisms only when the public product already has, or intentionally needs, the corresponding generic authority. Site-specific authored content, identity, mailing-list implementations, and Lattice-specific operational panes remain excluded unless a separate public-core mandate justifies a generic capability.
+
+The next source PR after the clean-route work is proving-ground PR #66. It is currently classified as **site-only / no portable authority yet**, because `ai-native-cms` has no generic subscriber/list authority to extend. Do not create a parallel audience store solely to reproduce that private-site feature.

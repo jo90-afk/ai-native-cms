@@ -6,11 +6,22 @@
 
 Options -Indexes
 
-# Serve real files/directories normally. Only unresolved paths enter the
-# database-free redirect runtime. REQUEST_URI remains the original request, so
-# query-preservation and redirect status semantics stay inside __redirect.php.
+# Serve clean managed-page projections canonically when they exist. These rules
+# are conditional on the projected directory/index.html, so unmanaged *.html
+# files preserve their existing behavior.
 <IfModule mod_rewrite.c>
   RewriteEngine On
+
+  RewriteCond %{THE_REQUEST} \s/+(.*/)?index\.html(?:[?\s]) [NC]
+  RewriteRule ^(.*/)?index\.html$ /$1 [R=301,L,NE]
+
+  RewriteCond %{THE_REQUEST} \s/+[^?\ ]+\.html(?:[?\s]) [NC]
+  RewriteCond %{DOCUMENT_ROOT}/$1/index.html -f
+  RewriteRule ^(.+)\.html$ /$1/ [R=301,L,NE]
+
+  # Serve real files/directories normally. Only unresolved paths enter the
+  # database-free redirect runtime. REQUEST_URI remains the original request,
+  # so query-preservation and redirect status semantics stay inside __redirect.php.
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
   RewriteRule ^ - [L]

@@ -26,11 +26,13 @@ This file distinguishes the frozen `0.1.0-rc.3` release baseline from post-relea
 | Retired separate Pages mutation surface | `/cms/pages.php` compatibility redirect | compatibility UX | technically satisfied — M-016 | One browser page-authoring concept; old API/client are removed, route remains as authenticated redirect |
 | Embedded Block Composer | Page Composer + `cms/block-composer-embed.js` | core UX | technically satisfied — M-016 | Block design can be summoned in context without changing preset snapshot semantics |
 | Incremental repository-preset import | `blockPresetBootstrap` + Page Composer | compatibility core | technically satisfied — M-016 | Import creates only missing converted presets using canonical keys and never overwrites existing saved presets |
+| Save selected block as new preset | Page Composer + `blockPresetSaveAsNew` | core UX/authority | technically satisfied — M-017 | Selected typed instance values create a new reusable recipe without mutating the source preset or page placement |
+| Typed save-as-new snapshot mapping | `compositionTypedSnapshotValues` | core authority | technically satisfied — M-017 | Browser submits bounded copy/media/link values only; unknown leaf identity or indexed-field drift fails closed |
 | Media library | media APIs/UI | core | released | Canonical metadata + adopter-owned bytes; bounded validated uploads |
 | Page hierarchy, navigation, branding | respective stores/APIs/UI | core | released | Trusted shells, parent validation, safe navigation, bounded branding tokens |
 | Database bootstrap | `database/bootstrap*.php` | core | released | CLI-only schema + first owner; no content seed, credential overwrite, or implicit migration |
 | Production readiness | readiness API/CLI/UI | core + adapter checks | released | Read-only actionable evidence; never deploys/migrates/publishes/exposes secrets |
-| Starter site, onboarding, repo/hosting ops, LLM governance | root/config/docs/CMS | product + governance | released; authority model updated through M-016 | Adopters can initialize, operate, deploy, and collaborate without bypassing authority boundaries |
+| Starter site, onboarding, repo/hosting ops, LLM governance | root/config/docs/CMS | product + governance | released; authority model updated through M-017 | Adopters can initialize, operate, deploy, and collaborate without bypassing authority boundaries |
 | Deterministic release package | release metadata + builder | release engineering | released — rc.3 | Published tag remains tied to the old main SHA; feature branches do not redefine the published artifact |
 | License and attribution | license files | distribution governance | released — rc.3 | Apache 2.0 + Commons Clause v1.0; source-available, not OSI open source |
 | Site-specific themes/content/integrations | adopter repository | site-only | excluded | Reusable mechanisms may upstream; identity/authored semantics do not |
@@ -60,8 +62,22 @@ Accepted evidence:
 - the M-016 convergence proof preserved pre-adoption canonical copy, rejected stale adoption, verified namespaced post-adoption leaf identity, committed a live typed edit into composition + canonical `page_blocks` + public projection, and preserved the edit across a later full rebuild;
 - run #61 uploaded the `ai-native-cms-release-rehearsal-evidence` artifact.
 
-Technical acceptance does not authorize merging the stacked PRs, migrating an installed site, deploying to production, or publishing a new release.
+## M-017 — save edited page block as new preset
+
+M-017 is technically satisfied on stacked draft PR #22, but remains unmerged, undeployed, and unpublished. The portable implementation keeps the proving-ground user capability while enforcing the public CMS's typed-preset boundary: Page Composer submits rich-copy leaves, image path/alt pairs, and link href/text pairs rather than structural block HTML.
+
+The server verifies the selected instance against current canonical/source-derived page state, maps the browser snapshot through the source preset's variable schema, and derives a new preset. Primitive origins hydrate a fresh governed primitive definition. Converted origins apply typed values to the original governed converted template. Both paths create a new key; neither path mutates the source preset or selected page instance. Unknown/stale browser leaf IDs and out-of-range media/link indices fail closed. There is no schema change: `block_presets` remains the sole reusable-block authority under schema v9.
+
+Accepted evidence:
+
+- validation run **#311** passed all cumulative contracts and behavior suites, the independent save-as-new contract, PHP/JavaScript/Python syntax checks, and deterministic release-candidate construction;
+- MySQL release rehearsal run **#66** first passed the frozen rc.3 clean-site path, then passed schema `8→9` migration/archive/idempotence;
+- primitive and converted typed snapshots each produced new independent presets containing their edited values;
+- source preset authority remained unchanged, selected page composition remained unchanged, and a fake browser leaf identity was rejected;
+- run #66 explicitly reported `sourcePreserved: true`, `pagePreserved: true`, and `tamperRejected: true`, and uploaded `ai-native-cms-release-rehearsal-evidence`.
+
+Technical acceptance of M-015 through M-017 does not authorize merging the stacked PRs, migrating an installed site, production deployment, or publishing a new release.
 
 ## Next release frontier
 
-Before a schema-v9 public release line is cut, compare the reusable core against the current production proving ground again and extract any additional portable parity gaps as independently verifiable milestones. Then integrate M-015 followed by M-016 in dependency order, rerun clean installation/migration/rebuild/release rehearsal on the integrated line, and only then prepare new release metadata. Public publication and production adoption remain explicit operator boundaries.
+Continue comparing the reusable core against the current production proving ground after reference-implementation PR #61 and extract additional portable gaps as separate milestones. The M-015 → M-016 → M-017 stack remains unmerged while technical extraction continues. Public publication and production adoption remain explicit operator boundaries.

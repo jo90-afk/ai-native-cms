@@ -31,6 +31,8 @@ jobs:
         run: python3 tests/seo_quality_contract.py
       - name: Composer and media contract
         run: python3 tests/composer_media_contract.py
+      - name: Page block save-as-new contract
+        run: python3 tests/page_block_save_as_new_contract.py
       - name: Hierarchy navigation and branding contract
         run: python3 tests/site_wide_contract.py
       - name: Bootstrap and readiness contract
@@ -68,7 +70,7 @@ jobs:
         run: |
           find cms -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - name: Python syntax
-        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/seo_quality_contract.py tests/composer_media_contract.py tests/site_wide_contract.py tests/bootstrap_readiness_contract.py tests/schema_v8_redirects_contract.py tests/deployment_adapters_contract.py tests/release_candidate_contract.py tests/onboarding_governance_contract.py tools/build_release.py
+        run: python3 -m py_compile tests/public_release_contract.py tests/content_authority_contract.py tests/rebuild_ui_contract.py tests/publishing_seo_contract.py tests/seo_quality_contract.py tests/composer_media_contract.py tests/page_block_save_as_new_contract.py tests/site_wide_contract.py tests/bootstrap_readiness_contract.py tests/schema_v8_redirects_contract.py tests/deployment_adapters_contract.py tests/release_candidate_contract.py tests/onboarding_governance_contract.py tools/build_release.py
       - name: Build release candidate
         run: python3 tools/build_release.py --source-ref "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Upload release candidate

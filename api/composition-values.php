@@ -79,3 +79,28 @@ function compositionHydratePresetValues(string $root,array $preset,string $html,
     }
     return composerNormalizeValues($root,$variables,$values);
 }
+
+/**
+ * Convert a browser interaction snapshot back into the preset's typed value
+ * schema. The browser may submit copy/media/link field values, but never block
+ * HTML or CSS. Unknown leaf identities and out-of-range indexed fields fail
+ * closed so a stale or tampered DOM cannot become reusable preset authority.
+ */
+function compositionTypedSnapshotValues(string $root,array $preset,string $instanceId,array $fallback,array $leafValues,array $mediaValues,array $linkValues): array {
+    if(!composerSafeInstanceId($instanceId))throw new RuntimeException('Invalid page block instance identifier.');
+    if(count($leafValues)>120||count($mediaValues)>30||count($linkValues)>60)throw new RuntimeException('A page block contains too many editable fields.');
+    $variables=(array)($preset['variables']??[]);$values=composerTemplateDefaults($variables);foreach($fallback as $key=>$value)$values[(string)$key]=$value;
+    $mediaRows=[];foreach($mediaValues as $row){if(!is_array($row))throw new RuntimeException('Invalid page block image field.');$index=(int)($row['index']??-1);if($index<0||$index>200||isset($mediaRows[$index]))throw new RuntimeException('Invalid page block image field.');$mediaRows[$index]=['path'=>compositionValueNormalizeMediaPath((string)($row['path']??'')),'alt'=>(string)($row['alt']??'')];}
+    $linkRows=[];foreach($linkValues as $row){if(!is_array($row))throw new RuntimeException('Invalid page block link field.');$index=(int)($row['index']??-1);if($index<0||$index>300||isset($linkRows[$index]))throw new RuntimeException('Invalid page block link field.');$linkRows[$index]=['href'=>(string)($row['href']??''),'text'=>(string)($row['text']??'')];}
+    $allowedLeaf=[];$mediaIndex=0;$linkIndex=0;$textIndex=0;
+    foreach($variables as $variable){if(!is_array($variable)||empty($variable['key']))continue;$key=(string)$variable['key'];$type=(string)($variable['type']??'text');$target=is_array($variable['target']??null)?$variable['target']:[];
+        if($type==='richtext'){$id='';if(($target['kind']??'')==='cms')$id=compositionValueRenderedCmsId($instanceId,(string)($target['id']??''));elseif(($target['kind']??'')==='primitive')$id=composerPrimitiveCmsId($instanceId,(string)($target['id']??''),(string)($target['field']??'html'));if($id!==''){$allowedLeaf[$id]=true;if(array_key_exists($id,$leafValues))$values[$key]=(string)$leafValues[$id];}continue;}
+        if($type==='media'){if(isset($mediaRows[$mediaIndex]))$values[$key]=$mediaRows[$mediaIndex];$mediaIndex++;continue;}
+        if($type==='link'){if(isset($linkRows[$linkIndex]))$values[$key]=$linkRows[$linkIndex]['href'];$linkIndex++;continue;}
+        if($type==='text'){if(isset($linkRows[$textIndex]))$values[$key]=$linkRows[$textIndex]['text'];$textIndex++;}
+    }
+    foreach($leafValues as $id=>$value){$id=(string)$id;if(!isset($allowedLeaf[$id]))throw new RuntimeException('Page block editable fields changed since selection. Refresh Page Composer and try again.');}
+    foreach(array_keys($mediaRows) as $index)if($index>=$mediaIndex)throw new RuntimeException('Page block image fields changed since selection. Refresh Page Composer and try again.');
+    $linkLimit=max($linkIndex,$textIndex);foreach(array_keys($linkRows) as $index)if($index>=$linkLimit)throw new RuntimeException('Page block link fields changed since selection. Refresh Page Composer and try again.');
+    return composerNormalizeValues($root,$variables,$values);
+}

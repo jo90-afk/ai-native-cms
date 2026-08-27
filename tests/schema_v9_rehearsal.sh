@@ -84,7 +84,23 @@ $canonical=contentAuthorityPageBlocks('index.html');if(($canonical[$canonicalId]
 $public=(string)file_get_contents($root.'/index.html');if(!str_contains($public,'Live composer canonical edit')||!str_contains($public,'data-cms-id="'.$canonicalId.'"'))throw new RuntimeException('live typed copy did not reach its namespaced public projection');
 $stored=compositionRecord('index.html');if(!$stored||($stored['blocks'][$titleBlock]['values'][$titleKey]??'')!=='Live composer canonical edit')throw new RuntimeException('live typed copy did not persist in composition snapshot');
 contentRebuild($root);$canonical=contentAuthorityPageBlocks('index.html');$public=(string)file_get_contents($root.'/index.html');if(($canonical[$canonicalId]['html']??'')!=='Live composer canonical edit'||!str_contains($public,'Live composer canonical edit'))throw new RuntimeException('later rebuild overwrote live canonical copy');
-echo json_encode(['ok'=>true,'preset'=>$key,'schema'=>9,'sourceGuard'=>true,'canonicalId'=>$canonicalId,'liveCopy'=>'preserved'],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES),PHP_EOL;
+
+// M-017: save current typed instances as new presets without mutating source/page authority.
+$primitiveSourceBefore=blockPresetRecord($key);if(!$primitiveSourceBefore)throw new RuntimeException('primitive source preset disappeared before save-as-new rehearsal');
+$primitiveInstance='primitive-rehearsal-01';$primitiveLeaf=[composerPrimitiveCmsId($primitiveInstance,'heading-01','html')=>'Snapshot primitive heading'];$primitiveLinks=[['index'=>0,'href'=>'/writing.html','text'=>'Snapshot CTA']];
+$primitiveValues=compositionTypedSnapshotValues($root,$primitiveSourceBefore,$primitiveInstance,(array)$primitiveSourceBefore['defaults'],$primitiveLeaf,[],$primitiveLinks);$primitiveClone=blockPresetSaveAsNew($root,$key,$primitiveInstance,$primitiveValues,'Primitive snapshot','Snapshots');
+if(($primitiveClone['kind']??'')!=='primitive'||($primitiveClone['key']??'')===$key)throw new RuntimeException('primitive save-as-new did not create an independent primitive preset');
+$primitiveCloneRender=blockPresetRender($root,(string)$primitiveClone['key'],(array)$primitiveClone['defaults'],'primitive-clone-01');if(!str_contains($primitiveCloneRender['html'],'Snapshot primitive heading')||!str_contains($primitiveCloneRender['html'],'Snapshot CTA')||!str_contains($primitiveCloneRender['html'],'href="/writing.html"'))throw new RuntimeException('primitive save-as-new did not preserve typed instance edits');
+$primitiveSourceAfter=blockPresetRecord($key);if(!$primitiveSourceAfter||dbJsonEncode($primitiveSourceAfter['definition'])!==dbJsonEncode($primitiveSourceBefore['definition']))throw new RuntimeException('primitive save-as-new mutated its source preset');
+
+$storedBeforeClone=compositionRecord('index.html');$legacyItem=(array)$storedBeforeClone['blocks'][$titleBlock];$legacySourceKey=(string)$legacyItem['presetKey'];$legacySourceBefore=blockPresetRecord($legacySourceKey);if(!$legacySourceBefore||($legacySourceBefore['kind']??'')!=='legacy')throw new RuntimeException('converted source preset unavailable for save-as-new rehearsal');
+$legacyInstance=(string)$legacyItem['instanceId'];$legacyValues=compositionTypedSnapshotValues($root,$legacySourceBefore,$legacyInstance,(array)$legacyItem['values'],[$canonicalId=>'Reusable snapshot copy'],[],[]);$legacyClone=blockPresetSaveAsNew($root,$legacySourceKey,$legacyInstance,$legacyValues,'Converted snapshot','Snapshots');
+if(($legacyClone['kind']??'')!=='legacy'||($legacyClone['key']??'')===$legacySourceKey||($legacyClone['defaults'][$titleKey]??'')!=='Reusable snapshot copy')throw new RuntimeException('converted save-as-new did not create an independent typed snapshot');
+$legacySourceAfter=blockPresetRecord($legacySourceKey);if(!$legacySourceAfter||$legacySourceAfter['html']!==$legacySourceBefore['html'])throw new RuntimeException('converted save-as-new mutated its source preset');
+$storedAfterClone=compositionRecord('index.html');if(($storedAfterClone['blocks'][$titleBlock]['values'][$titleKey]??'')!=='Live composer canonical edit')throw new RuntimeException('save-as-new mutated the selected page instance');
+$tamperRejected=false;try{compositionTypedSnapshotValues($root,$legacySourceBefore,$legacyInstance,(array)$legacyItem['values'],['not-a-real-leaf'=>'bad'],[],[]);}catch(RuntimeException $e){$tamperRejected=str_contains($e->getMessage(),'changed since selection');}if(!$tamperRejected)throw new RuntimeException('save-as-new accepted an unknown browser leaf identity');
+
+echo json_encode(['ok'=>true,'preset'=>$key,'schema'=>9,'sourceGuard'=>true,'canonicalId'=>$canonicalId,'liveCopy'=>'preserved','saveAsNew'=>['primitive'=>$primitiveClone['key'],'legacy'=>$legacyClone['key'],'sourcePreserved'=>true,'pagePreserved'=>true,'tamperRejected'=>true]],JSON_PRETTY_PRINT|JSON_UNESCAPED_SLASHES),PHP_EOL;
 PHP
 php "$WORK/verify-v9.php" "$SITE" | tee /tmp/aincms-v9-composition.json
 python3 - /tmp/aincms-v9-migration.json /tmp/aincms-v9-migration-second.json <<'PY'
@@ -95,4 +111,4 @@ assert first['after']['schemaVersion']==9 and first['after']['blockPresets'] is 
 assert first['compositionsRewritten']>=1
 assert second['ok'] and second['changed'] is False
 PY
-echo 'PASS: schema-v9 migration, live composer convergence, and governed composition rehearsal'
+echo 'PASS: schema-v9 migration, live composer convergence, and typed save-as-new rehearsal'

@@ -1,0 +1,17 @@
+<?php
+declare(strict_types=1);
+require_once __DIR__.'/runtime.php';
+require_once __DIR__.'/block-presets.php';
+require_once __DIR__.'/media.php';
+secureJsonHeaders();requireCmsAuth(true);$root=dirname(__DIR__);$method=(string)($_SERVER['REQUEST_METHOD']??'GET');
+function cmsBlockPayload(string $root,array $record): array {$payload=$record;$preview='';try{$rendered=blockPresetRender($root,(string)$record['key'],(array)($record['defaults']??[]),'preset-preview');$preview=(string)$rendered['html'];}catch(Throwable $ignored){}$payload['previewHtml']=$preview;$payload['usage']=blockPresetUsageCount((string)$record['key']);return $payload;}
+try{
+    dbRequireSchemaVersion(9);
+    if($method==='GET'){$key=trim((string)($_GET['key']??''));$response=['ok'=>true,'presets'=>blockPresets(),'primitiveCatalog'=>composerPrimitiveCatalog(),'media'=>mediaItems($root)];if($key!==''){$record=blockPresetRecord($key);if(!$record)runtimeJson(['ok'=>false,'error'=>'Block preset not found.'],404);$response['preset']=cmsBlockPayload($root,$record);}runtimeJson($response);}
+    if($method!=='POST')runtimeJson(['ok'=>false,'error'=>'Method not allowed.'],405);requireSameOrigin(true);requireCmsCsrf();enforceRateLimit('cms-blocks',180,3600,$root);$payload=readJsonBody(500000);$action=(string)($payload['action']??'');
+    if($action==='bootstrap'){$result=blockPresetBootstrap($root);cmsAudit('blocks','Imported repository block presets',$result,$root);runtimeJson(['ok'=>true,'result'=>$result,'presets'=>blockPresets()]);}
+    if($action==='savePrimitive'){$key=trim((string)($payload['key']??''));$definition=$payload['definition']??null;if(!is_array($definition))runtimeJson(['ok'=>false,'error'=>'Invalid block definition.'],422);$record=blockPresetSavePrimitive($root,$key!==''?$key:null,(string)($payload['label']??''),(string)($payload['category']??'Designed'),$definition);cmsAudit('blocks',$key===''?'Created block preset':'Updated block preset',['preset'=>$record['key']??$key,'kind'=>'primitive'],$root);runtimeJson(['ok'=>true,'preset'=>cmsBlockPayload($root,$record),'presets'=>blockPresets()]);}
+    if($action==='saveMetadata'){$key=trim((string)($payload['key']??''));$record=blockPresetUpdateMetadata($key,(string)($payload['label']??''),(string)($payload['category']??''));cmsAudit('blocks','Updated block preset metadata',['preset'=>$key,'kind'=>$record['kind']??'unknown'],$root);runtimeJson(['ok'=>true,'preset'=>cmsBlockPayload($root,$record),'presets'=>blockPresets()]);}
+    if($action==='delete'){$key=trim((string)($payload['key']??''));$record=blockPresetRecord($key);if(!$record)runtimeJson(['ok'=>false,'error'=>'Block preset not found.'],404);blockPresetDelete($key);cmsAudit('blocks','Deleted unused block preset',['preset'=>$key,'kind'=>$record['kind']??'unknown'],$root);runtimeJson(['ok'=>true,'presets'=>blockPresets()]);}
+    runtimeJson(['ok'=>false,'error'=>'Unsupported block operation.'],422);
+}catch(Throwable $e){if($e instanceof RuntimeException&&str_contains($e->getMessage(),'schema upgrade required'))runtimeJson(['ok'=>false,'error'=>'Schema v9 is required before using Block Composer. Run database/migrations/8-to-9.php --apply from the CLI.','migrationRequired'=>true],409);if($e instanceof RuntimeException&&preg_match('/^(Block name|Invalid block|Converted presets|This block preset|A designed block|Designed block|A selected block|A block button)/',$e->getMessage()))runtimeJson(['ok'=>false,'error'=>$e->getMessage()],422);runtimeError($e,'The block preset operation could not be completed.',500);}

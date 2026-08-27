@@ -62,7 +62,7 @@ Those repository merges remain distinct from installed-site migration, productio
 
 ## M-018 — clean managed-page routes
 
-Draft PR #23 reconstructs the reusable behavior proven by `judeoneill.com` PR #63 and carries the generic runtime-relative URL lesson exposed by source PR #65. The source implementation is evidence, not a file-copy authority.
+Draft PR #23 reconstructs the reusable behavior proven by reference proving-ground PR #63 and carries the generic runtime-relative URL lesson exposed by source PR #65. The source implementation is evidence, not a file-copy authority.
 
 The public implementation keeps canonical managed page keys such as `about.html` while optionally projecting `/about/index.html` for the reader-facing `/about/` route. Clean routes are enabled in the example configuration for new installs; the runtime default is off when the setting is absent so existing adopters retain their established route shape until explicit adoption.
 

@@ -1,6 +1,6 @@
 # cPanel email provider setup
 
-Status: **M-019 provider/onboarding contract**. The `AINCMS_MAIL_*` settings described here become active when the M-019 mail adapter is implemented; do not assume current releases already consume them.
+Status: **M-019 provider/onboarding contract**. The `AINCMS_MAIL_*` settings described here are implemented on the M-019 branch; production use still waits for milestone assurance and merge.
 
 AI Native CMS treats a cPanel mailbox as an **outgoing mail transport**. The CMS remains the authority for lists and subscription state. Creating a cPanel mailbox does not create, synchronize, or own an Audience list.
 
@@ -37,13 +37,11 @@ Official cPanel guide:
 
 - https://docs.cpanel.net/cpanel/email/set-up-mail-client/
 
-M-019 will also support configurable ports/security modes for providers that expose a different authenticated SMTP configuration. The onboarding UI must not hard-code `mail.<domain>` or port 465 as universal truth.
+AI Native CMS also supports configurable ports/security modes for providers that expose STARTTLS or a different authenticated SMTP configuration. The CMS does not hard-code `mail.<domain>` or port 465 as universal truth.
 
 ## 3. Put credentials in private runtime configuration
 
 Store mail credentials through the same private configuration boundary used for database/runtime secrets. The populated file must stay outside the public document root and out of Git.
-
-Planned M-019 example:
 
 ```ini
 AINCMS_MAIL_TRANSPORT=smtp
@@ -58,32 +56,28 @@ AINCMS_MAIL_FROM_NAME=Example Site
 
 Use the hostname, port, and security mode shown by your provider. `AINCMS_MAIL_FROM` must be a valid sender address permitted by the account/provider.
 
-The CMS must never:
+The CMS never saves the SMTP password in canonical SQL, writes it into public configuration, echoes it into the browser, or includes it in readiness/audit output.
 
-- save the SMTP password in canonical SQL;
-- write it into `config/site.php`;
-- echo it back into the browser;
-- include it in readiness output, audit context, exception messages, release artifacts, or logs.
+## 4. Recheck Audience onboarding
 
-## 4. Recheck onboarding
+When schema v10 is active, open **CMS → Audience**. The Email delivery card reports only safe configuration state: transport, host, port, security, sender, and whether the username is present. Password values are never returned.
 
-M-019 adds an **Email delivery** onboarding/readiness step when at least one active public Audience list exists.
-
-After private configuration is present, return to `/cms/onboarding.php` or `/cms/readiness.php` and recheck. The CMS should report only whether the required provider fields are present and syntactically valid. Opening onboarding must not itself authenticate to SMTP or send mail.
+The broader onboarding workspace adds an Email delivery step when at least one active Audience list exists. Opening onboarding checks configuration presence only; it does not authenticate to SMTP or send mail.
 
 ## 5. Send one explicit test email
 
-M-019 adds a **Send test email** action in the authenticated CMS.
+In **CMS → Audience**, enter a recipient in the Email delivery card and choose **Send test**.
 
 The action:
 
 - accepts only the test recipient address from the browser;
 - reads SMTP host/username/password server-side from private configuration;
 - sends one bounded test message;
+- uses certificate/peer verification for encrypted SMTP;
 - reports connection, TLS, authentication, or delivery-stage failure without revealing secret values;
-- records only safe operational evidence if a last-test result is retained.
+- records only the transport name in the CMS audit event.
 
-A successful SMTP transaction proves that the CMS can hand the message to the configured server. It does not prove inbox placement.
+A successful SMTP transaction proves that the CMS handed the message to the configured server. It does not prove inbox placement.
 
 ## 6. Check cPanel Email Deliverability
 
@@ -99,20 +93,9 @@ If DNS is hosted somewhere other than the cPanel server, cPanel may show suggest
 
 ## 7. Keep the provider role narrow
 
-M-019 sends only transactional Audience confirmation/test messages. It does not turn the cPanel mailbox into a campaign platform.
+M-019 sends transactional Audience confirmation/test messages only. It does not turn the cPanel mailbox into a campaign platform.
 
-The CMS owns:
-
-- list definitions;
-- pending/confirmed/unsubscribed state;
-- consent timestamps;
-- confirmation-token hashes;
-- list exports and operator actions.
-
-cPanel SMTP owns:
-
-- authenticated transport of a message from the CMS to the mail server;
-- server-side mail handling/delivery infrastructure.
+The CMS owns list definitions, pending/confirmed/unsubscribed state, consent timestamps, confirmation-token hashes, and list exports/operator actions. cPanel SMTP owns authenticated transport of a message from the CMS to the mail server.
 
 This separation lets an adopter replace cPanel SMTP with another provider later without migrating or redefining Audience membership.
 
@@ -136,14 +119,4 @@ Check cPanel **Email Deliverability** for SPF/DKIM/DMARC issues, then inspect th
 
 ### PHP `mail()` works but SMTP is not configured
 
-M-019 may retain a deliberate local `mail` adapter for hosts that choose it, but authenticated SMTP is the documented cPanel provider path. cPanel notes that DKIM behavior for mail sent from PHP processes can depend on host PHP/Exim configuration, which is another reason not to make PHP `mail()` the only portable production path.
-
-## Security baseline
-
-- Prefer cPanel’s Secure SSL/TLS settings.
-- Require certificate verification for SMTP TLS.
-- Require TLS 1.2+ where supported by the host/runtime.
-- Use a dedicated sender mailbox when practical.
-- Keep real credentials outside Git and the public root.
-- Rotate a mailbox password immediately if it appears in a repository, browser-visible response, log, screenshot, or support transcript.
-- Never weaken TLS verification merely to make a readiness check green.
+AI Native CMS retains a deliberate local `mail` adapter for hosts that choose it, but authenticated SMTP is the documented cPanel provider path. The CMS does not silently downgrade from SMTP to `mail()` when SMTP configuration fails.

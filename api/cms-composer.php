@@ -18,6 +18,15 @@ try{
         $item=$payload['item']??null;if(!is_array($item))runtimeJson(['ok'=>false,'error'=>'A typed block item is required.'],422);$rendered=compositionRenderBlock($root,$item);
         runtimeJson(['ok'=>true,'html'=>$rendered['html'],'values'=>$rendered['values'],'presetKey'=>$rendered['presetKey'],'instanceId'=>$rendered['instanceId']]);
     }
+    if($action==='saveAsNewPreset'){
+        $path=trim((string)($payload['path']??''));$instanceId=trim((string)($payload['instanceId']??''));$label=trim((string)($payload['label']??''));$category=trim((string)($payload['category']??'Section'));
+        if(!isset(cmsManagedPages($root)[$path])||!composerSafeInstanceId($instanceId))runtimeJson(['ok'=>false,'error'=>'Invalid page block reference.'],422);
+        $page=compositionPayload($root,$path);$source=null;foreach((array)($page['blocks']??[]) as $block)if(is_array($block)&&($block['instanceId']??null)===$instanceId){$source=$block;break;}if(!$source)runtimeJson(['ok'=>false,'error'=>'Page block changed since selection. Refresh Page Composer and try again.'],409);
+        $sourceKey=trim((string)($source['presetKey']??''));$preset=blockPresetRecord($sourceKey);if(!$preset)runtimeJson(['ok'=>false,'error'=>'The source block preset is unavailable. Refresh Page Composer and try again.'],409);
+        $leafValues=is_array($payload['leafValues']??null)?$payload['leafValues']:[];$mediaValues=is_array($payload['mediaValues']??null)?$payload['mediaValues']:[];$linkValues=is_array($payload['linkValues']??null)?$payload['linkValues']:[];
+        $values=compositionTypedSnapshotValues($root,$preset,$instanceId,is_array($source['values']??null)?$source['values']:[],$leafValues,$mediaValues,$linkValues);$saved=blockPresetSaveAsNew($root,$sourceKey,$instanceId,$values,$label,$category);$catalog=blockPresets();$summary=null;foreach($catalog as $row)if(($row['key']??null)===($saved['key']??null)){$summary=$row;break;}
+        cmsAudit('composer','Saved page block as new preset',['page'=>$path,'instance'=>$instanceId,'sourcePreset'=>$sourceKey,'preset'=>$saved['key']??'','kind'=>$saved['kind']??'legacy'],$root);runtimeJson(['ok'=>true,'preset'=>$summary??['key'=>$saved['key']??'','label'=>$saved['label']??$label,'category'=>$saved['category']??$category,'kind'=>$saved['kind']??'legacy'],'presets'=>$catalog]);
+    }
     if($action==='save'){
         $path=trim((string)($payload['path']??''));$items=$payload['items']??null;$expected=trim((string)($payload['expectedHash']??''));if(!is_array($items))runtimeJson(['ok'=>false,'error'=>'Composition blocks are required.'],422);
         $metadata=[];foreach(['label','title','shellPath','parentPath'] as $key)if(array_key_exists($key,$payload))$metadata[$key]=$payload[$key]!==null?(string)$payload[$key]:null;$metadata['expectedSourceHash']=trim((string)($payload['expectedSourceHash']??''));
@@ -30,7 +39,7 @@ try{
     runtimeJson(['ok'=>false,'error'=>'Unsupported composer action.'],422);
 }catch(Throwable $e){
     if($e instanceof RuntimeException&&str_contains($e->getMessage(),'schema upgrade required'))runtimeJson(['ok'=>false,'error'=>'Schema v9 is required before using Page Composer. Run database/migrations/8-to-9.php --apply from the CLI.','migrationRequired'=>true],409);
-    if($e instanceof RuntimeException&&(str_contains($e->getMessage(),'changed since the composer was opened')||str_contains($e->getMessage(),'changed since it was opened')))runtimeJson(['ok'=>false,'error'=>$e->getMessage()],409);
-    if($e instanceof RuntimeException&&preg_match('/^(Page is not CMS-managed|New page|That page path|Choose a valid|Page hierarchy|Composition page|A composition needs|Invalid composition|Duplicate composition|A composed public page|A referenced block preset|A selected block image|A block button|A typed block item)/',$e->getMessage()))runtimeJson(['ok'=>false,'error'=>$e->getMessage()],422);
+    if($e instanceof RuntimeException&&(str_contains($e->getMessage(),'changed since the composer was opened')||str_contains($e->getMessage(),'changed since it was opened')||str_contains($e->getMessage(),'changed since selection')))runtimeJson(['ok'=>false,'error'=>$e->getMessage()],409);
+    if($e instanceof RuntimeException&&preg_match('/^(Page is not CMS-managed|New page|That page path|Choose a valid|Page hierarchy|Composition page|A composition needs|Invalid composition|Duplicate composition|A composed public page|A referenced block preset|A selected block image|A block button|A typed block item|Invalid page block|Block name|A page block contains|Page block editable|Page block image|Page block link)/',$e->getMessage()))runtimeJson(['ok'=>false,'error'=>$e->getMessage()],422);
     runtimeError($e,'The page composition update could not be completed.',500);
 }

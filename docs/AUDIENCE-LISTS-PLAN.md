@@ -1,6 +1,6 @@
 # M-019 — Audience lists and collection
 
-Status: **implementation plan**. This document defines the next governed milestone; it does not claim the feature is already available.
+Status: **implementation in progress on PR #24**. Canonical Audience authority, public double-opt-in collection, CMS management/export, generated Signup blocks, and the transactional mail transport are now implemented on the milestone branch. Provider onboarding and exact-head assurance remain before pre-merge handoff.
 
 ## Goal
 
@@ -8,306 +8,74 @@ Add a first-class **Audience** area to AI Native CMS so an adopter can create na
 
 The first documented provider path is a cPanel-hosted mailbox using authenticated SMTP. cPanel is a transport adapter, not subscriber authority.
 
-## Why this is a core capability
-
-The proving ground demonstrated a useful site-specific pattern: one `list_key`, a `subscribers` table, double opt-in, confirmation-token hashing, resend throttling, a private list pane, and CSV export. M-019 generalizes that mechanism rather than copying the proving-ground list name, copy, endpoint, or subscriber state.
-
-The public CMS currently has no audience/list authority. M-019 intentionally creates one instead of adding a one-off signup table beside the rest of the canonical model.
-
-## User-visible consequence
-
-An adopter should be able to:
-
-1. open **Audience** in the CMS;
-2. create a list such as “Product updates” with a stable machine key and reader-facing label/copy;
-3. add a governed **Signup form** block to a page and choose that list;
-4. collect an email address without exposing whether it already exists;
-5. require a human confirmation action before membership becomes confirmed;
-6. view All / Pending / Confirmed / Unsubscribed members inside the CMS;
-7. export a bounded CSV without exposing confirmation hashes or internal IDs;
-8. connect a private outgoing-mail transport and send a test message;
-9. see onboarding/readiness guidance when a public list exists but mail is not configured.
-
-M-019 does **not** add campaign composition, bulk sends, marketing automation, segmentation rules, analytics pixels, contact enrichment, or a CRM.
-
 ## Authority model
-
-### Canonical SQL
 
 M-019 advances development schema v9 → v10 with an explicit CLI migration.
 
-Proposed canonical tables:
+Canonical SQL:
 
-### `audience_lists`
+- `audience_lists` owns stable list identity, operator/public labels, purpose copy, confirmation copy, and active/disabled state.
+- `audience_subscriptions` owns normalized membership state: pending, confirmed, or unsubscribed; consent timestamps; resend state; token hashes; and bounded provenance.
+- the frozen schema-v8 `subscribers` primitive is migrated when present, copied into Audience authority, and renamed to `subscribers_legacy_archive` only after successful import. Imported lists start disabled so legacy membership is preserved without silently publishing a new public signup surface.
+- `mail_outbox` remains a development/log transport only, not campaign authority.
 
-- `list_key` — stable bounded key, primary identifier;
-- `label` — CMS/operator label;
-- `public_label` — reader-facing form/confirmation label;
-- `description` — optional plain-text purpose statement;
-- `confirmation_subject` — bounded plain-text subject;
-- `confirmation_body` — bounded plain-text confirmation copy with a server-owned confirmation-link token slot;
-- `status` — `active` or `disabled`;
-- `created_by`, `updated_by`, timestamps.
+Git owns schema/migrations, Audience API/store logic, CMS interface, generated Signup-block structure, provider transport adapters, onboarding/readiness behavior, tests, and documentation.
 
-A list key is identity. Renaming labels does not rewrite membership identity.
+## Implemented collection contract
 
-### `audience_subscriptions`
+`/api/audience-subscribe.php` is the generic same-site collection boundary.
 
-- internal row id;
-- `list_key` foreign key;
-- normalized `email`;
-- `status` — `pending`, `confirmed`, or `unsubscribed`;
-- `requested_at`, `confirmed_at`, `unsubscribed_at`;
-- `last_confirmation_sent_at`;
-- `confirmation_token_hash` — SHA-256 only, never the bearer token;
-- bounded source/provenance string such as `public-form` or `operator-import` when imports are later authorized;
-- timestamps;
-- unique `(list_key,email)`.
-
-Public signup never writes a second contact store. The membership row is the authority for collection state.
-
-### Development outbox
-
-A log/outbox transport may exist for development and CI. It is not a production delivery queue or campaign engine.
-
-## Repository authority
-
-Git continues to own:
-
-- schema/migration code;
-- Audience API/store logic;
-- CMS interface and Signup-form primitive structure;
-- provider transport adapters;
-- onboarding/readiness behavior;
-- tests and documentation.
-
-List definitions and memberships are accepted mutable SQL state. Public HTML is a projection/interaction surface, not audience authority.
-
-## Public collection contract
-
-Add one generic same-site endpoint owned by the audience module rather than one endpoint per list.
-
-A public subscribe request supplies only:
-
-- `listKey`;
-- `email`;
-- honeypot field;
-- bounded source context if server-generated by the Signup block.
-
-Required behavior:
-
-- POST only for signup mutation;
-- same-origin protection for browser mutation;
-- per-IP/rate-secret throttling using the existing rate-limit system;
-- email normalization and RFC-compatible validation within the existing 254-character boundary;
-- generic success response whether the address is new, pending, or already confirmed;
-- honeypot requests return the same generic success shape;
-- pending tokens use cryptographically random bytes and SQL stores only SHA-256;
-- confirmation resend cooldown: at least 15 minutes;
+- signup mutation is POST-only;
+- same-origin enforcement and the existing rate-limit store apply;
+- list key + email are bounded/normalized;
+- honeypot requests return the same generic success result;
+- new, pending, existing-confirmed, and scanner-fetch cases do not reveal membership state;
+- resend cooldown is 15 minutes;
 - pending confirmation expires after 30 days;
-- expired pending rows may be safely renewed without duplicating membership;
-- GET confirmation links render a noindex confirmation screen but **do not confirm merely because a mail scanner fetched the link**;
+- raw bearer tokens are never stored; SQL keeps SHA-256 only;
+- GET confirmation links render a noindex confirmation screen but do not confirm;
 - confirmation requires an explicit POST from that screen;
-- an already-used/expired token fails generically;
-- no raw token, password, or provider secret is logged.
+- unsubscribed rows remain suppression/consent history but an explicit new signup may start a new pending confirmation.
 
-The confirmation page uses site-neutral presentation and returns to a configured same-site destination.
+## Generated Signup block
 
-## Unsubscribe model
+Each saved Audience list creates or refreshes one governed `block_presets` entry named `Signup — <list label>` in the **Audience** category. The server generates the complete form structure and fixed list key. Browser clients never submit structural form HTML.
 
-The schema includes `unsubscribed` from the beginning so later mail features do not need to reinterpret deletion as consent state.
+The block can be placed through Page Composer like another governed preset. Public form submission targets the generic Audience endpoint; membership state stays in SQL.
 
-M-019 should expose operator-side unsubscribe/removal controls and preserve an unsubscribed membership as suppression state. A public one-click unsubscribe flow may be added only if M-019 sends mail beyond confirmation messages; otherwise its bearer-token design can remain reserved for the later outbound-mail milestone.
+## CMS surface
 
-## CMS: Audience
+`/cms/audience.php` provides:
 
-Add `/cms/audience.php` with two levels.
+- create/edit list configuration;
+- active/disabled list state;
+- total/pending/confirmed/unsubscribed counts;
+- bounded member inspection;
+- pending confirmation resend with cooldown;
+- operator unsubscribe preserving suppression state;
+- confirmed CSV export with no internal IDs/token hashes;
+- outgoing mail configuration status with secret values omitted;
+- explicit test-send action;
+- direct handoff to Page Composer and cPanel provider documentation.
 
-### List index
+No campaign composer, bulk send, CRM, tracking pixel, enrichment, or marketing automation is included.
 
-- active/disabled lists;
-- confirmed/pending/unsubscribed counts;
-- create list;
-- open list;
-- provider status summary.
+## Mail transport
 
-### List detail
+`api/mail-transport.php` implements replaceable transactional transport:
 
-- edit labels and confirmation copy without changing `list_key`;
-- enable/disable public collection;
-- copy/embed guidance for the Signup form;
-- All / Confirmed / Pending / Unsubscribed filters;
-- email, status, requested/confirmed/unsubscribed times;
-- CSV export for current filter or confirmed-only;
-- token hashes and internal IDs never appear;
-- no bulk-send button in M-019.
+- `smtp` — authenticated SMTP with peer/certificate verification, implicit TLS (`ssl`) or STARTTLS (`tls`), and no unencrypted production fallback;
+- `mail` — deliberate host-local PHP mail adapter;
+- `log` — development/CI outbox only unless an explicit private override is set.
 
-List mutations, exports, and operator membership changes use CMS auth, same-origin/CSRF controls, expected hashes where state replacement applies, rate limits where appropriate, and audit records.
+Private `AINCMS_MAIL_*` configuration is the only credential source. Status exposed to CMS/browser reports transport/host/port/security/from and whether a username is present; the password is never returned.
 
-## Page/Block Composer integration
+## Remaining milestone work before handoff
 
-Add a governed **Signup form** primitive rather than arbitrary embed HTML.
+1. wire the private-config example and onboarding state to the implemented transport;
+2. add structural/behavior contracts and a schema-v10 MySQL rehearsal after the existing v9 rehearsal;
+3. run exact-head validate + release rehearsal;
+4. self-review the full PR for sanitization, consent-state preservation, and secret leakage;
+5. update Lattice capsule/PR evidence and move the PR out of draft only when all gates pass.
 
-Typed fields:
-
-- audience list key selected from active canonical lists;
-- heading/label copy;
-- email-field label/placeholder;
-- button label;
-- success message;
-- optional short consent/purpose sentence.
-
-Server-owned structure controls the form action, honeypot, accessible labels, status region, and client behavior. The browser never submits arbitrary form HTML or JavaScript.
-
-If no active list exists, the primitive explains that an Audience list must be created first rather than accepting a free-form list name.
-
-## Mail transport boundary
-
-Create a site-neutral mail interface used first for confirmation messages.
-
-Planned transports:
-
-- `log` — development/CI only; fail closed in production unless an explicit development override is present;
-- `smtp` — authenticated SMTP, the preferred production provider path and the documented cPanel integration;
-- `mail` — optional local PHP mail adapter for hosts that deliberately choose it, never the only supported production path.
-
-Provider secrets remain private runtime configuration. They are never stored in canonical SQL, `config/site.php`, browser local storage, generated public files, or audit context.
-
-Proposed private keys:
-
-```ini
-AINCMS_MAIL_TRANSPORT=smtp
-AINCMS_MAIL_HOST=mail.example.com
-AINCMS_MAIL_PORT=465
-AINCMS_MAIL_SECURITY=ssl
-AINCMS_MAIL_USERNAME=updates@example.com
-AINCMS_MAIL_PASSWORD=replace_me
-AINCMS_MAIL_FROM=updates@example.com
-AINCMS_MAIL_FROM_NAME=Example Site
-```
-
-The implementation must also allow a TLS/STARTTLS mode and non-default ports because cPanel hosts can expose different secure connection details. Onboarding must tell the operator to copy the exact values shown by cPanel **Connect Devices**, not assume `mail.<domain>`.
-
-SMTP implementation requirements:
-
-- certificate verification on by default;
-- TLS 1.2+ where supported by the host/runtime;
-- bounded connect/read timeouts;
-- validated From address;
-- CR/LF header-injection rejection;
-- no secret values in user-visible errors/logs;
-- clear adapter error classes for connection, TLS, authentication, and send failure;
-- deterministic fake SMTP fixture in CI rather than depending on an external mailbox.
-
-Dependency choice (vendored library vs a deliberately small internal SMTP client) is an implementation decision, but M-019 may not weaken TLS/certificate handling merely to avoid a dependency.
-
-## cPanel onboarding
-
-The browser onboarding layer remains state-derived and does **not** write provider passwords. Secrets stay in the existing private runtime configuration boundary.
-
-When no list exists, Audience is optional. Once an active public list exists, onboarding/readiness adds an **Email delivery** step:
-
-1. Create or choose a mailbox in cPanel **Email Accounts**.
-2. Click **Connect Devices** for that mailbox.
-3. Use the **Secure SSL/TLS** outgoing server values shown by cPanel.
-4. Put the exact SMTP hostname, port, full mailbox username, mailbox password, sender address, and security mode into private `AINCMS_MAIL_*` configuration outside the public root.
-5. Return to CMS onboarding and recheck configuration.
-6. Use an explicit **Send test email** action. The CMS reads configured secrets server-side, sends one message to an operator-entered destination, and returns only pass/fail diagnostics; it never echoes the password.
-7. Review cPanel **Email Deliverability** and resolve SPF/DKIM/DMARC warnings before relying on confirmation delivery.
-
-Current cPanel guidance strongly recommends the Secure SSL/TLS settings. Its current manual-settings documentation lists SMTP port 465 for the secure configuration and notes that the actual server hostname is selected based on the account/domain certificate; adopters must use the value cPanel displays for their account.
-
-Provider documentation: `docs/CPANEL-EMAIL.md`.
-
-## Readiness
-
-Add non-destructive checks:
-
-- `audience.schema` — required tables/version when Audience code is active;
-- `audience.lists` — informational count/state;
-- `mail.transport` — recognized adapter;
-- `mail.sender` — valid configured From address when a public list is active;
-- `mail.smtp.config` — host/port/security/username/password present for SMTP, without exposing values;
-- `mail.delivery.test` — informational result of the most recent explicit test if such operational evidence is persisted.
-
-Readiness must not repeatedly send email or authenticate to SMTP merely because the page is opened.
-
-## Migration and release boundary
-
-M-019 requires an explicit schema `9→10` migration and matching fresh bootstrap schema. It must:
-
-- refuse source versions other than 9 when applying;
-- acquire the existing database migration lock;
-- create audience tables idempotently;
-- advance `app_meta.schema_version` only after required structures are present;
-- leave the published `0.1.0-rc.3` schema-v8 artifact untouched;
-- preserve a pre-migration backup/restore rollback boundary.
-
-No proving-ground subscriber records are imported automatically. An adopter-specific migration/import is a separate operator decision.
-
-## Implementation tranches
-
-### M-019A — authority + migration
-
-- schema v10 + migration;
-- list/subscription store;
-- typed API contracts;
-- admin Audience list/index/detail UI;
-- read-only/filter/export and audited operator status changes.
-
-### M-019B — public collection + Signup primitive
-
-- generic subscribe/confirm flow;
-- server-owned confirmation page;
-- rate limiting/honeypot/resend/expiry behavior;
-- Page/Block Composer Signup primitive;
-- no-enumeration and scanner-safe confirmation regressions.
-
-### M-019C — mail transport + onboarding
-
-- generic mail adapter;
-- authenticated SMTP + dev log transport;
-- cPanel provider guide;
-- onboarding/readiness state;
-- explicit test-email action;
-- fake SMTP CI fixture and release rehearsal.
-
-These may land as one PR only if each tranche remains independently testable and the schema/mail boundary is still reviewable. Otherwise use stacked PRs in A → B → C order.
-
-## Verification
-
-Required gates include:
-
-- public-release sanitization (no proving-ground identity/list names/addresses);
-- schema v9→v10 migration + idempotence/guard rehearsal;
-- list-key uniqueness and immutable identity behavior;
-- pending → confirmed state transition;
-- 30-day expiry and 15-minute resend throttle;
-- confirmation GET cannot confirm;
-- confirmation POST is one-time;
-- no email-address enumeration across new/pending/confirmed states;
-- honeypot generic success;
-- CSV filters/list scoping and token/internal-ID non-disclosure;
-- disabled list refuses new collection without deleting existing members;
-- Signup primitive can reference only active canonical lists;
-- mail header-injection rejection;
-- SMTP TLS/auth/send happy path against a local fake server;
-- SMTP connection/auth/TLS failures redact secrets;
-- existing cumulative contracts, syntax gates, deterministic candidate build, and release rehearsal remain green.
-
-## Rollback
-
-Before schema v10 accepts production audience writes, close/revert the feature branch. After schema v10 has accepted memberships, rollback is the paired pre-migration database backup + matching code revision, not dropping audience tables while keeping newer code.
-
-Mail credentials are operational secrets and can be rotated independently without changing canonical audience state.
-
-## Principal/operator boundaries
-
-Technical completion does not authorize:
-
-- importing a private subscriber list;
-- enabling a public collection form on a production site;
-- storing real provider credentials in Git;
-- bulk email campaigns;
-- production migration/deployment;
-- publishing a new AI Native CMS release.
+Production migration/deployment, public release publication, and bulk outbound mail remain Principal/operator boundaries.

@@ -45,6 +45,8 @@ jobs:
         run: bash tests/release_rehearsal.sh "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Schema v9 upgrade and composition rehearsal
         run: bash tests/schema_v9_rehearsal.sh
+      - name: Schema v10 Audience and mail rehearsal
+        run: bash tests/schema_v10_rehearsal.sh
       - name: Upload rehearsal evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -65,5 +67,9 @@ jobs:
             /tmp/aincms-v9-migration.json
             /tmp/aincms-v9-migration-second.json
             /tmp/aincms-v9-composition.json
+            /tmp/aincms-v10-migration.json
+            /tmp/aincms-v10-migration-second.json
+            /tmp/aincms-v10-audience.json
+            /tmp/aincms-smtp-message.txt
           if-no-files-found: ignore
           retention-days: 7

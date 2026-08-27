@@ -94,7 +94,7 @@ M-016 remains independently replaceable as a stacked PR above M-015. Its technic
 
 **Active candidate on `feat/page-block-save-as-new-port`; stacked on M-016 and not merged, released, or deployed.**
 
-Source proving-ground change: `jo90-afk/judeoneill.com` PR #61, merged to production source on 2026-08-26.
+Source proving-ground change: production proving-ground PR #61, merged into the reference implementation on 2026-08-26.
 
 Objective: let a Page Composer user turn the currently edited selected block into a new reusable preset without mutating the original preset or page placement and without promoting browser structural DOM into authority.
 
@@ -124,4 +124,4 @@ Independent GitHub Actions verification is required before M-017 can be technica
 
 ## Next frontier after M-017
 
-Continue the proving-ground comparison from current `judeoneill.com` main after PR #61. Any additional reusable behavior should remain a separate milestone unless it is inseparable from M-017’s typed snapshot contract. The frozen rc.3 public artifact remains unchanged; merge, installed-site migration, deployment, and public release publication remain outside technical milestone acceptance.
+Continue the proving-ground comparison from the current reference implementation after PR #61. Any additional reusable behavior should remain a separate milestone unless it is inseparable from M-017’s typed snapshot contract. The frozen rc.3 public artifact remains unchanged; merge, installed-site migration, deployment, and public release publication remain outside technical milestone acceptance.

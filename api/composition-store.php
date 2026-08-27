@@ -55,8 +55,7 @@ function compositionStructuralHtml(string $root,string $path,array $blocks,?stri
  * visible state, so edited rich text and composition values commit together.
  */
 function compositionSyncCanonicalBlocks(string $path,string $structural,bool $preferStructural=false): int {
-    $next=cmsExtractEditableBlocks($structural);$current=contentAuthorityPageBlocks($path);$pdo=db();$user=(int)($_SESSION['cms_user_id']??0);$pdo->prepare('DELETE FROM page_blocks WHERE page_path=?')->execute([]);
-    // The prepared statement above intentionally scopes the delete by page.
+    $next=cmsExtractEditableBlocks($structural);$current=contentAuthorityPageBlocks($path);$pdo=db();$user=(int)($_SESSION['cms_user_id']??0);
     $delete=$pdo->prepare('DELETE FROM page_blocks WHERE page_path=?');$delete->execute([$path]);
     $insert=$pdo->prepare('INSERT INTO page_blocks (page_path,block_id,tag_name,html_content,content_sha256,source_sha256,source_ref,source_updated_at,updated_by,updated_at) VALUES (?,?,?,?,?,?,?,UTC_TIMESTAMP(),NULLIF(?,0),UTC_TIMESTAMP())');
     foreach($next as $block){$id=(string)$block['id'];$html=(!$preferStructural&&isset($current[$id]))?(string)$current[$id]['html']:(string)$block['html'];$insert->execute([$path,$id,$block['tag'],$html,hash('sha256',$html),(string)$block['hash'],'composition',$user]);}

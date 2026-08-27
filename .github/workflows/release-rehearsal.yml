@@ -47,7 +47,7 @@ jobs:
       - name: Clean rc.4 schema-v10 candidate rehearsal
         run: bash tests/release_rehearsal.sh "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Published rc.3 schema-v8 to v9 composition rehearsal
-        run: bash -x tests/schema_v9_rehearsal.sh 2>&1 | tee /tmp/aincms-v9-trace.txt
+        run: bash tests/schema_v9_rehearsal.sh
       - name: Schema v9 to v10 Audience and mail rehearsal
         run: bash tests/schema_v10_rehearsal.sh
       - name: Upload rehearsal evidence
@@ -68,7 +68,6 @@ jobs:
             /tmp/aincms-discovery-summary.json
             /tmp/aincms-server.log
             /tmp/aincms-v9-site-setup.txt
-            /tmp/aincms-v9-trace.txt
             /tmp/aincms-v9-migration.json
             /tmp/aincms-v9-migration-second.json
             /tmp/aincms-v9-composition.json

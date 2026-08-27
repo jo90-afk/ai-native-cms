@@ -19,8 +19,7 @@ assert "if($method==='GET'&&isset($_GET['confirm']))" in public and "isset($_POS
 assert 'audienceConfirm(' not in public.split("if($method==='GET'&&isset($_GET['confirm']))",1)[1].split("if($method==='POST'&&isset($_POST['confirm_token']))",1)[0]
 assert 'mailTransportStatus()' in cms and 'mailTransportConfig()' not in cms
 assert "['configured'=>" in mail and "'usernameSet'" in mail and "'password'=>" not in mail.split('function mailTransportStatus',1)[1].split('function mailTransportValidateHeader',1)[0]
-assert 'verify_peer'=>True if False else True
-assert "'verify_peer'=>true" in mail and 'STARTTLS' in mail and "AUTH LOGIN" in mail and 'Unencrypted SMTP is disabled outside development.' in mail
+assert "'verify_peer'=>true" in mail and "'verify_peer_name'=>true" in mail and 'STARTTLS' in mail and 'AUTH LOGIN' in mail and 'Unencrypted SMTP is disabled outside development.' in mail
 assert 'AINCMS_MAIL_PASSWORD' in private and 'Connect Devices' in private
 assert 'activeAudienceLists' in onboarding and '/docs/CPANEL-EMAIL.md' in onboarding and 'mailConfigured' in onboarding
 assert '/cms/audience.php' in ui and 'Export confirmed CSV' in ui and 'Send test' in ui

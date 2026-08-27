@@ -1,4 +1,4 @@
--- AI Native CMS — MySQL schema v8 extraction baseline
+-- AI Native CMS — MySQL schema v10 public release candidate
 -- MySQL 5.7+/8.0 compatible; utf8mb4 throughout.
 -- Contains structure only. Adopter-authored content belongs in adopter seeds or canonical runtime state.
 
@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS app_meta (
   schema_version INT UNSIGNED NOT NULL,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-INSERT INTO app_meta (id, schema_version) VALUES (1, 8)
-  ON DUPLICATE KEY UPDATE schema_version=GREATEST(schema_version, 8);
+INSERT INTO app_meta (id, schema_version) VALUES (1, 10)
+  ON DUPLICATE KEY UPDATE schema_version=GREATEST(schema_version, 10);
 
 CREATE TABLE IF NOT EXISTS cms_users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
@@ -86,19 +86,25 @@ CREATE TABLE IF NOT EXISTS page_blocks (
   CONSTRAINT fk_page_blocks_user FOREIGN KEY (updated_by) REFERENCES cms_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS page_block_templates (
-  template_key VARCHAR(191) NOT NULL PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS block_presets (
+  preset_key VARCHAR(191) NOT NULL PRIMARY KEY,
   label VARCHAR(191) NOT NULL,
   category VARCHAR(96) NOT NULL DEFAULT 'Section',
-  source_page VARCHAR(512) NOT NULL,
-  source_ordinal INT UNSIGNED NOT NULL,
-  source_hash CHAR(64) NOT NULL,
+  preset_kind VARCHAR(32) NOT NULL DEFAULT 'legacy',
   html_content LONGTEXT NOT NULL,
+  definition_json LONGTEXT NOT NULL,
   variables_json LONGTEXT NOT NULL,
+  source_note VARCHAR(512) NOT NULL DEFAULT '',
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  KEY idx_page_block_templates_source (source_page(191), source_ordinal),
-  KEY idx_page_block_templates_category (category)
+  KEY idx_block_presets_category (category, label),
+  KEY idx_block_presets_kind (preset_kind),
+  KEY idx_block_presets_created_user (created_by),
+  KEY idx_block_presets_updated_user (updated_by),
+  CONSTRAINT fk_block_presets_created_user FOREIGN KEY (created_by) REFERENCES cms_users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_block_presets_updated_user FOREIGN KEY (updated_by) REFERENCES cms_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS page_compositions (
@@ -270,21 +276,40 @@ CREATE TABLE IF NOT EXISTS post_revisions (
   CONSTRAINT fk_post_revisions_user FOREIGN KEY (user_id) REFERENCES cms_users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Optional built-in subscription primitive. Sites that do not expose subscriptions may leave these tables unused.
-CREATE TABLE IF NOT EXISTS subscribers (
+CREATE TABLE IF NOT EXISTS audience_lists (
+  list_key VARCHAR(64) NOT NULL PRIMARY KEY,
+  label VARCHAR(191) NOT NULL,
+  public_label VARCHAR(191) NOT NULL,
+  description TEXT NOT NULL,
+  confirmation_subject VARCHAR(255) NOT NULL,
+  confirmation_body TEXT NOT NULL,
+  status ENUM('active','disabled') NOT NULL DEFAULT 'disabled',
+  created_by BIGINT UNSIGNED NULL,
+  updated_by BIGINT UNSIGNED NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_audience_lists_status (status,label),
+  CONSTRAINT fk_audience_lists_created_user FOREIGN KEY (created_by) REFERENCES cms_users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_audience_lists_updated_user FOREIGN KEY (updated_by) REFERENCES cms_users(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS audience_subscriptions (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
   list_key VARCHAR(64) NOT NULL,
   email VARCHAR(254) NOT NULL,
-  status ENUM('pending','confirmed') NOT NULL DEFAULT 'pending',
+  status ENUM('pending','confirmed','unsubscribed') NOT NULL DEFAULT 'pending',
   requested_at DATETIME NOT NULL,
   last_confirmation_sent_at DATETIME NULL,
   confirmed_at DATETIME NULL,
+  unsubscribed_at DATETIME NULL,
   confirmation_token_hash CHAR(64) NULL,
+  source VARCHAR(64) NOT NULL DEFAULT 'public-form',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  UNIQUE KEY uq_subscribers_list_email (list_key, email),
-  KEY idx_subscribers_status (list_key, status),
-  KEY idx_subscribers_token (confirmation_token_hash)
+  UNIQUE KEY uq_audience_subscription (list_key,email),
+  KEY idx_audience_subscription_status (list_key,status),
+  KEY idx_audience_subscription_token (confirmation_token_hash),
+  CONSTRAINT fk_audience_subscription_list FOREIGN KEY (list_key) REFERENCES audience_lists(list_key) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Used only when AINCMS_MAIL_TRANSPORT=log for local/testing environments.

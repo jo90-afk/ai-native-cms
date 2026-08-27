@@ -6,7 +6,7 @@ Published release baseline: `0.1.0-rc.3` (schema v8, frozen artifact)
 Current development baseline: `main` after merged M-015 → M-017
 Working branch: `feat/clean-managed-routes-port`
 Active milestone: M-018 / draft PR #23
-Runtime contract: `jo90-afk/lattice-app-works-platform-agnostic` 0.1.6
+Runtime contract: `lattice-app-works-platform-agnostic` 0.1.6
 Principal alias: `Repository Owner`
 Updated: **2026-08-27 (America/New_York)**
 

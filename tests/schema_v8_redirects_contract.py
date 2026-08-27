@@ -19,7 +19,9 @@ need('api/cms-redirects.php','requireCmsAuth(true)','redirectRequireSchema()','r
 need('api/cms-writing.php','dbRequireSchemaVersion(8)','redirectPostPreflight','redirectUpsertPostSlug','removePostProjection','contentFinalizePublicProjections')
 pages=need('api/cms-pages.php','dbRequireSchemaVersion(8)','database/reconcile.php','contentFinalizePublicProjections');assert 'contentAuthorityImport(' not in pages,'browser Pages endpoint must not import repository source'
 need('database/reconcile.php','dbRequireSchemaVersion(8)','contentSyncRepository')
-rebuild=need('api/content-rebuild.php','dbRequireSchemaVersion(9)','after_seo','contentFinalizePublicProjections','seoProjectAll','navigationProject','brandingProject','redirectProject')
+rebuild=need('api/content-rebuild.php','after_seo','contentFinalizePublicProjections','seoProjectAll','navigationProject','brandingProject','redirectProject')
+assert 'function contentFinalizePublicProjections(string $root,?array $hooks=null,?array $seedContext=null): array {dbRequireSchemaVersion(8);' in rebuild,'schema-v8 sites must be able to reconcile/finalize immediately before the explicit v9 migration'
+assert 'function contentRebuild(string $root): array {dbRequireSchemaVersion(9);' in rebuild,'full preset-aware rebuild must require schema v9'
 order=[rebuild.index(x) for x in ["$context['core']['seo']=seoProjectAll","contentRebuildRunHooks($hooks,'after_seo'","$context['core']['navigation']=navigationProject","$context['core']['branding']=brandingProject","$context['core']['redirects']=redirectProject"]];assert order==sorted(order),'site-wide finalization order regressed'
 for path in ['api/cms-pages.php','api/cms-media.php','api/cms-navigation.php','api/cms-branding.php','api/cms-writing.php','api/cms-seo.php']: need(path,'dbRequireSchemaVersion(8)')
 need('api/cms-composer.php','dbRequireSchemaVersion(9)');need('api/cms-blocks.php','dbRequireSchemaVersion(9)')

@@ -10,43 +10,8 @@ require_once __DIR__.'/branding.php';
 require_once __DIR__.'/redirects.php';
 
 /** Deterministic rebuild orchestration with bounded adopter projector hooks. */
-
 function contentRebuildPhases(): array { return ['before_documents','after_documents','before_pages','after_pages','after_seo','finalize']; }
-function contentRebuildHooks(string $root): array {
-    $configured=siteConfigValue('projection','hooks',[]);$out=[];foreach(contentRebuildPhases() as $phase)$out[$phase]=[];if(!is_array($configured))return $out;
-    foreach($configured as $phase=>$items){if(!isset($out[$phase])||!is_array($items))continue;foreach($items as $item){if(!is_array($item))continue;$id=trim((string)($item['id']??''));$script=str_replace('\\','/',trim((string)($item['script']??'')));$callable=trim((string)($item['callable']??''));if(!preg_match('/^[A-Za-z0-9._:-]{2,191}$/',$id)||$script===''||str_starts_with($script,'/')||$callable===''||!preg_match('/^[A-Za-z_][A-Za-z0-9_\\\\:]*$/',$callable))throw new RuntimeException('Invalid projection hook configuration for phase '.$phase.'.');foreach(explode('/',$script) as $part)if($part===''||$part==='.'||$part==='..')throw new RuntimeException('Projection hook path is invalid: '.$script);$full=realpath(rtrim($root,'/\\').'/'.$script);if($full===false||!is_file($full)||!pathInside($full,$root))throw new RuntimeException('Projection hook script is unavailable or outside the site root: '.$script);$out[$phase][]=['id'=>$id,'script'=>$script,'path'=>$full,'callable'=>$callable];}}
-    return $out;
-}
-function contentRebuildRunHooks(array $hooks,string $phase,string $root,array &$context): array {
-    $results=[];foreach($hooks[$phase]??[] as $hook){require_once $hook['path'];if(!is_callable($hook['callable']))throw new RuntimeException('Projection hook callable is unavailable: '.$hook['id']);$started=microtime(true);$result=call_user_func($hook['callable'],$root,$context);$elapsed=(int)round((microtime(true)-$started)*1000);$results[]=['id'=>$hook['id'],'phase'=>$phase,'durationMs'=>$elapsed,'result'=>is_array($result)?$result:($result===null?[]:['value'=>$result])];$context['hooks'][$hook['id']]=$results[array_key_last($results)];}return $results;
-}
-
-/**
- * Complete site-wide derived-state boundary after a canonical content mutation.
- * after_pages adapters run before SEO; after_seo exists for sitemap/discovery work
- * that must consume final SEO state. Navigation, branding, redirects, and finalize
- * hooks then converge without becoming alternate authored-state authorities.
- */
-function contentFinalizePublicProjections(string $root,?array $hooks=null,?array $seedContext=null): array {
-    dbRequireSchemaVersion(8);$hooks=$hooks??contentRebuildHooks($root);$context=$seedContext??['startedAt'=>gmdate('c'),'hooks'=>[],'core'=>[]];$runs=[];
-    foreach(contentRebuildRunHooks($hooks,'after_pages',$root,$context) as $run)$runs[]=$run;
-    $context['core']['seo']=seoProjectAllPublicPages($root);
-    foreach(contentRebuildRunHooks($hooks,'after_seo',$root,$context) as $run)$runs[]=$run;
-    $context['core']['navigation']=navigationProject($root);
-    $context['core']['branding']=brandingProject($root);
-    $context['core']['redirects']=redirectProject($root);
-    foreach(contentRebuildRunHooks($hooks,'finalize',$root,$context) as $run)$runs[]=$run;
-    $context['finishedAt']=gmdate('c');return ['core'=>$context['core'],'hooks'=>$runs,'finishedAt'=>$context['finishedAt'],'context'=>$context];
-}
-function contentRebuild(string $root): array {
-    dbRequireSchemaVersion(8);$hooks=contentRebuildHooks($root);$context=['startedAt'=>gmdate('c'),'hooks'=>[],'core'=>[]];$runs=[];
-    foreach(contentRebuildRunHooks($hooks,'before_documents',$root,$context) as $run)$runs[]=$run;
-    $context['core']['documents']=contentAuthorityProjectConfiguredDocuments($root);
-    foreach(contentRebuildRunHooks($hooks,'after_documents',$root,$context) as $run)$runs[]=$run;
-    foreach(contentRebuildRunHooks($hooks,'before_pages',$root,$context) as $run)$runs[]=$run;
-    $context['core']['pages']=contentAuthorityProjectPages($root);
-    $context['core']['compositions']=compositionProjectAll($root);
-    $context['core']['publishing']=projectPublishedPosts($root);
-    $final=contentFinalizePublicProjections($root,$hooks,$context);foreach($final['hooks'] as $run)$runs[]=$run;$context=$final['context'];
-    return ['ok'=>true,'core'=>$context['core'],'hooks'=>$runs,'finishedAt'=>$context['finishedAt']];
-}
+function contentRebuildHooks(string $root): array {$configured=siteConfigValue('projection','hooks',[]);$out=[];foreach(contentRebuildPhases() as $phase)$out[$phase]=[];if(!is_array($configured))return $out;foreach($configured as $phase=>$items){if(!isset($out[$phase])||!is_array($items))continue;foreach($items as $item){if(!is_array($item))continue;$id=trim((string)($item['id']??''));$script=str_replace('\\','/',trim((string)($item['script']??'')));$callable=trim((string)($item['callable']??''));if(!preg_match('/^[A-Za-z0-9._:-]{2,191}$/',$id)||$script===''||str_starts_with($script,'/')||$callable===''||!preg_match('/^[A-Za-z_][A-Za-z0-9_\\\\:]*$/',$callable))throw new RuntimeException('Invalid projection hook configuration for phase '.$phase.'.');foreach(explode('/',$script) as $part)if($part===''||$part==='.'||$part==='..')throw new RuntimeException('Projection hook path is invalid: '.$script);$full=realpath(rtrim($root,'/\\').'/'.$script);if($full===false||!is_file($full)||!pathInside($full,$root))throw new RuntimeException('Projection hook script is unavailable or outside the site root: '.$script);$out[$phase][]=['id'=>$id,'script'=>$script,'path'=>$full,'callable'=>$callable];}}return $out;}
+function contentRebuildRunHooks(array $hooks,string $phase,string $root,array &$context): array {$results=[];foreach($hooks[$phase]??[] as $hook){require_once $hook['path'];if(!is_callable($hook['callable']))throw new RuntimeException('Projection hook callable is unavailable: '.$hook['id']);$started=microtime(true);$result=call_user_func($hook['callable'],$root,$context);$elapsed=(int)round((microtime(true)-$started)*1000);$results[]=['id'=>$hook['id'],'phase'=>$phase,'durationMs'=>$elapsed,'result'=>is_array($result)?$result:($result===null?[]:['value'=>$result])];$context['hooks'][$hook['id']]=$results[array_key_last($results)];}return $results;}
+function contentFinalizePublicProjections(string $root,?array $hooks=null,?array $seedContext=null): array {dbRequireSchemaVersion(9);$hooks=$hooks??contentRebuildHooks($root);$context=$seedContext??['startedAt'=>gmdate('c'),'hooks'=>[],'core'=>[]];$runs=[];foreach(contentRebuildRunHooks($hooks,'after_pages',$root,$context) as $run)$runs[]=$run;$context['core']['seo']=seoProjectAllPublicPages($root);foreach(contentRebuildRunHooks($hooks,'after_seo',$root,$context) as $run)$runs[]=$run;$context['core']['navigation']=navigationProject($root);$context['core']['branding']=brandingProject($root);$context['core']['redirects']=redirectProject($root);foreach(contentRebuildRunHooks($hooks,'finalize',$root,$context) as $run)$runs[]=$run;$context['finishedAt']=gmdate('c');return ['core'=>$context['core'],'hooks'=>$runs,'finishedAt'=>$context['finishedAt'],'context'=>$context];}
+function contentRebuild(string $root): array {dbRequireSchemaVersion(9);$hooks=contentRebuildHooks($root);$context=['startedAt'=>gmdate('c'),'hooks'=>[],'core'=>[]];$runs=[];foreach(contentRebuildRunHooks($hooks,'before_documents',$root,$context) as $run)$runs[]=$run;$context['core']['documents']=contentAuthorityProjectConfiguredDocuments($root);foreach(contentRebuildRunHooks($hooks,'after_documents',$root,$context) as $run)$runs[]=$run;foreach(contentRebuildRunHooks($hooks,'before_pages',$root,$context) as $run)$runs[]=$run;$context['core']['pages']=contentAuthorityProjectPages($root);$context['core']['compositions']=compositionProjectAll($root);$context['core']['publishing']=projectPublishedPosts($root);$final=contentFinalizePublicProjections($root,$hooks,$context);foreach($final['hooks'] as $run)$runs[]=$run;$context=$final['context'];return ['ok'=>true,'core'=>$context['core'],'hooks'=>$runs,'finishedAt'=>$context['finishedAt']];}

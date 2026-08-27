@@ -13,13 +13,15 @@ export AINCMS_DB_HOST="${AINCMS_DB_HOST:-127.0.0.1}" AINCMS_DB_PORT="${AINCMS_DB
 export AINCMS_CMS_ENABLED=1 AINCMS_CMS_USER=rehearsal-owner AINCMS_CMS_PASSWORD_HASH="$(php -r 'echo password_hash("rehearsal-owner-password", PASSWORD_DEFAULT);')" AINCMS_RATE_LIMIT_SECRET=0123456789abcdef0123456789abcdef AINCMS_ENV=development AINCMS_CMS_REQUIRE_HTTPS=0 AINCMS_PUBLIC_ORIGIN=http://localhost:8080
 
 # Reset only the dedicated rehearsal database, using the same scoped application
-# account the service provisions. No server/root privilege is required.
+# account the service provisions. Table names come from SHOW TABLES and are
+# validated before interpolation; no server/root privilege is required.
 git -C "$ROOT" show v0.1.0-rc.3:database/schema.sql > "$WORK/schema-v8.sql"
 grep -q 'VALUES (1, 8)' "$WORK/schema-v8.sql"
 MYSQL=(mysql -h "$AINCMS_DB_HOST" -P "$AINCMS_DB_PORT" -u "$AINCMS_DB_USER" -p"$AINCMS_DB_PASSWORD" "$AINCMS_DB_NAME")
 while IFS= read -r table; do
   [[ -n "$table" ]] || continue
-  "${MYSQL[@]}" -e "SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS \\`$table\\`; SET FOREIGN_KEY_CHECKS=1;"
+  [[ "$table" =~ ^[A-Za-z0-9_]+$ ]] || { echo "Unsafe rehearsal table name: $table" >&2; exit 1; }
+  "${MYSQL[@]}" -e "SET FOREIGN_KEY_CHECKS=0; DROP TABLE IF EXISTS ${table}; SET FOREIGN_KEY_CHECKS=1;"
 done < <("${MYSQL[@]}" -Nse 'SHOW TABLES')
 "${MYSQL[@]}" < "$WORK/schema-v8.sql"
 php -r 'require "api/runtime.php"; if((dbHealth()["schemaVersion"]??0)!==8) throw new RuntimeException("published rc.3 fixture is not schema 8");'

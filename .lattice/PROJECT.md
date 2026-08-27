@@ -3,7 +3,8 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Release baseline: `main` at public `0.1.0-rc.3`
-Working branch: `feat/schema-v9-block-composer-port`
+Working branch: `feat/live-page-composer-port`
+Stacked base: `feat/schema-v9-block-composer-port` / draft PR #20
 Runtime contract: `lattice-app-works-platform-agnostic` 0.1.6
 Principal alias: `Repository Owner`
 Updated: **2026-08-26 (America/New_York)**
@@ -26,8 +27,11 @@ Routine reversible implementation, tests, documentation, parity refreshes, relea
 - Generated HTML/JSON/XML/indexes/redirect maps are outputs, not reverse source authority.
 - Human and agent writers converge on guarded mutation contracts.
 - Browser clients never submit arbitrary structural HTML or CSS.
-- Structural HTML is generated server-side from either repository-derived converted presets or canonical governed semantic primitive definitions.
-- A saved block preset is a recipe, not a live shared component. Page Composer stores a preset key, stable instance identity, and typed value snapshot; later preset edits affect future placements only.
+- Structural HTML is generated server-side from repository-derived converted presets or canonical governed semantic primitive definitions.
+- A saved block preset is a recipe, not a live shared component. Each page placement owns an independent typed value snapshot.
+- Page Composer is the sole browser mutation boundary for public page copy and page composition after schema v9.
+- A repository page may be adopted into canonical composition only from a source-state hash; stale first adoption fails closed.
+- Rebuild may preserve canonical `page_blocks`; an intentional live Composer save synchronizes its typed rendered leaves into canonical `page_blocks` atomically with composition state.
 - Repository source may propose canonical content but may not silently overwrite newer accepted database state.
 - Database bootstrap owns schema structure and the first persisted owner only; migrations remain explicit CLI operations.
 - Browser onboarding/readiness/maintenance may not migrate, deploy, publish, or expose secrets.
@@ -40,35 +44,49 @@ M-001 through M-014 and SEO parity closure are satisfied for public `0.1.0-rc.3`
 
 ## M-015 — governed saved-block composition
 
-**Active candidate on `feat/schema-v9-block-composer-port`; not released, merged, or deployed.**
+**Technically satisfied on draft PR #20; not merged, released, or deployed.**
 
-Objective: port the reusable composition wave validated in the production proving ground without importing site identity, authored content, styling assumptions, credentials, or host-specific deployment behavior.
+Accepted evidence:
+
+- explicit CLI-only schema `8→9` migration creates `block_presets`, converts former template rows, rewrites `templateKey→presetKey`, archives the old table, and is idempotent;
+- bounded semantic primitive renderer and standalone Block Composer never accept arbitrary browser structural HTML/CSS;
+- Page Composer stores `presetKey`, `instanceId`, and typed value snapshots;
+- shared first-party thumbnail media picker is reused across composition surfaces;
+- schema-v8 installed sites remain read-compatible immediately before migration;
+- cumulative validation run #246 passed contracts, behavior, PHP/JS/Python syntax, and deterministic candidate build;
+- MySQL release rehearsal run #57 passed clean rc.3 bootstrap/reconcile plus the v8→v9 conversion, archive, idempotence, sanitation, and single-H1 composition invariants.
+
+M-015 remains independently replaceable because its PR is not collapsed into M-016.
+
+## M-016 — unified live Page Composer
+
+**Active candidate on `feat/live-page-composer-port`; stacked on M-015 and not merged, released, or deployed.**
+
+Objective: port the production proving-ground consolidation that makes one live Page Composer the sole browser page-authoring workflow while preserving the public CMS’s typed preset authority, optimistic hashes, and source/repository boundary.
 
 Acceptance conditions:
 
-- schema-v8 release state remains frozen and installable;
-- explicit CLI-only `8-to-9` migration creates canonical `block_presets`, converts former template rows, rewrites composition references, archives the retired table, and advances the schema only after guarded work;
-- primitive definitions are bounded to application-declared layouts, surfaces, widths, spacing, semantic elements, counts, media paths, link schemes, and heading rules;
-- Block Composer never persists arbitrary browser HTML/CSS;
-- Page Composer consumes saved presets and persists only `presetKey`, `instanceId`, and typed values;
-- in-use presets cannot be deleted;
-- shared thumbnail media selection is first-party and used by both new composition surfaces;
-- composed public pages retain exactly one H1 and deterministic editable-leaf identities;
-- rebuild/projection requires schema v9 once preset-based composition is active;
-- cumulative public-release, authority, security, syntax, migration, and behavior contracts remain green.
+- public pages render in a same-origin sandboxed iframe with site scripts disabled;
+- direct rich-text edits map to typed preset variables rather than browser-submitted structural HTML;
+- media, link, and text fields remain typed and bounded; first-party media selection is shared with Block Composer;
+- block add/duplicate/move/remove operations submit only preset identities, instance identities, and typed values; server rendering remains structural authority;
+- repository pages can be adopted into canonical composition without losing prior accepted `page_blocks` edits;
+- first adoption is guarded by both composition hash (`none`) and a canonical source-state hash;
+- live typed saves synchronize composition snapshots and canonical editable leaves; later rebuilds preserve those accepted values;
+- Block Composer can open inside Page Composer and saved preset edits remain future-placement-only;
+- `/cms/pages.php` becomes authenticated compatibility redirect only; `api/cms-pages.php` and its browser client are removed;
+- onboarding and CMS navigation teach Blocks + Composer rather than competing Pages/Composer concepts;
+- schema-v8 read/reconcile compatibility from M-015 remains intact;
+- static contracts, PHP/JS syntax, deterministic package build, clean rc.3 rehearsal, v9 migration rehearsal, and live-state convergence rehearsal are green.
 
 Current implementation evidence:
 
-- new primitive renderer: `api/composer-primitives.php`;
-- new canonical preset store: `api/block-presets.php`;
-- guarded Block Composer API/UI: `api/cms-blocks.php`, `cms/blocks.php`, `cms/block-composer.js`;
-- explicit migration: `database/migrations/8-to-9.php`;
-- Page Composer composition records now use preset instance snapshots;
-- shared visual media picker: `cms/media-picker.js` + `cms/media-picker.css`;
-- extraction and test contracts updated for the v8-release/v9-development boundary.
+- typed visible-state hydration: `api/composition-values.php`;
+- live save/source-adoption convergence: `api/composition-store.php`;
+- server-only block preview and guarded save: `api/cms-composer.php`;
+- live authoring surface: `cms/composer.php`, `cms/composer.js`, `cms/composer-live.css`;
+- embedded block design bridge: `cms/blocks.php`, `cms/block-composer-embed.js`;
+- Pages compatibility redirect and retired mutation API/client;
+- updated onboarding/authority contracts and MySQL rehearsal coverage.
 
-Independent CI verification is required before M-015 can be accepted.
-
-## Next frontier after M-015
-
-Port the later production change that makes one live Page Composer the sole page mutation boundary and retires the separate Pages editor. That change is intentionally excluded from M-015 because it changes operator information architecture and mutation routing on top of the new schema-v9 authority model.
+Independent verification is required before M-016 is accepted or its stacked draft PR is promoted from technical candidate.

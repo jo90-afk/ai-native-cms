@@ -2,80 +2,73 @@
 
 Project ID: `ai-native-cms-001`
 Product repository: this repository
-Baseline branch: `main`
+Release baseline: `main` at public `0.1.0-rc.3`
+Working branch: `feat/schema-v9-block-composer-port`
 Runtime contract: `lattice-app-works-platform-agnostic` 0.1.6
 Principal alias: `Repository Owner`
 Updated: **2026-08-26 (America/New_York)**
 
 ## Confirmed mandate
 
-Maintain a site-neutral AI-native CMS that preserves canonical SQL authority, repository/template ownership, static public delivery, revisions/provenance, explicit migrations, deterministic projection, bounded deployment adapters, friendly onboarding, reversible repository operations, and governed human/LLM collaboration.
+Maintain a site-neutral AI-native CMS that preserves canonical SQL authority, repository-owned application behavior, static public delivery, revisions/provenance, explicit migrations, deterministic projection, bounded deployment adapters, friendly onboarding, reversible repository operations, and governed human/LLM collaboration.
 
-Routine reversible implementation, tests, documentation, parity refreshes, release-candidate preparation, and release assurance are delegated. Production deployment/adoption, credentials, and destructive data actions remain explicit operator/Principal boundaries.
+Routine reversible implementation, tests, documentation, parity refreshes, release-candidate preparation, and release assurance are delegated. Production deployment/adoption, credentials, public release publication, and destructive data actions remain explicit operator/Principal boundaries.
 
-The selected license is **Apache License 2.0 subject to Commons Clause License Condition v1.0**. The project is **source-available**, not OSI-approved open source.
+## Frozen release truth
+
+`0.1.0-rc.3` is already published and remains a schema-v8 artifact tied to its released main SHA. Post-release development may not silently redefine that tag, package, release metadata, or installation contract.
 
 ## Durable product truths
 
 - Anonymous public delivery is static-first and database-free.
-- MySQL owns accepted authored state.
-- Git owns code, structural templates/shells, CSS/JS behavior, schema/migrations, tests, docs, adapters, and public non-secret adopter configuration.
-- Repository source may propose canonical content but may not silently overwrite newer accepted database state.
+- MySQL owns accepted authored state and bounded reusable composition state.
+- Git owns code, rendering behavior, shells, CSS/JS, schema/migrations, tests, docs, adapters, and public non-secret adopter configuration.
 - Generated HTML/JSON/XML/indexes/redirect maps are outputs, not reverse source authority.
-- Human and agent writers converge on the same guarded mutation contracts.
-- Structural HTML remains repository/template-owned; canonical CMS state stores trusted template identities and bounded typed values.
-- Repository-authored pages and CMS-created pages remain distinct source classes.
-- SEO quality inspection is observational. Canonical page-specific SEO remains in `seo_overrides`; deterministic social/schema enhancement is projection only.
-- Release-managed SEO updates may seed missing state but may replace an existing override only by exact expected-predecessor hash.
-- Database bootstrap owns schema structure and the first persisted owner only; migrations remain explicit.
-- Browser onboarding is authenticated and state-derived but never writes credentials, migrates, or deploys.
-- Redirect authority is canonical in SQL; anonymous routing consumes generated static state only.
-- Readiness is observational and may not mutate, migrate, deploy, publish, or expose secrets.
-- LLM collaboration preserves branches/review, canonical-state boundaries, migrations, tests, and secret separation.
-- Before any future release candidate, a fresh production proving-ground comparison is required; only material reusable core deltas reopen extraction.
+- Human and agent writers converge on guarded mutation contracts.
+- Browser clients never submit arbitrary structural HTML or CSS.
+- Structural HTML is generated server-side from either repository-derived converted presets or canonical governed semantic primitive definitions.
+- A saved block preset is a recipe, not a live shared component. Page Composer stores a preset key, stable instance identity, and typed value snapshot; later preset edits affect future placements only.
+- Repository source may propose canonical content but may not silently overwrite newer accepted database state.
+- Database bootstrap owns schema structure and the first persisted owner only; migrations remain explicit CLI operations.
+- Browser onboarding/readiness/maintenance may not migrate, deploy, publish, or expose secrets.
+- Redirect authority remains canonical in SQL while anonymous routing consumes generated static state only.
+- Before a future release line is cut, a fresh production proving-ground comparison and clean rehearsal are required.
 
 ## Satisfied release milestones
 
-- **M-001 — Generic executable foundation**
-- **M-002 — Canonical page/document authority**
-- **M-003 — Operable page CMS and bounded projector hooks**
-- **M-004 — Long-form publishing and SEO**
-- **M-005 — Typed composition and media**
-- **M-006 — Page hierarchy, navigation, and branding**
-- **M-007 — Portable bootstrap and readiness**
-- **M-008 — Reproducible release packaging**
-- **M-009 — Schema-v8 redirects and finalization**
-- **M-010 — Reference deployment adapters**
-- **M-011 — Friendly onboarding and coherent starter site**
-- **M-012 — Repository/hosting operations**
-- **M-013 — Governed LLM collaboration**
-- **SEO parity closure — site-wide audit/projection/compare-and-swap mechanics**
-- **M-014 — Clean empty-site release rehearsal**
+M-001 through M-014 and SEO parity closure are satisfied for public `0.1.0-rc.3`.
 
-M-014 proved the packaged rc.3 candidate through deterministic double-builds, clean MySQL 8 bootstrap/reconciliation, authenticated onboarding, zero-blocker readiness, a representative governed repository/agent change, canonical content mutation and projection, database-free redirect routing, and paired filesystem/database recovery.
+## M-015 — governed saved-block composition
 
-## Public rc.3 authorization
+**Active candidate on `feat/schema-v9-block-composer-port`; not released, merged, or deployed.**
 
-The Principal explicitly authorized publication of `0.1.0-rc.3`.
+Objective: port the reusable composition wave validated in the production proving ground without importing site identity, authored content, styling assumptions, credentials, or host-specific deployment behavior.
 
-Release contract:
+Acceptance conditions:
 
-- channel: `public-release-candidate`;
-- required tag: `v0.1.0-rc.3`;
-- schema version: 8;
-- public distribution: authorized;
-- license: Apache 2.0 + Commons Clause v1.0;
-- GitHub release type: prerelease.
+- schema-v8 release state remains frozen and installable;
+- explicit CLI-only `8-to-9` migration creates canonical `block_presets`, converts former template rows, rewrites composition references, archives the retired table, and advances the schema only after guarded work;
+- primitive definitions are bounded to application-declared layouts, surfaces, widths, spacing, semantic elements, counts, media paths, link schemes, and heading rules;
+- Block Composer never persists arbitrary browser HTML/CSS;
+- Page Composer consumes saved presets and persists only `presetKey`, `instanceId`, and typed values;
+- in-use presets cannot be deleted;
+- shared thumbnail media selection is first-party and used by both new composition surfaces;
+- composed public pages retain exactly one H1 and deterministic editable-leaf identities;
+- rebuild/projection requires schema v9 once preset-based composition is active;
+- cumulative public-release, authority, security, syntax, migration, and behavior contracts remain green.
 
-The publication branch must pass the cumulative repository gate and clean packaged-candidate rehearsal. After merge, `.github/workflows/publish-release.yml` builds from the exact `main` SHA, attempts repository-public visibility, creates/verifies the tag and GitHub prerelease, and attaches the ZIP, manifest, and SHA256.
+Current implementation evidence:
 
-If GitHub's workflow token lacks repository-administration permission, repository visibility remains the only manual account-level action; tag/release/package creation still proceeds within the repository.
+- new primitive renderer: `api/composer-primitives.php`;
+- new canonical preset store: `api/block-presets.php`;
+- guarded Block Composer API/UI: `api/cms-blocks.php`, `cms/blocks.php`, `cms/block-composer.js`;
+- explicit migration: `database/migrations/8-to-9.php`;
+- Page Composer composition records now use preset instance snapshots;
+- shared visual media picker: `cms/media-picker.js` + `cms/media-picker.css`;
+- extraction and test contracts updated for the v8-release/v9-development boundary.
 
-## Post-release frontier
+Independent CI verification is required before M-015 can be accepted.
 
-- adopter feedback and release-candidate fixes;
-- additional server/CDN deployment adapters;
-- optional newsletter/subscription extension;
-- additional starter themes/template packs;
-- future schema changes require explicit migrations;
-- production deployment/adoption remains independent of source publication.
+## Next frontier after M-015
+
+Port the later production change that makes one live Page Composer the sole page mutation boundary and retires the separate Pages editor. That change is intentionally excluded from M-015 because it changes operator information architecture and mutation routing on top of the new schema-v9 authority model.

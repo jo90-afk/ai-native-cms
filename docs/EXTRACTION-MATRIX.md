@@ -1,67 +1,44 @@
 # Extraction and release matrix
 
-This file records which capabilities belong in reusable core, adapters, release engineering, and adopter-specific layers for AI Native CMS `0.1.0-rc.3`.
+This file distinguishes the frozen `0.1.0-rc.3` release baseline from post-release reusable-core extraction.
 
 | Capability | Public destination | Classification | Status | Product rule |
 | --- | --- | --- | --- | --- |
 | MySQL transport and secret loading | `api/database.php` | core | released | Generic `AINCMS_*` configuration; secrets stay outside public root |
 | HTTPS/origin/session/auth/CSRF/rate limits/audit | `api/runtime.php` | core | released | Fail closed in production |
-| Canonical schema | `database/schema.sql` | core | released — v8 | Structure only; no adopter content seed |
-| Explicit schema upgrades | `database/migrations/` | compatibility core | released — 7→8 | Versioned CLI migrations; bootstrap repair is never migration |
+| Canonical release schema | `database/schema.sql` | core | released — rc.3 / v8 | Frozen release bootstrap remains schema v8 until a later release line is cut |
+| Explicit schema upgrades | `database/migrations/` | compatibility core | v7→8 released; v8→9 candidate | Versioned CLI migrations; bootstrap repair and browser requests are never migration |
 | Repository page/document registry | `config/site.php` | adopter config | released | Public structure only; repository pages remain distinct from CMS-created pages |
 | Page editing/revisions | content/page APIs + Pages UI | core | released | Sanitized bounded content, optimistic hashes, revisions |
 | Canonical content reconciliation | content authority/sync + CLI reconcile | core | released | Three-way source/canonical reconciliation; browser never promotes repository source into SQL |
-| Deterministic public projection | rebuild/projector pipeline | core + adapter hooks | released | Accepted state projects deterministically; anonymous reads stay static-first |
+| Deterministic public projection | rebuild/projector pipeline | core + adapter hooks | released; v9 floor candidate | Accepted state projects deterministically; anonymous reads stay static-first |
 | Posts/drafts/revisions/publishing | writing store/API/UI | core | released | Canonical SQL, bounded Markdown, static projection, slug-history redirects |
-| SEO controls | SEO store/API/UI | core | released | Canonical overrides; same-origin canonicals |
-| Site-wide SEO quality audit | `api/seo-quality.php`, `database/seo-audit.php`, Search + Social UI | core QA | released | Read-only duplicate/link/orphan/sitemap/canonical/H1/social/schema/alt findings |
-| Deterministic SEO/social/schema enhancement | `api/seo-projection.php`, rebuild finalizer | core projection | released | Canonical overrides first; inherited/custom social modes preserved |
-| Release-managed SEO compare-and-swap | `api/content-sync-seo.php` | compatibility core | released | Existing canonical override changes only with exact predecessor hash |
-| Canonical redirects | redirect store/API/UI | core | released | Graph serialization, optimistic record revisions, collision/conflict/cycle rejection |
-| Static redirect runtime | `__redirect.php`, `__redirect-map.php` | core projection | released | Anonymous redirect path is database-free |
-| Templates/composer | composer APIs/UI | core | released | Structural HTML remains repository-owned; CMS stores trusted template identities + typed values |
+| SEO controls and site-wide quality | SEO APIs/UI + audit/projection | core | released | Canonical overrides; same-origin canonicals; deterministic projection |
+| Canonical redirects + static runtime | redirect APIs/UI + `__redirect*` | core | released | Graph safety in SQL; anonymous routing remains database-free |
+| Converted structural presets | `api/block-presets.php` | compatibility core | candidate — M-015 | Existing repository block structures become canonical saved recipes with typed copy/media/link values |
+| Governed primitive presets | `api/composer-primitives.php`, Block Composer | core | candidate — M-015 | SQL may own constrained semantic definitions; server owns validation and structural HTML generation; browser never submits arbitrary HTML/CSS |
+| Saved block authority | schema-v9 `block_presets` | core | candidate — M-015 | One reusable-block authority replaces active `page_block_templates`; legacy table becomes recovery archive during migration |
+| Preset instance composition | composition store + Page Composer | core | candidate — M-015 | A preset is a recipe, not a live shared component; each placement stores `presetKey`, stable instance ID, and typed value snapshot |
+| Standalone Block Composer | `cms/blocks.php` + API/client | core UX | candidate — M-015 | Design/edit/delete governed presets; in-use presets cannot be deleted |
+| Shared thumbnail media picker | `cms/media-picker.*` | core UX | candidate — M-015 | Same first-party media catalog used by Block Composer and Page Composer |
+| Unified live Page Composer / retirement of separate Pages editor | Page Composer | core UX | next frontier | Port only after M-015 authority/migration tranche is green; page copy and composition mutations must converge deliberately |
 | Media library | media APIs/UI | core | released | Canonical metadata + adopter-owned bytes; bounded validated uploads |
-| Page hierarchy | composition store/Composer | core | released | Trusted shells, bounded routes, parent validation/cycle rejection |
-| Navigation | navigation store/API/UI | core | released | Canonical ordered state; safe destinations; projects only into `#site-nav` |
-| Branding | branding store/API/UI | core + adopter token definitions | released | Identity + explicitly declared bounded CSS variables only |
+| Page hierarchy, navigation, branding | respective stores/APIs/UI | core | released | Trusted shells, parent validation, safe navigation, bounded branding tokens |
 | Database bootstrap | `database/bootstrap*.php` | core | released | CLI-only schema + first owner; no content seed, credential overwrite, or implicit migration |
 | Production readiness | readiness API/CLI/UI | core + adapter checks | released | Read-only actionable evidence; never deploys/migrates/publishes/exposes secrets |
-| Starter public site | root pages, `assets/`, `templates/article.html` | product starter | released — rc.3 | Neutral Home/About/Writing site works before customization |
-| Public site initializer | `setup/site.php` | onboarding utility | released — rc.3 | CLI-only non-secret public config writer |
-| State-derived onboarding | onboarding API/UI | core UX | released — M-011 | Authenticated read-only progress model; no completion flag |
-| GitHub/repository operations guide | `docs/REPOSITORY-OPERATIONS.md` | operability docs | released — M-012 | Git vs SQL vs projection vs host state, deploy, backup, migration, rollback |
-| Agent repository contract | `AGENTS.md` | governance | released — M-013 | Authority/branch/migration/secret/test rules for coding agents |
-| LLM collaboration guide | `docs/LLM-COLLABORATION.md` | governance docs | released — M-013 | Governed design/content/feature/bug/schema/release workflows |
-| Browser credential-writing setup | deployment/provider layer | excluded from core | excluded | Core never writes provider/database credentials in browser |
-| Redirect interception contract | `docs/DEPLOYMENT-ADAPTERS.md` | adapter contract | released | Serve real files/dirs first; unresolved paths use static redirect projection |
-| Apache public/private references | `adapters/apache/` | reference adapters | released | Conservative public caching/compression; private/preview `no-store` |
-| Other server/CDN adapters | `adapters/<target>/` | optional adapters | later | Follow the same contract; no platform required |
-| Deterministic release package | `VERSION`, release metadata, builder | release engineering | released — rc.3 | Exact source provenance, reproducible ZIP/manifest/SHA256, residue guards |
-| License and attribution | `LICENSE`, `LICENSE-APACHE-2.0.txt`, `NOTICE` | distribution governance | released — rc.3 | Apache 2.0 + Commons Clause v1.0; source-available, not OSI open source |
-| Installation/upgrade/rollback | installation + release docs | release engineering | released — rc.3 | Site init → secrets → bootstrap → reconcile → onboarding → readiness; migrations/rollback explicit |
-| Clean empty-site release rehearsal | workflow + `tests/release_rehearsal.sh` | release assurance | satisfied — M-014 | Packaged candidate proves deterministic build, clean MySQL bootstrap, authenticated onboarding, governed changes, redirect transport, paired rollback |
-| Public GitHub prerelease publisher | `.github/workflows/publish-release.yml` | release automation | authorized — rc.3 | Exact main SHA → tag `v0.1.0-rc.3` → prerelease assets; idempotent on same tag/SHA |
-| Host repository updater / automatic deployment | provider adapter | optional | later | Host authority remains explicit/provider-specific |
-| Newsletter/subscription | extension | optional | later | Not required for core release |
+| Starter site, onboarding, repo/hosting ops, LLM governance | root/config/docs/CMS | product + governance | released — rc.3 | Adopters can initialize, operate, deploy, and collaborate without bypassing authority boundaries |
+| Deterministic release package | release metadata + builder | release engineering | released — rc.3 | Published tag remains tied to the old main SHA; feature branches do not redefine the published artifact |
+| License and attribution | license files | distribution governance | released — rc.3 | Apache 2.0 + Commons Clause v1.0; source-available, not OSI open source |
 | Site-specific themes/content/integrations | adopter repository | site-only | excluded | Reusable mechanisms may upstream; identity/authored semantics do not |
 
-## Release closure
+## Frozen public release
 
-M-001 through M-014 are satisfied for `0.1.0-rc.3`. The final clean-candidate rehearsal built the packaged candidate twice, bootstrapped a fresh MySQL 8 database and owner, reconciled repository content, authenticated through the shipped CMS boundary, reached zero-blocker readiness, exercised governed repository/agent work and canonical content mutation, generated database-free redirect state, restored paired filesystem/database backups, and returned to green readiness.
+`0.1.0-rc.3` remains the published schema-v8 release. Its tag, release metadata, and package provenance are not rewritten by post-release feature extraction.
 
-The final proving-ground parity check found no unresolved reusable CMS-core delta. Governance-only or adopter-only changes do not reopen extraction.
+## M-015 — governed saved-block composition
 
-## Public distribution state
+The production proving ground added a coherent reusable-core wave after rc.3: semantic primitive block design, one canonical saved-preset authority, a standalone Block Composer, Page Composer preset instances, and a shared visual media picker. The portable tranche deliberately excludes site-specific content, styling assumptions, credentials, deployment coupling, and the later live-page-editor consolidation.
 
-The Principal authorized publication of `0.1.0-rc.3`.
+The v8→v9 migration is CLI-only and guarded. It creates `block_presets`, copies the former template library as converted presets, rewrites canonical composition records from `templateKey` to `presetKey`, renames the old template table to `block_presets_legacy_archive`, and only then advances `app_meta` to schema 9. Browser mutation surfaces fail closed until that migration is complete.
 
-`release/release.json` now records:
-
-- channel `public-release-candidate`;
-- `public: true`;
-- required tag `v0.1.0-rc.3`;
-- selected Apache 2.0 + Commons Clause v1.0 source-available license.
-
-The release publisher builds from the exact merged `main` SHA and creates/verifies the Git tag, GitHub prerelease, ZIP, manifest, and SHA256 assets. Repository visibility is also requested; if GitHub's workflow token cannot perform that administrative change, an owner must change visibility to Public in repository settings.
-
-Production deployment/adoption remains independent of source publication.
+Acceptance requires static/security contracts, PHP/JavaScript syntax, migration behavior, composition invariants including exactly one H1, first-party media bounds, and the cumulative rc.3 contracts to remain green. The next extraction wave—one live Page Composer as the sole page mutation boundary—stays out of scope until M-015 is accepted.

@@ -83,14 +83,21 @@ Rc.4 adds site-neutral core discovery rather than requiring every adopter to han
 After public HTML, SEO, navigation, branding, redirects, and clean routes converge:
 
 1. `api/discovery-projection.php` scans public HTML only;
-2. `noindex` pages and external canonicals are excluded;
+2. `noindex` pages, external/different-origin canonicals, private/source trees, symlinks, and unsafe paths are excluded;
 3. duplicate legacy/clean files collapse onto their same-site canonical URL;
 4. `site-index.json`, `sitemap.xml`, and `sitemap.txt` are emitted from that public surface;
-5. `api/llms-projection.php` builds a compact `llms.txt` routing index from `site-index.json`;
-6. an optional existing `llms-full.txt` expanded-public-context body can be synchronized beneath the compact index;
-7. public HTML receives an idempotent `rel="describedby"` link to `/llms.txt`.
+5. `api/markdown-projection.php` revalidates the current public HTML set and serializes one adjacent `.md` alternate per canonical page;
+6. `api/llms-projection.php` builds a compact `llms.txt` routing index that prefers those verified alternates;
+7. an optional existing `llms-full.txt` expanded-public-context body is synchronized beneath the compact index;
+8. eligible public HTML receives idempotent `rel="alternate" type="text/markdown"` and `rel="describedby"` links, respecting a configured base path.
 
 These outputs never read private CMS state, subscriber records, credentials, drafts, or host-only operational markers. They are replaceable public projections, not content authority.
+
+Markdown follows the published HTML source path (`about/index.html` → `about/index.md`) and names the canonical HTML URL in its footer. The serializer retains headings, paragraphs, emphasis, links, lists, quotes, code, and image descriptions while omitting page chrome, forms, scripts, templates, and nested elements explicitly hidden by HTML/ARIA or inline display/visibility rules. It is a text projection, not a full layout or stylesheet interpreter. Hidden client-side data must never be used as a private store in public HTML.
+
+The public index does not grant file-reading authority: a stale or edited `sourcePath` is rechecked against the current contained public-file set. No alternate can follow a symlink or read an operational/source tree. Existing authored `.md` files cause a collision error rather than being overwritten. Generated files carry the `AI Native CMS public Markdown projection v1` ownership comment; a rebuild removes only marked alternates whose source was removed, changed route, became `noindex`, or acquired an ineligible canonical. It also removes their stale alternate metadata. Fix the owning source/configuration and rebuild to recover from a collision; do not use generated Markdown as reconciliation input.
+
+An absent `llms-full.txt` needs no setup and creates no expanded-context link. Presence opts into synchronization: the file must be a regular local file with a separator consisting of a line `---` followed by a blank line. The suffix beginning at that separator is preserved verbatim regardless of its first heading. Missing separators, symlinks, unreadable files, or failed writes raise an error. The corpus must already contain only approved public material; this projector neither harvests private state nor independently curates the adopter's expanded corpus.
 
 ### 9. Projection/finalization order
 
@@ -107,7 +114,7 @@ These outputs never read private CMS state, subscriber records, credentials, dra
 9. `finalize` adopter hooks;
 10. managed clean-route materialization;
 11. core public discovery index/sitemaps;
-12. `llms.txt` and public discovery-link injection.
+12. Markdown alternates, `llms.txt`, optional full-context synchronization, and public discovery-link injection.
 
 Hooks remain available for adopter-specific derived surfaces; they may not replace canonical authority. Anonymous delivery remains static-first/database-free.
 

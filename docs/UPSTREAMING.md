@@ -56,6 +56,8 @@ Path compatibility is preferred over a generated abstraction layer. A maintainer
 
 When a future refactor intentionally breaks path compatibility, treat that as a versioned migration and provide an adapter/migration guide. Do not allow gradual topology drift to become the integration strategy.
 
+The public Markdown discovery increment is a generic forward adaptation: its source set comes from the public discovery index and current public HTML, with no fixed portfolio routes or adopter titles. Its three runtime paths are `api/discovery-projection.php`, `api/markdown-projection.php`, and `api/llms-projection.php`. Adopt them as one reviewed unit and run the discovery contract plus cumulative gates. Preserve any site-specific index schema or full-corpus production behind an adapter; the generic index uses `site` and `pages`. No schema migration or release tag rewrite is required for this increment.
+
 ## What never moves upstream
 
 Do not upstream:

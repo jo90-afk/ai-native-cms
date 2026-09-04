@@ -19,7 +19,7 @@ python3 - "$A_MANIFEST" "$SOURCE_REF" <<'PY'
 import json,sys
 m=json.load(open(sys.argv[1],encoding='utf-8'));assert m['sourceRevision']==sys.argv[2];assert m['version']=='0.1.0-rc.4';assert m['schemaVersion']==10;assert m['channel']=='public-release-candidate';assert m['distribution']['tag']=='v0.1.0-rc.4'
 paths={r['path'] for r in m['files']}
-for required in ['LICENSE','AGENTS.md','docs/INSTALLATION.md','docs/CPANEL-EMAIL.md','api/discovery-projection.php','api/llms-projection.php','api/audience.php','api/mail-transport.php','database/migrations/7-to-8.php','database/migrations/8-to-9.php','database/migrations/9-to-10.php','__redirect.php']:
+for required in ['LICENSE','AGENTS.md','docs/INSTALLATION.md','docs/CPANEL-EMAIL.md','api/discovery-projection.php','api/markdown-projection.php','api/llms-projection.php','api/audience.php','api/mail-transport.php','database/migrations/7-to-8.php','database/migrations/8-to-9.php','database/migrations/9-to-10.php','__redirect.php']:
     assert required in paths,required
 for forbidden in ['config/site.php','.lattice/PROJECT.md','tests/release_rehearsal.sh']:
     assert forbidden not in paths,forbidden
@@ -46,7 +46,14 @@ for file in site-index.json sitemap.xml sitemap.txt llms.txt; do [[ -s "$file" ]
 python3 - "$SITE" > /tmp/aincms-discovery-summary.json <<'PY'
 import json,sys
 from pathlib import Path
-root=Path(sys.argv[1]);idx=json.loads((root/'site-index.json').read_text());text=(root/'llms.txt').read_text();assert idx['site']['name']=='Rehearsal Site';assert idx['pages'];assert text.startswith('# Rehearsal Site\n');assert '/cms/' not in text;assert all(p['url'].startswith('http://localhost:8080/') for p in idx['pages']);assert any('rel="describedby" href="/llms.txt"' in p.read_text() for p in root.rglob('*.html'));print(json.dumps({'pages':len(idx['pages']),'revision':idx['revision'],'llmsBytes':len(text)}))
+root=Path(sys.argv[1]);idx=json.loads((root/'site-index.json').read_text());text=(root/'llms.txt').read_text();assert idx['site']['name']=='Rehearsal Site';assert idx['pages'];assert text.startswith('# Rehearsal Site\n');assert '/cms/' not in text;assert all(p['url'].startswith('http://localhost:8080/') for p in idx['pages']);assert any('rel="describedby" href="/llms.txt"' in p.read_text() for p in root.rglob('*.html'))
+for page in idx['pages']:
+    source=root/page['sourcePath'];alternate=source.with_suffix('.md');assert alternate.is_file(),alternate
+    markdown=alternate.read_text();assert markdown.startswith('# ');assert 'Canonical: '+page['url'] in markdown
+    assert 'http://localhost:8080/'+alternate.relative_to(root).as_posix() in text
+    assert 'rel="alternate" type="text/markdown"' in source.read_text()
+assert '[Expanded LLM context]' not in text, 'a missing optional corpus must remain optional'
+print(json.dumps({'pages':len(idx['pages']),'markdownAlternates':len(idx['pages']),'revision':idx['revision'],'llmsBytes':len(text)}))
 PY
 
 php -S 127.0.0.1:8080 -t "$SITE" >/tmp/aincms-server.log 2>&1 & SERVER_PID=$!

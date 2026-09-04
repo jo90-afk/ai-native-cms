@@ -129,7 +129,8 @@ def assert_projection_contract() -> None:
 def assert_markdown_behavior() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         site = Path(tmp)
-        body = """<header>GLOBAL_NAV_SECRET</header><main><h1>Public guide</h1>
+        body = """<script>const shell = '<main>SCRIPT_MAIN_SECRET</main>';</script><template><main>TEMPLATE_MAIN_SECRET</main></template>
+        <header>GLOBAL_NAV_SECRET</header><main><h1>Public guide</h1>
         <p>Readable <strong>emphasis</strong>, <em>nuance</em>, and café.</p>
         <p><a href="../about/?view=one#part">About us</a> and <a href="#local">this section</a>.</p>
         <p><a href="https://reference.test/source">Public reference</a>
@@ -152,13 +153,17 @@ def assert_markdown_behavior() -> None:
         assert "https://reference.test/source" in text
         assert "_SECRET" not in text and "javascript:" not in text and "/api/private" not in text
         assert "<main" not in text and "<pre" not in text
+        hidden_root = put(site, "hidden-root.html", html("Hidden region", "https://example.test/hidden-root.html").replace("Public body", '<div hidden><main><p>HIDDEN_ROOT_SECRET</p></main></div><article aria-hidden="true">HIDDEN_ARTICLE_SECRET</article><p>Visible fallback.</p>'))
+        run_projection(site)
+        assert "_SECRET" not in hidden_root.with_suffix(".md").read_text()
+        assert "Visible fallback." in hidden_root.with_suffix(".md").read_text()
 
 
 def assert_cleanup_and_privacy() -> None:
     with tempfile.TemporaryDirectory() as tmp, tempfile.TemporaryDirectory() as outside:
         site = Path(tmp)
         put(site, "index.html", html("Public home", "https://example.test/"))
-        private_names = ["api", "cms", "setup", "database", "tests", "tools", "runtime", "config", "docs", "templates", "adapters", "uploads", "private", "drafts", ".hidden"]
+        private_names = ["api", "cms", "setup", "database", "tests", "tools", "scripts", "runtime", "config", "docs", "templates", "adapters", "uploads", "private", "drafts", ".hidden"]
         for name in private_names:
             put(site, f"{name}/leak.html", html("PRIVATE_TITLE_SECRET", f"https://example.test/{name}/leak.html"))
         put(site, "external.html", html("EXTERNAL_SECRET", "https://outside.test/"))
@@ -224,13 +229,22 @@ def assert_optional_corpus_and_collisions() -> None:
         (site / "index.md").unlink()
         (site / "index.md").symlink_to(site / "notes.md")
         must_fail(site, "Unsafe Markdown projection destination")
+        (site / "index.md").unlink()
+        page = site / "index.html"
+        authored = html("Home", "https://example.test/").replace("</head>", '<link rel="alternate" type="text/markdown" href="/authored.md"></head>')
+        page.write_text(authored)
+        must_fail(site, "replace an authored alternate link")
+        assert page.read_text() == authored and not (site / "index.md").exists()
+        page.write_text(authored.replace("</head>", '<meta name="robots" content="noindex"></head>'))
+        run_projection(site)
+        assert 'href="/authored.md"' in page.read_text(), "An ineligible page retains its authored alternate"
 
 
 def assert_base_path_and_alternate_idempotence() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         site = Path(tmp)
         page = put(site, "index.html", html("Manual", "https://example.test/manual/"))
-        original = page.read_text().replace("</head>", '<link type="text/markdown" href="/old.md" rel="alternate"><link rel="alternate" type="text/markdown" href="/older.md"></head>')
+        original = page.read_text().replace("</head>", '<link type="text/markdown" href="/old.md" rel="alternate" data-aincms-projection="markdown"><link rel="alternate" type="text/markdown" href="/older.md" data-aincms-projection="markdown"></head>')
         page.write_text(original)
         put(site, "outside.html", html("OUTSIDE_BASE_SECRET", "https://example.test/other/"))
         first = run_projection(site, base="https://example.test/manual")
@@ -241,6 +255,10 @@ def assert_base_path_and_alternate_idempotence() -> None:
         assert "OUTSIDE_BASE_SECRET" not in (site / "llms.txt").read_text()
         second = run_projection(site, base="https://example.test/manual")
         assert second["llms"]["markdown"]["htmlAlternateLinks"] == 0
+        page.write_text(page.read_text().replace(' data-aincms-projection="markdown"', ''))
+        run_projection(site, base="https://example.test/manual")
+        assert page.read_text().count('type="text/markdown"') == 1
+        assert 'data-aincms-projection="markdown"' in page.read_text(), "A correct existing relation can be adopted"
 
 
 def main() -> None:

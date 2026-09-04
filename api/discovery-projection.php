@@ -51,7 +51,7 @@ function discoverySameSite(string $base,string $url): bool {
 function discoveryPublicRelativePath(string $relative): bool {
     if($relative===''||str_starts_with($relative,'/')||str_contains($relative,'\\')||preg_match('/[\x00-\x20%?#\x7f]/',$relative))return false;
     $parts=explode('/',$relative);
-    $private=['api','cms','setup','database','tests','tools','dist','runtime','config','docs','templates','adapters','uploads','vendor','node_modules','private','drafts'];
+    $private=['api','cms','setup','database','tests','tools','scripts','dist','runtime','config','docs','templates','adapters','uploads','vendor','node_modules','private','drafts'];
     if(in_array(strtolower($parts[0]),$private,true))return false;
     foreach($parts as $part)if($part===''||str_starts_with($part,'.')||in_array(strtolower($part),['private','drafts'],true))return false;
     return true;

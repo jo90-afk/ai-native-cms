@@ -70,9 +70,9 @@ function markdownProjectRenderFrame(array $frame,string $base,string $canonical)
 }
 /** Small dependency-free serializer for published HTML, with nested exclusions. */
 function markdownProjectHtmlToMarkdown(string $html,string $base,string $canonical): string {
-    foreach(['main','article','body'] as $element){if(preg_match('~<'.$element.'\\b[^>]*>(.*?)</'.$element.'>~is',$html,$match)){$html=$match[1];break;}}
     $tokens=preg_split('~(<!--.*?-->|<(?:[^>"\']+|"[^"]*"|\'[^\']*\')*>)~s',$html,-1,PREG_SPLIT_DELIM_CAPTURE|PREG_SPLIT_NO_EMPTY)?:[];
     $frames=[['tag'=>'root','open'=>'','body'=>'','skip'=>false,'pre'=>false,'code'=>false,'prefix'=>'','next'=>1]];
+    $sections=['main'=>[],'article'=>[],'body'=>[]];
     $void=['area','base','br','col','embed','hr','img','input','link','meta','param','source','track','wbr'];
     $excluded=['head','script','style','template','svg','header','nav','footer','aside','form','button','input','select','textarea','iframe','object','embed','noscript'];
     foreach($tokens as $token){
@@ -80,7 +80,7 @@ function markdownProjectHtmlToMarkdown(string $html,string $base,string $canonic
         if(str_starts_with($token,'<!--')||str_starts_with($token,'<!'))continue;
         if(preg_match('~^</([a-z][a-z0-9:-]*)\\s*>$~i',$token,$match)){
             $tag=strtolower($match[1]);$found=null;for($i=$last;$i>0;$i--)if($frames[$i]['tag']===$tag){$found=$i;break;}
-            if($found!==null)while(count($frames)-1>=$found){$frame=array_pop($frames);$frames[count($frames)-1]['body'].=markdownProjectRenderFrame($frame,$base,$canonical);}
+            if($found!==null)while(count($frames)-1>=$found){$frame=array_pop($frames);$rendered=markdownProjectRenderFrame($frame,$base,$canonical);if(!$frame['skip']&&isset($sections[$frame['tag']]))$sections[$frame['tag']][]=$rendered;$frames[count($frames)-1]['body'].=$rendered;}
             continue;
         }
         if(preg_match('~^<([a-z][a-z0-9:-]*)\\b~i',$token,$match)){
@@ -100,14 +100,17 @@ function markdownProjectHtmlToMarkdown(string $html,string $base,string $canonic
         if(!$frames[$last]['pre'])$text=preg_replace('/\\s+/u',' ',$text)??$text;
         $frames[$last]['body'].=$frames[$last]['pre']||$frames[$last]['code']?$text:markdownProjectEscape($text);
     }
-    while(count($frames)>1){$frame=array_pop($frames);$frames[count($frames)-1]['body'].=markdownProjectRenderFrame($frame,$base,$canonical);}
-    return trim(preg_replace('/\\n[ \\t]*\\n(?:[ \\t]*\\n)+/',"\n\n",$frames[0]['body'])??$frames[0]['body']);
+    while(count($frames)>1){$frame=array_pop($frames);$rendered=markdownProjectRenderFrame($frame,$base,$canonical);if(!$frame['skip']&&isset($sections[$frame['tag']]))$sections[$frame['tag']][]=$rendered;$frames[count($frames)-1]['body'].=$rendered;}
+    $body=$frames[0]['body'];foreach($sections as $section)if($section){$body=implode("\n\n",$section);break;}
+    return trim(preg_replace('/\\n[ \\t]*\\n(?:[ \\t]*\\n)+/',"\n\n",$body)??$body);
 }
 function markdownProjectUpdateAlternate(string $html,?string $href): string {
     $replacement=$href===null?'':'<link rel="alternate" type="text/markdown" href="'.htmlspecialchars($href,ENT_QUOTES|ENT_SUBSTITUTE,'UTF-8').'" data-aincms-projection="markdown">';$inserted=false;
-    $next=preg_replace_callback('~<link\\b[^>]*>~i',function($match)use($replacement,&$inserted){
+    $next=preg_replace_callback('~<link\\b[^>]*>~i',function($match)use($replacement,$href,&$inserted){
         $tag=$match[0];$rel=preg_split('/\\s+/',strtolower(discoveryHtmlAttribute($tag,'rel')))?:[];
-        if(discoveryHtmlAttribute($tag,'data-aincms-projection')==='markdown'||(in_array('alternate',$rel,true)&&strtolower(discoveryHtmlAttribute($tag,'type'))==='text/markdown')){if($inserted)return '';$inserted=true;return $replacement;}return $tag;
+        $owned=discoveryHtmlAttribute($tag,'data-aincms-projection')==='markdown';$alternate=in_array('alternate',$rel,true)&&strtolower(discoveryHtmlAttribute($tag,'type'))==='text/markdown';
+        if(!$owned&&$alternate){if($href===null)return $tag;if(discoveryHtmlAttribute($tag,'href')!==$href)throw new RuntimeException('Markdown projection would replace an authored alternate link.');}
+        if($owned||$alternate){if($inserted)return '';$inserted=true;return $replacement;}return $tag;
     },$html)??$html;
     if(!$inserted&&$replacement!==''&&stripos($next,'</head>')!==false)$next=preg_replace('~</head>~i',$replacement.'</head>',$next,1)??$next;
     return $next;
@@ -127,6 +130,14 @@ function markdownProject(string $root,array $index): array {
         $documents[$markdown]=rtrim($body)."\n\nCanonical: ".$page['url']."\n\n".MARKDOWN_PROJECTION_MARKER."\n";
         $preferred[$page['url']]=$base.'/'.$markdown;
     }
+    // Resolve every HTML metadata collision before changing any projection file.
+    $htmlUpdates=[];$prefix=(string)(parse_url($base,PHP_URL_PATH)??'');
+    foreach(discoveryPublicHtmlFiles($root) as $relative=>$path){
+        $html=(string)file_get_contents($path);$canonical=discoveryCanonical($html)?:discoveryUrlForRelative($base,$relative);
+        $noindex=preg_match('/(?:^|[,\\s])noindex(?:$|[,\\s])/i',discoveryMetaContent($html,'robots'));
+        $url=!$noindex?($preferred[$canonical]??null):null;$href=$url===null?null:substr($url,strlen($base)-strlen($prefix));
+        $next=markdownProjectUpdateAlternate($html,$href);if($next!==$html)$htmlUpdates[$path]=$next;
+    }
     $removed=0;$iterator=new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root,FilesystemIterator::SKIP_DOTS));
     foreach($iterator as $file){
         if(!$file->isFile()||strtolower($file->getExtension())!=='md')continue;
@@ -135,13 +146,7 @@ function markdownProject(string $root,array $index): array {
         if(markdownProjectOwned((string)file_get_contents($path))){if(!unlink($path))throw new RuntimeException('Could not remove stale Markdown projection: '.$relative);$removed++;}
     }
     foreach($documents as $relative=>$document){$path=$root.'/'.$relative;if(!is_file($path)||file_get_contents($path)!==$document)pageProjectionWrite($path,$document);}
-    $changed=0;$prefix=(string)(parse_url($base,PHP_URL_PATH)??'');
-    foreach(discoveryPublicHtmlFiles($root) as $relative=>$path){
-        $html=(string)file_get_contents($path);$canonical=discoveryCanonical($html)?:discoveryUrlForRelative($base,$relative);
-        $noindex=preg_match('/(?:^|[,\\s])noindex(?:$|[,\\s])/i',discoveryMetaContent($html,'robots'));
-        $url=!$noindex?($preferred[$canonical]??null):null;$href=$url===null?null:substr($url,strlen($base)-strlen($prefix));
-        $next=markdownProjectUpdateAlternate($html,$href);if($next!==$html){pageProjectionWrite($path,$next);$changed++;}
-    }
+    foreach($htmlUpdates as $path=>$html)pageProjectionWrite($path,$html);
     $alternates=array_keys($documents);sort($alternates,SORT_STRING);
-    return ['generated'=>count($documents),'removed'=>$removed,'htmlAlternateLinks'=>$changed,'alternates'=>$alternates,'preferredUrls'=>$preferred,'pages'=>$pages];
+    return ['generated'=>count($documents),'removed'=>$removed,'htmlAlternateLinks'=>count($htmlUpdates),'alternates'=>$alternates,'preferredUrls'=>$preferred,'pages'=>$pages];
 }

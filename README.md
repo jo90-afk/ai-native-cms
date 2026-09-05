@@ -93,7 +93,7 @@ The reusable core includes:
 - replaceable transactional mail transports: authenticated SMTP with TLS/STARTTLS verification, deliberate host-local PHP `mail`, and development/CI log transport;
 - cPanel-oriented email-provider onboarding without making cPanel list authority;
 - deterministic SEO/social/schema enhancement and redirect graph validation;
-- site-neutral public discovery: `site-index.json`, XML/text sitemaps, compact `llms.txt`, optional expanded `llms-full.txt`, and `rel="describedby"` metadata derived only from public state;
+- site-neutral public discovery: `site-index.json`, XML/text sitemaps, public Markdown alternates, compact `llms.txt`, optional expanded `llms-full.txt`, and idempotent discovery metadata derived only from public state;
 - CLI-only fresh-schema bootstrap plus explicit 7→8→9→10 migrations;
 - authenticated/CLI readiness and provider adapter seams;
 - deterministic release packaging with exact source provenance and residue scanning.
@@ -116,7 +116,9 @@ Published posts materialize static article HTML and a public writing index. Draf
 
 Manual redirects are canonical in `redirect_records`; configured system aliases are read-only. `__redirect.php` consumes a generated static map and never opens MySQL.
 
-After clean routes materialize, core discovery scans indexable same-site public HTML, emits `site-index.json` plus XML/text sitemaps, builds a compact absolute-link `llms.txt`, optionally synchronizes an expanded public-context file, and adds an idempotent discovery relation to public HTML. Private CMS state, subscriber records, credentials, drafts, private APIs, and host-only state are excluded.
+After clean routes materialize, core discovery scans indexable same-origin public HTML, emits `site-index.json` plus XML/text sitemaps, and generates adjacent `.md` alternates with canonical HTML attribution. The compact absolute-link `llms.txt` prefers these alternates; HTML carries one Markdown alternate relation and one LLM discovery relation. Private CMS state, subscriber records, credentials, drafts, private APIs, and host-only state are excluded. Generated Markdown is removed when its source disappears or becomes ineligible, while authored Markdown is preserved.
+
+`llms-full.txt` remains optional. When supplied, it must contain a blank-line-delimited `---` corpus separator: the compact prefix is refreshed while the public corpus below it remains verbatim. A present file that cannot be safely synchronized fails the rebuild. See [the discovery contract](docs/ARCHITECTURE.md#8-public-discovery) for ownership, exclusions, and recovery.
 
 ## Requirements and migration
 

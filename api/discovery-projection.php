@@ -30,17 +30,45 @@ function discoveryBaseUrl(?array $site=null): string {
     $base=rtrim(trim((string)($site['base_url']??siteConfigValue('site','base_url',''))),'/');
     if($base===''||filter_var($base,FILTER_VALIDATE_URL)===false)throw new RuntimeException('A valid public site base_url is required for discovery projection.');
     $scheme=strtolower((string)parse_url($base,PHP_URL_SCHEME));if(!in_array($scheme,['http','https'],true))throw new RuntimeException('Public discovery requires an HTTP(S) base URL.');
+    $parts=parse_url($base);if(!is_array($parts)||isset($parts['user'])||isset($parts['pass'])||isset($parts['query'])||isset($parts['fragment']))throw new RuntimeException('Public discovery base URL must not contain credentials, query, or fragment.');
     return $base;
 }
 function discoveryUrlForRelative(string $base,string $rel): string {
     $rel=str_replace('\\','/',$rel);if($rel==='index.html')return $base.'/';if(str_ends_with($rel,'/index.html'))return $base.'/'.substr($rel,0,-10);return $base.'/'.ltrim($rel,'/');
 }
 function discoverySameSite(string $base,string $url): bool {
-    $a=parse_url($base);$b=parse_url($url);return is_array($a)&&is_array($b)&&strtolower((string)($a['host']??''))===strtolower((string)($b['host']??''))&&in_array(strtolower((string)($b['scheme']??'')),['http','https'],true);
+    $a=parse_url($base);$b=parse_url($url);
+    if(!is_array($a)||!is_array($b)||isset($b['user'])||isset($b['pass'])||isset($b['query'])||isset($b['fragment']))return false;
+    $scheme=strtolower((string)($a['scheme']??''));$other=strtolower((string)($b['scheme']??''));
+    if(!in_array($scheme,['http','https'],true)||$scheme!==$other||strtolower((string)($a['host']??''))!==strtolower((string)($b['host']??'')))return false;
+    if(($a['port']??($scheme==='https'?443:80))!==($b['port']??($other==='https'?443:80)))return false;
+    $prefix=rtrim((string)($a['path']??''),'/');$path=(string)($b['path']??'/');
+    if($prefix!==''&&$path!==$prefix&&!str_starts_with($path,$prefix.'/'))return false;
+    $relative=ltrim(substr($path,strlen($prefix)),'/');
+    return $relative===''||discoveryPublicRelativePath(rtrim($relative,'/'));
+}
+/** No operational/source trees or encoded traversal become public discovery. */
+function discoveryPublicRelativePath(string $relative): bool {
+    if($relative===''||str_starts_with($relative,'/')||str_contains($relative,'\\')||preg_match('/[\x00-\x20%?#\x7f]/',$relative))return false;
+    $parts=explode('/',$relative);
+    $private=['api','cms','setup','database','tests','tools','scripts','dist','runtime','config','docs','templates','adapters','uploads','vendor','node_modules','private','drafts'];
+    if(in_array(strtolower($parts[0]),$private,true))return false;
+    foreach($parts as $part)if($part===''||str_starts_with($part,'.')||in_array(strtolower($part),['private','drafts'],true))return false;
+    return true;
+}
+function discoveryContainedFile(string $root,string $relative): ?string {
+    if(!discoveryPublicRelativePath($relative))return null;
+    $real=realpath($root);if($real===false)return null;
+    $path=$real;foreach(explode('/',$relative) as $part){$path.='/'.$part;if(is_link($path))return null;}
+    return is_file($path)&&realpath($path)===$path?$path:null;
+}
+function discoveryPublicHtmlFiles(string $root): array {
+    $files=[];foreach(presentationPublicHtmlFiles($root) as $relative=>$unused){$path=discoveryContainedFile($root,(string)$relative);if($path!==null)$files[$relative]=$path;}
+    return $files;
 }
 function discoveryPublicPages(string $root,string $base): array {
     $byUrl=[];
-    foreach(presentationPublicHtmlFiles($root) as $rel=>$full){
+    foreach(discoveryPublicHtmlFiles($root) as $rel=>$full){
         $html=(string)file_get_contents($full);$robots=strtolower(discoveryMetaContent($html,'robots'));if(preg_match('/(?:^|[,\s])noindex(?:$|[,\s])/',$robots))continue;
         $canonical=discoveryCanonical($html);$url=$canonical!==''&&filter_var($canonical,FILTER_VALIDATE_URL)!==false?$canonical:discoveryUrlForRelative($base,$rel);if(!discoverySameSite($base,$url))continue;
         $title=discoveryTitle($html);if($title==='')$title=basename($rel)==='index.html'?(dirname($rel)==='.'?'Home':basename(dirname($rel))):pathinfo($rel,PATHINFO_FILENAME);

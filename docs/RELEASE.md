@@ -119,3 +119,5 @@ See `docs/INSTALLATION.md` for the detailed sequence, `docs/REPOSITORY-OPERATION
 `0.1.0-rc.4` remains a prerelease. It is intended for evaluation, site builds, and governed production trials with tested backups and explicit review of migrations, deployment, and provider configuration before consequential actions.
 
 Future release candidates repeat the proving-ground parity and packaged-candidate gates. Material reusable core changes reopen extraction; site-only or governance-only changes do not.
+
+The development successor to the published rc.4 artifact adds public Markdown alternates and compact-index routing. It leaves the published version, tag, schema, and artifact frozen. The existing packaged-candidate rehearsal now verifies that the Markdown runtime is included and a fresh installation produces alternates with matching canonical attribution and LLM links, while requiring no optional expanded corpus. A new published version still requires its own release preparation and publication decision.

@@ -48,7 +48,7 @@ Repository integration never implies installed-site migration, production creden
 
 ## M-022 — proving-ground CMS publication parity
 
-The current proving-ground sweep through `jo90-afk/judeoneill.com` main `40357dc470f3e5f44bd524bd4eed69209a35b52d` identified a reusable cluster that landed after the prior upstream sweep: authenticated CMS writers now distinguish canonical persistence from successful public publication and coordinate with host recovery through a shared private publication boundary.
+A current private production proving-ground sweep at inspected revision `40357dc470f3e5f44bd524bd4eed69209a35b52d` identified a reusable cluster that landed after the prior upstream sweep: authenticated CMS writers now distinguish canonical persistence from successful public publication and coordinate with host recovery through a shared private publication boundary.
 
 The generic upstream increment must preserve schema-10/product authority while extracting only reusable behavior:
 
@@ -59,9 +59,9 @@ The generic upstream increment must preserve schema-10/product authority while e
 5. unresolved pending publication blocks follow-on public writers before they mutate canonical state;
 6. redirects converge on the same complete finalization boundary rather than bypassing it;
 7. Writing, Branding, Navigation, SEO, Page Composer, Redirects, Blocks, and Media participate in the coordination boundary appropriate to their mutation semantics;
-8. private state uses `AINCMS_*` configuration and contains no adopter identity, authored content, credentials, or proving-ground filesystem paths.
+8. private state uses only the product's public configuration namespace and contains no adopter identity, authored content, credentials, or proving-ground filesystem paths.
 
-The core owns the save-versus-publication invariant and pending-state format. Immutable snapshots, private staging, serving-generation materialization, Apache selector switching, shared-host PHP/tool discovery, host capability evidence, and rollback remain deployment-adapter responsibilities. Their portable obligations are documented; Bluehost/Jude-specific executable paths and markers do not move upstream.
+The core owns the save-versus-publication invariant and pending-state format. Immutable snapshots, private staging, serving-generation materialization, web-server selector switching, shared-host runtime/tool discovery, host capability evidence, and rollback remain deployment-adapter responsibilities. Their portable obligations are documented; adopter-specific executable paths and markers do not move upstream.
 
 ## Acceptance
 
@@ -70,7 +70,7 @@ M-022 is acceptable when:
 - the dedicated publication-outcome contract and executable behavior test pass on the exact candidate head;
 - cumulative `validate` remains green across schema-10 authoring, Audience/mail, discovery, migrations, packaging, and sanitizer contracts;
 - `release-rehearsal` remains green across clean schema-10 install and the published rc.3 → v9 → v10 upgrade path;
-- the candidate contains no `JUDE_*`, personal/site identity, private host path, database dump, private evidence, or release-publication metadata change;
+- the candidate contains no proving-ground-specific environment names, personal/site identity, private host path, database dump, private evidence, or release-publication metadata change;
 - proving-ground parity is recorded against the inspected source revision and any intentionally non-upstreamed behavior is classified as adopter/deployment-adapter state rather than silently omitted.
 
 ## Consequence boundary

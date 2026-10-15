@@ -1,6 +1,8 @@
 # Release process
 
-AI Native CMS `0.1.0-rc.4` is the current **public release candidate**, schema version 10. Its required Git tag is `v0.1.0-rc.4`. The published `0.1.0-rc.3` tag remains a frozen schema-v8 predecessor and upgrade fixture; rc.4 does not redefine it.
+AI Native CMS `0.1.0-rc.5` is the current **public release candidate**, schema version 10. Its required Git tag is `v0.1.0-rc.5`.
+
+The published `0.1.0-rc.4` artifact remains the immediate schema-10 predecessor. The published `0.1.0-rc.3` tag remains the frozen schema-v8 upgrade fixture for the supported 8→9→10 migration path.
 
 The release is source-available under **Apache License 2.0 subject to Commons Clause License Condition v1.0**. It is not OSI-approved open source. The binding files are `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE`.
 
@@ -8,16 +10,29 @@ The release is source-available under **Apache License 2.0 subject to Commons Cl
 
 `VERSION` defines the candidate version. `release/release.json` defines product/channel/schema/runtime metadata, license state, public-distribution authorization, package root, and required version tag.
 
-For rc.4:
+For rc.5:
 
-- version: `0.1.0-rc.4`;
+- version: `0.1.0-rc.5`;
 - channel: `public-release-candidate`;
 - schema: 10;
 - public distribution: authorized;
-- required tag: `v0.1.0-rc.4`;
+- required tag: `v0.1.0-rc.5`;
 - license: Apache 2.0 + Commons Clause v1.0.
 
 `tools/build_release.py` refuses disagreement between `VERSION`, `database/schema.sql`, release metadata, channel, tag, or license state.
+
+## What rc.5 promotes
+
+Rc.5 publishes the accepted development work after rc.4:
+
+1. deterministic adjacent public Markdown alternates and compact LLM routing derived from verified public HTML;
+2. strict same-origin/source-path/symlink/noindex/collision handling for public discovery;
+3. publication coordination that distinguishes canonical MySQL persistence from successful public projection;
+4. private `cms-publication` recovery state after post-save projection failure, blocking follow-on public writers until recovery;
+5. redirect mutation convergence on the complete public-finalization boundary;
+6. portable documentation of the core/publication-adapter seam.
+
+Schema remains 10. An rc.4 installation therefore does not require a new database migration to adopt rc.5 code. Historical schema-8 installations still traverse 8→9→10 explicitly.
 
 ## Deterministic build
 
@@ -27,17 +42,17 @@ Build from an exact Git revision:
 python3 tools/build_release.py --source-ref <git-sha>
 ```
 
-For rc.4 the builder emits:
+For rc.5 the builder emits:
 
-- `dist/ai-native-cms-0.1.0-rc.4.zip`
-- `dist/ai-native-cms-0.1.0-rc.4.manifest.json`
-- `dist/ai-native-cms-0.1.0-rc.4.sha256`
+- `dist/ai-native-cms-0.1.0-rc.5.zip`
+- `dist/ai-native-cms-0.1.0-rc.5.manifest.json`
+- `dist/ai-native-cms-0.1.0-rc.5.sha256`
 
 Sorted paths, fixed ZIP metadata, deterministic compression, and exact source-ref provenance make repeated builds byte-for-byte comparable.
 
 ## Public package contents
 
-The package contains the reusable CMS/runtime; neutral Home/About/Writing starter; Page Composer and Block Composer; clean-route projection; Audience list/double-opt-in surfaces; transactional mail adapters and cPanel onboarding; deterministic public discovery (`site-index.json`, sitemaps, `llms.txt` projection code); schema-10 bootstrap plus explicit historical migrations; reconciliation/readiness/onboarding; SEO/redirect behavior; deployment-adapter examples; repository/LLM collaboration documentation; and license/release metadata.
+The package contains the reusable CMS/runtime; neutral Home/About/Writing starter; Page Composer and Block Composer; clean-route projection; Audience list/double-opt-in surfaces; transactional mail adapters and cPanel onboarding; deterministic public discovery including Markdown alternates and compact LLM routing; publication-outcome coordination; schema-10 bootstrap plus explicit historical migrations; reconciliation/readiness/onboarding; SEO/redirect behavior; deployment-adapter examples; repository/LLM collaboration documentation; and license/release metadata.
 
 It excludes `.git/`, `.github/`, `.lattice/`, tests, release tooling, generated `dist/`, runtime/upload state, adopter-local `config/site.php`, populated INI files, symlinks, credentials, and known proving-ground/adopter residue.
 
@@ -49,20 +64,21 @@ The embedded/external `RELEASE-MANIFEST.json` records product/version/channel, e
 
 ## Required verification
 
-Before creating the rc.4 GitHub prerelease:
+Before creating the rc.5 GitHub prerelease:
 
 1. cumulative CI is green on the exact reviewed head;
-2. the clean packaged rc.4 rehearsal is green on that same head;
-3. two candidate builds are byte-identical;
-4. ZIP SHA256 matches the emitted checksum;
-5. embedded and external manifests are identical and record the exact source revision;
-6. fresh installation reaches schema 10 and current canonical tables without retired active authorities;
-7. the published rc.3/schema-8 upgrade fixture successfully traverses 8 → 9 → 10, including composition and Audience/mail behavior;
-8. current Composer, clean-route, Audience/mail, discovery, onboarding, repository-operation, LLM-collaboration, and deployment-adapter surfaces are packaged;
-9. `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE` are packaged;
-10. no adopter-local configuration, personal residue, private repository identifiers, secret material, subscriber data, or host-only operational state enters the package;
-11. repository-visible governance files are reviewed for public suitability;
-12. a fresh proving-ground parity check shows no unresolved reusable-core delta.
+2. the dedicated publication-outcome contract/behavior suite is green on that same head;
+3. the clean packaged rc.5 rehearsal is green on that same head;
+4. two candidate builds are byte-identical;
+5. ZIP SHA256 matches the emitted checksum;
+6. embedded and external manifests are identical and record the exact source revision;
+7. fresh installation reaches schema 10 and current canonical tables without retired active authorities;
+8. the published rc.3/schema-8 upgrade fixture successfully traverses 8 → 9 → 10, including composition and Audience/mail behavior;
+9. current Composer, clean-route, Audience/mail, Markdown/LLM discovery, publication-outcome, onboarding, repository-operation, LLM-collaboration, and deployment-adapter surfaces are packaged;
+10. `LICENSE`, `LICENSE-APACHE-2.0.txt`, and `NOTICE` are packaged;
+11. no adopter-local configuration, personal residue, private repository identifiers, secret material, subscriber data, or host-only operational state enters the package;
+12. repository-visible governance files are reviewed for public suitability;
+13. a fresh proving-ground parity check shows no unresolved reusable-core delta.
 
 A green release candidate is evidence and a pre-publication handoff, not publication authorization.
 
@@ -70,11 +86,11 @@ A green release candidate is evidence and a pre-publication handoff, not publica
 
 The proving ground is an implementation source and validation environment, not public-core copy authority. Material reusable mechanisms found there reopen extraction before a new release candidate is accepted. Site-authored content, identity, and host-specific operational details do not.
 
-For M-020, deterministic LLM discovery from the proving ground was generalized into site-neutral core projection. A separate deployment-provenance repair was classified as host-specific at the path/marker level; its reusable principle remains that missing operational provenance must not be falsely represented as canonical SQL staleness.
+The parity sweep preceding rc.5 generalized publication-save correctness and retained immutable serving-generation mechanics as deployment-adapter responsibilities. The portable core therefore owns save-versus-publication truth and pending-state format without importing a specific host filesystem, selector policy, runtime path, or adopter identity.
 
 ## GitHub publication
 
-`.github/workflows/publish-release.yml` is version-driven. On an authorized publication merge to `main` it:
+`.github/workflows/publish-release.yml` is version-driven. On the authorized publication merge to `main` it:
 
 1. resolves `VERSION`, `release/release.json`, and `release/RELEASE-NOTES-<version>.md`;
 2. validates the public and release-candidate contracts;
@@ -86,11 +102,11 @@ For M-020, deterministic LLM discovery from the proving ground was generalized i
 
 The normal workflow token may not have repository-administration permission. If visibility cannot be changed, release/tag creation may still succeed while repository visibility remains an owner action.
 
-Because release metadata on `main` triggers this publisher, the rc.4 release-preparation PR merge is a **Principal publication consequence boundary**. Technical readiness does not authorize that merge.
+Because release metadata on `main` triggers this publisher, the rc.5 release-preparation PR merge is a **Principal publication consequence boundary**. This release has been explicitly authorized by the Principal in the publication request that initiated this preparation.
 
 ## Installation and upgrades
 
-Fresh rc.4 installation:
+Fresh rc.5 installation:
 
 ```bash
 php setup/site.php --name="My Site" --url=https://example.com --owner="Site Owner"
@@ -100,6 +116,8 @@ php database/readiness.php
 ```
 
 Fresh bootstrap is schema 10.
+
+Existing rc.4/schema-10 installations need no schema migration for rc.5. Preserve a tested backup, update repository/package code through the adopter's governed deployment path, and rebuild/reconcile according to that deployment contract.
 
 Published rc.3 is schema 8 and upgrades explicitly:
 
@@ -112,12 +130,10 @@ php database/reconcile.php post-migration
 
 Schema 7 first applies `database/migrations/7-to-8.php --apply`. `database/bootstrap.php --repair` is never a migration path. Back up and prove restore before migration.
 
-See `docs/INSTALLATION.md` for the detailed sequence, `docs/REPOSITORY-OPERATIONS.md` for repository-to-host operation, `docs/CPANEL-EMAIL.md` for mail-provider setup, and `docs/LLM-COLLABORATION.md` for governed iterative work.
+See `docs/INSTALLATION.md` for the detailed sequence, `docs/PUBLICATION-OUTCOMES.md` for save/publication recovery semantics, `docs/REPOSITORY-OPERATIONS.md` for repository-to-host operation, `docs/CPANEL-EMAIL.md` for mail-provider setup, and `docs/LLM-COLLABORATION.md` for governed iterative work.
 
 ## Prerelease status
 
-`0.1.0-rc.4` remains a prerelease. It is intended for evaluation, site builds, and governed production trials with tested backups and explicit review of migrations, deployment, and provider configuration before consequential actions.
+`0.1.0-rc.5` remains a prerelease. It is intended for evaluation, site builds, and governed production trials with tested backups and explicit review of migrations, deployment, and provider configuration before consequential actions.
 
-Future release candidates repeat the proving-ground parity and packaged-candidate gates. Material reusable core changes reopen extraction; site-only or governance-only changes do not.
-
-The development successor to the published rc.4 artifact adds public Markdown alternates and compact-index routing. It leaves the published version, tag, schema, and artifact frozen. The existing packaged-candidate rehearsal now verifies that the Markdown runtime is included and a fresh installation produces alternates with matching canonical attribution and LLM links, while requiring no optional expanded corpus. A new published version still requires its own release preparation and publication decision.
+Future release candidates repeat proving-ground parity and packaged-candidate gates. Material reusable core changes reopen extraction; site-only or governance-only changes do not.

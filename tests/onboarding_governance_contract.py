@@ -13,9 +13,9 @@ def require(source:str,needles:list[str],label:str)->None:
     if missing: fail(f"{label} is missing: {', '.join(missing)}")
 def main()->None:
     metadata=json.loads(text("release/release.json"));distribution=metadata.get("distribution",{});license_meta=distribution.get("license",{});version=text('VERSION').strip()
-    if version!='0.1.0-rc.4' or metadata.get('version')!=version or metadata.get('schemaVersion')!=10: fail('rc.4 metadata/version/schema boundary is wrong')
-    if metadata.get('channel')!='public-release-candidate': fail('rc.4 must use the authorized public release-candidate channel')
-    if distribution.get('public') is not True or distribution.get('licenseSelected') is not True or distribution.get('tagRequired') is not True or distribution.get('tag')!=f'v{version}': fail('rc.4 public distribution/license/tag state is wrong')
+    if version!='0.1.0-rc.5' or metadata.get('version')!=version or metadata.get('schemaVersion')!=10: fail('rc.5 metadata/version/schema boundary is wrong')
+    if metadata.get('channel')!='public-release-candidate': fail('rc.5 must use the authorized public release-candidate channel')
+    if distribution.get('public') is not True or distribution.get('licenseSelected') is not True or distribution.get('tagRequired') is not True or distribution.get('tag')!=f'v{version}': fail('rc.5 public distribution/license/tag state is wrong')
     expected_license={"base":"Apache-2.0","condition":"Commons Clause License Condition v1.0","sourceAvailable":True,"osiApproved":False,"attributionRequired":True}
     for key,value in expected_license.items():
         if license_meta.get(key)!=value: fail(f"license metadata disagrees on {key}")
@@ -45,5 +45,5 @@ def main()->None:
     require(text('docs/REPOSITORY-OPERATIONS.md'),['Commit to Git','Keep in canonical MySQL state','Generated public output','Branch and pull-request workflow','SSH pull-to-host','reviewed artifact/copy','Database backups and migrations','Rollback','Working with an LLM on the repository'],'repository/hosting operations guide')
     require(text('docs/LLM-COLLABORATION.md'),['The four kinds of state','Repository-owned state','Canonical CMS state','Generated public projection','Host/provider state','Interface / design iteration','Content iteration','Feature work','Bug fix','Schema / migration work','Release work','conversation history'],'LLM collaboration guide')
     require(text('AGENTS.md'),['Source-of-truth order','Human and agent writers use the same canonical contracts','Change packets','Conversation memory is context, not authority'],'repository agent contract')
-    print('PASS: public licensed rc4 onboarding and unified page/Audience governance contract')
+    print('PASS: public licensed rc5 onboarding and unified page/Audience governance contract')
 if __name__=='__main__': main()

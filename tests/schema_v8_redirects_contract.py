@@ -16,7 +16,7 @@ redirects=need('api/redirects.php','function redirectRequireSchema(): void { dbR
 for token in ['reserved application path','ambiguous path separator','dot segments','cycle detected','changed since it was opened','redirect graph lock']: assert token.lower() in redirects.lower(),f'redirect safety missing {token}'
 assert redirects.index('redirectAcquireGraphLock($pdo)')<redirects.index('redirectValidateGraph(redirectHypothetical($candidate))')
 router=need('__redirect.php','__redirect-map.php','preserveQuery','Location: ');assert 'db(' not in router and 'PDO' not in router and 'database.php' not in router
-need('api/cms-redirects.php','requireCmsAuth(true)','redirectRequireSchema()','requireCmsCsrf()','enforceRateLimit','expectedHash','redirectProject')
+need('api/cms-redirects.php','requireCmsAuth(true)','redirectRequireSchema()','requireCmsCsrf()','enforceRateLimit','expectedHash','contentFinalizePublicProjections','PublicationOutcome::saved','requireCmsPublicationLock')
 need('api/cms-writing.php','dbRequireSchemaVersion(8)','redirectPostPreflight','redirectUpsertPostSlug','removePostProjection','contentFinalizePublicProjections')
 assert not (ROOT/'api/cms-pages.php').exists(),'standalone Pages mutation API must remain retired'
 need('cms/pages.php','requireCmsAuth(false)',"header('Location: /cms/composer.php',true,302)");need('cms/index.php',"$target='/cms/composer.php'")

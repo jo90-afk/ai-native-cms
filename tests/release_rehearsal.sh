@@ -17,9 +17,9 @@ A_SHA="$(find dist/rehearsal-a -maxdepth 1 -name '*.sha256' -print -quit)"; B_SH
 [[ -n "$A_ZIP" && -n "$B_ZIP" ]]; cmp "$A_ZIP" "$B_ZIP"; cmp "$A_MANIFEST" "$B_MANIFEST"; cmp "$A_SHA" "$B_SHA"
 python3 - "$A_MANIFEST" "$SOURCE_REF" <<'PY'
 import json,sys
-m=json.load(open(sys.argv[1],encoding='utf-8'));assert m['sourceRevision']==sys.argv[2];assert m['version']=='0.1.0-rc.4';assert m['schemaVersion']==10;assert m['channel']=='public-release-candidate';assert m['distribution']['tag']=='v0.1.0-rc.4'
+m=json.load(open(sys.argv[1],encoding='utf-8'));assert m['sourceRevision']==sys.argv[2];assert m['version']=='0.1.0-rc.5';assert m['schemaVersion']==10;assert m['channel']=='public-release-candidate';assert m['distribution']['tag']=='v0.1.0-rc.5'
 paths={r['path'] for r in m['files']}
-for required in ['LICENSE','AGENTS.md','docs/INSTALLATION.md','docs/CPANEL-EMAIL.md','api/discovery-projection.php','api/markdown-projection.php','api/llms-projection.php','api/audience.php','api/mail-transport.php','database/migrations/7-to-8.php','database/migrations/8-to-9.php','database/migrations/9-to-10.php','__redirect.php']:
+for required in ['LICENSE','AGENTS.md','docs/INSTALLATION.md','docs/CPANEL-EMAIL.md','docs/PUBLICATION-OUTCOMES.md','api/discovery-projection.php','api/markdown-projection.php','api/llms-projection.php','api/publication-lock.php','api/audience.php','api/mail-transport.php','database/migrations/7-to-8.php','database/migrations/8-to-9.php','database/migrations/9-to-10.php','__redirect.php']:
     assert required in paths,required
 for forbidden in ['config/site.php','.lattice/PROJECT.md','tests/release_rehearsal.sh']:
     assert forbidden not in paths,forbidden
@@ -36,7 +36,7 @@ export AINCMS_CMS_ENABLED=1 AINCMS_CMS_USER=rehearsal-owner AINCMS_CMS_PASSWORD_
 export AINCMS_ENV=development AINCMS_CMS_REQUIRE_HTTPS=0 AINCMS_PUBLIC_ORIGIN=http://localhost:8080
 php database/bootstrap.php | tee /tmp/aincms-bootstrap.txt
 grep -q 'Status: ready; schema: 10/10' /tmp/aincms-bootstrap.txt
-php database/reconcile.php rc4-clean-import > /tmp/aincms-reconcile.json
+php database/reconcile.php rc5-clean-import > /tmp/aincms-reconcile.json
 php database/readiness.php > /tmp/aincms-readiness-before.json
 python3 - /tmp/aincms-readiness-before.json <<'PY'
 import json,sys
@@ -75,12 +75,12 @@ mysqldump --no-tablespaces -h "$AINCMS_DB_HOST" -P "$AINCMS_DB_PORT" -u "$AINCMS
 BASE_INDEX_SHA="$(sha256sum index.html | awk '{print $1}')"
 cat > "$WORK/canonical-change.php" <<'PHP'
 <?php
-declare(strict_types=1);$root=$argv[1];require_once $root.'/api/content-authority.php';require_once $root.'/api/content-rebuild.php';$row=db()->query('SELECT page_path,block_id,html_content,content_sha256 FROM page_blocks ORDER BY page_path,block_id LIMIT 1')->fetch();if(!is_array($row))throw new RuntimeException('No canonical block available.');$next=cmsSanitizeRichHtml((string)$row['html_content'].' <strong>Rehearsed canonical edit.</strong>');$outcome=contentAuthorityCommitBlock((string)$row['page_path'],(string)$row['block_id'],$next,'cms','rc4-rehearsal',(string)$row['content_sha256']);if($outcome!=='applied')throw new RuntimeException('Canonical edit was not applied.');contentRebuild($root);if(!str_contains((string)file_get_contents($root.'/'.(string)$row['page_path']),'Rehearsed canonical edit.'))throw new RuntimeException('Canonical edit did not project.');echo $row['page_path'],PHP_EOL;
+declare(strict_types=1);$root=$argv[1];require_once $root.'/api/content-authority.php';require_once $root.'/api/content-rebuild.php';$row=db()->query('SELECT page_path,block_id,html_content,content_sha256 FROM page_blocks ORDER BY page_path,block_id LIMIT 1')->fetch();if(!is_array($row))throw new RuntimeException('No canonical block available.');$next=cmsSanitizeRichHtml((string)$row['html_content'].' <strong>Rehearsed canonical edit.</strong>');$outcome=contentAuthorityCommitBlock((string)$row['page_path'],(string)$row['block_id'],$next,'cms','rc5-rehearsal',(string)$row['content_sha256']);if($outcome!=='applied')throw new RuntimeException('Canonical edit was not applied.');contentRebuild($root);if(!str_contains((string)file_get_contents($root.'/'.(string)$row['page_path']),'Rehearsed canonical edit.'))throw new RuntimeException('Canonical edit did not project.');echo $row['page_path'],PHP_EOL;
 PHP
 php "$WORK/canonical-change.php" "$SITE" > /tmp/aincms-canonical-path.txt
 cat > "$WORK/redirect-change.php" <<'PHP'
 <?php
-declare(strict_types=1);$root=$argv[1];require_once $root.'/api/redirects.php';$r=redirectSaveRecord($root,['source'=>'/legacy-rehearsal/','target'=>'/about.html','status'=>301,'preserveQuery'=>true,'active'=>true,'note'=>'rc4 rehearsal']);$p=redirectProject($root);$map=require $root.'/__redirect-map.php';if(($map['/legacy-rehearsal/']['target']??'')!=='/about.html'||($p['records']??0)<1)throw new RuntimeException('Static redirect map was not generated.');
+declare(strict_types=1);$root=$argv[1];require_once $root.'/api/redirects.php';$r=redirectSaveRecord($root,['source'=>'/legacy-rehearsal/','target'=>'/about.html','status'=>301,'preserveQuery'=>true,'active'=>true,'note'=>'rc5 rehearsal']);$p=redirectProject($root);$map=require $root.'/__redirect-map.php';if(($map['/legacy-rehearsal/']['target']??'')!=='/about.html'||($p['records']??0)<1)throw new RuntimeException('Static redirect map was not generated.');
 PHP
 php "$WORK/redirect-change.php" "$SITE"
 ! grep -q 'PDO\|db(' __redirect.php
@@ -95,6 +95,6 @@ PY
 ! grep -RIEq 'BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|github_pat_|gh[pousr]_[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' "$SITE"
 python3 - "$SITE/RELEASE-MANIFEST.json" "$SOURCE_REF" <<'PY'
 import json,sys
-m=json.load(open(sys.argv[1],encoding='utf-8'));assert m['sourceRevision']==sys.argv[2];assert m['version']=='0.1.0-rc.4';assert m['schemaVersion']==10;assert m['distribution']['tag']=='v0.1.0-rc.4'
+m=json.load(open(sys.argv[1],encoding='utf-8'));assert m['sourceRevision']==sys.argv[2];assert m['version']=='0.1.0-rc.5';assert m['schemaVersion']==10;assert m['distribution']['tag']=='v0.1.0-rc.5'
 PY
-echo "PASS: clean public rc.4 schema-v10 release rehearsal from deterministic candidate"
+echo "PASS: clean public rc.5 schema-v10 release rehearsal from deterministic candidate"

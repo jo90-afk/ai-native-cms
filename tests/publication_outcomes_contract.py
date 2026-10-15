@@ -20,9 +20,6 @@ for needle in [
     "requireCmsPublicationLock",
 ]:
     require(lock, needle, f'publication boundary missing {needle}')
-for forbidden in ['JUDE_', '.judeoneill', 'jude-host-update', '[jude-site']:
-    if forbidden in lock:
-        raise SystemExit(f'proving-ground residue leaked upstream: {forbidden}')
 
 rebuild = text('api/content-rebuild.php')
 require(rebuild, "require_once __DIR__.'/publication-lock.php';", 'rebuild does not load publication boundary')

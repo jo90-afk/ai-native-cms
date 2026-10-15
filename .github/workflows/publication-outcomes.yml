@@ -1,0 +1,60 @@
+name: Validate CMS publication outcomes
+
+on:
+  pull_request:
+    paths:
+      - 'api/publication-lock.php'
+      - 'api/content-rebuild.php'
+      - 'api/cms-branding.php'
+      - 'api/cms-navigation.php'
+      - 'api/cms-seo.php'
+      - 'api/cms-writing.php'
+      - 'api/cms-composer.php'
+      - 'api/cms-redirects.php'
+      - 'api/cms-blocks.php'
+      - 'api/cms-media.php'
+      - 'tests/publication_outcomes_contract.py'
+      - 'tests/publication_outcomes_core.php'
+      - '.github/workflows/publication-outcomes.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'api/publication-lock.php'
+      - 'api/content-rebuild.php'
+      - 'api/cms-branding.php'
+      - 'api/cms-navigation.php'
+      - 'api/cms-seo.php'
+      - 'api/cms-writing.php'
+      - 'api/cms-composer.php'
+      - 'api/cms-redirects.php'
+      - 'api/cms-blocks.php'
+      - 'api/cms-media.php'
+      - 'tests/publication_outcomes_contract.py'
+      - 'tests/publication_outcomes_core.php'
+      - '.github/workflows/publication-outcomes.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate generic publication contract
+        run: python3 tests/publication_outcomes_contract.py
+      - name: Exercise publication outcome behavior
+        run: php tests/publication_outcomes_core.php
+      - name: Validate touched PHP syntax
+        run: |
+          php -l api/publication-lock.php
+          php -l api/content-rebuild.php
+          php -l api/cms-branding.php
+          php -l api/cms-navigation.php
+          php -l api/cms-seo.php
+          php -l api/cms-writing.php
+          php -l api/cms-composer.php
+          php -l api/cms-redirects.php
+          php -l api/cms-blocks.php
+          php -l api/cms-media.php

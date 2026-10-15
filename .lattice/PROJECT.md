@@ -3,9 +3,9 @@
 Project ID: `ai-native-cms-001`
 Product repository: this repository
 Published release baseline: `0.1.0-rc.4` (schema v10, frozen artifact at `89ea969aa299de8a4ae06e89d925d50625c066ae`)
-Current development baseline: `main` through merged M-022 / PR #27 (`2658a6f72d585c3c68f5958f154e1192a8a80729`)
-Working branch: none
-Active milestone: none — proving-ground publication parity accepted; observe before starting another upstream increment
+Current development baseline: `main` through accepted M-022 plus state reconciliation (`663533c4491bc79df654e8eb4e5c1f3281d36a80`)
+Working branch: `release/0.1.0-rc.5`
+Active milestone: M-023 — publish `0.1.0-rc.5`
 Runtime contract: `lattice-app-works-platform-agnostic` 0.1.6
 Principal alias: `Repository Owner`
 Updated: **2026-10-15 (UTC)**
@@ -14,13 +14,13 @@ Updated: **2026-10-15 (UTC)**
 
 Maintain a site-neutral AI-native CMS with canonical SQL authority, repository-owned application behavior, deterministic/static public projection where practical, explicit migrations, bounded provider adapters, friendly onboarding, reversible repository operations, and governed human/LLM collaboration.
 
-Routine reversible implementation, tests, documentation, parity refreshes, release-candidate preparation, and release assurance are delegated. Production deployment/adoption, credentials, public release publication, private-data import, bulk messaging, destructive data actions, and any merge that directly triggers public release publication remain explicit operator/Principal boundaries.
+Routine reversible implementation, tests, documentation, parity refreshes, release-candidate preparation, and release assurance are delegated. Production deployment/adoption, credentials, private-data import, bulk messaging, and destructive live-data actions remain explicit operator/Principal boundaries.
 
-## Frozen release truth
+The Principal explicitly authorized publication of a new version on 2026-10-15 after M-022 acceptance. For M-023, merging the reviewed rc.5 release-preparation PR to `main` is therefore an authorized public-release consequence, provided the exact candidate head satisfies the release contract.
 
-`0.1.0-rc.4` remains the published schema-v10 release. M-021 and M-022 advanced development `main` without changing version, tag, schema, published artifact, or release metadata. No new public release was authorized or created by those merges.
+## Frozen predecessor truth
 
-`0.1.0-rc.3` remains the historical schema-v8 upgrade origin. Current schema evolution remains 7→8→9→10 with explicit migrations; bootstrap repair is not migration.
+`0.1.0-rc.4` remains the current published schema-v10 predecessor until M-023 publication succeeds. `0.1.0-rc.3` remains the historical schema-v8 upgrade fixture. Current schema evolution remains 7→8→9→10 with explicit migrations; bootstrap repair is not migration.
 
 ## Durable product truths
 
@@ -32,7 +32,7 @@ Routine reversible implementation, tests, documentation, parity refreshes, relea
 - Browser clients do not submit arbitrary structural HTML/CSS for governed composition.
 - Secrets remain outside canonical SQL, public configuration, generated output, and browser-visible state.
 - Provider-specific transport/deployment integration remains adapter state and may not become application authority.
-- Exact-head cumulative validation and fresh proving-ground parity are required before a release candidate is promoted.
+- Exact-head cumulative validation and fresh proving-ground parity are required before release publication.
 
 ## Accepted development sequence
 
@@ -43,41 +43,40 @@ Routine reversible implementation, tests, documentation, parity refreshes, relea
 - M-019 / PR #24 — schema-v10 Audience authority, double opt-in, authenticated Audience CMS, transactional-mail adapters, and cPanel onboarding.
 - M-020 / PR #25 — generic discovery plus published rc.4/schema-v10 release line.
 - M-021 / PR #26 — adjacent public Markdown alternates and compact LLM routing derived from current public HTML.
-- M-022 / PR #27 — generic save-versus-publication semantics, shared private publication locking, pending recovery state, and public-writer coordination extracted from the current production proving ground.
+- M-022 / PR #27 — generic save-versus-publication semantics, shared private publication locking, pending recovery state, and public-writer coordination extracted from the production proving ground.
 
-Repository integration never implies installed-site migration, production credentials, deployment, public collection activation, or release publication.
+## M-023 — rc.5 publication
 
-## Accepted M-022 — proving-ground CMS publication parity
+`0.1.0-rc.5` promotes accepted M-021 and M-022 behavior into a new public prerelease without changing schema 10.
 
-A private production proving-ground sweep at inspected revision `40357dc470f3e5f44bd524bd4eed69209a35b52d` identified a reusable cluster that landed after the prior upstream sweep. PR #27 generalized that behavior without importing adopter identity, authored content, private host paths, or host-vendor routing mechanics.
+Release content must include:
 
-Accepted behavior now includes:
+1. deterministic public Markdown alternates and compact LLM routing;
+2. publication locking plus canonical-save/publication outcome separation;
+3. bounded `cms-publication` pending recovery state and follow-on writer blocking;
+4. redirect convergence on complete public finalization;
+5. generic publication-outcome/adapter documentation;
+6. unchanged explicit 7→8→9→10 migration lineage and frozen rc.3 fixture.
 
-1. public-content writers acquire one shared private publication lock before canonical mutation;
-2. after canonical persistence succeeds, request-local outcome state records that a save occurred;
-3. only successful complete public finalization clears that saved state;
-4. a later projection failure records bounded private pending state of kind `cms-publication` and reports `saved=true`, `published=false`;
-5. unresolved pending publication blocks follow-on public writers before they mutate canonical state;
-6. redirects converge on the same complete finalization boundary;
-7. Writing, Branding, Navigation, SEO, Page Composer, Redirects, Blocks, and Media participate in the coordination boundary appropriate to their mutation semantics;
-8. private state uses only the product configuration namespace and contains no adopter identity, authored content, credentials, or proving-ground filesystem paths.
+The release identity is `0.1.0-rc.5`, tag `v0.1.0-rc.5`, channel `public-release-candidate`, schema 10. No database migration is added between rc.4 and rc.5.
 
-The core owns the save-versus-publication invariant and pending-state format. Immutable snapshots, private staging, serving-generation materialization, web-server selector switching, shared-host runtime/tool discovery, host capability evidence, and rollback remain deployment-adapter responsibilities. Their portable obligations are documented in `docs/PUBLICATION-OUTCOMES.md`.
+## M-023 acceptance
 
-## Acceptance evidence
+Before the authorized merge to `main`:
 
-Exact candidate `4170bca43454d0ed015b767ea2846f26e010d413` passed:
+- cumulative `validate` must be green on the exact release head;
+- the dedicated publication-outcome behavior/contract must be part of release assurance and green;
+- `release-rehearsal` must prove the deterministic rc.5 package, clean schema-10 install, and published rc.3 → v9 → v10 upgrade path;
+- public-release sanitization must find no adopter identity, private paths, credentials, or proving-ground residue;
+- `release/release.json`, `VERSION`, release notes, package root, tag, docs, and candidate tests must agree on rc.5;
+- no unresolved reusable proving-ground delta may remain.
 
-- the dedicated publication-outcome contract and executable behavior gate;
-- cumulative `validate`, including sanitizer, schema-10 authoring, Audience/mail, discovery, migrations, redirect behavior, syntax, and deterministic candidate packaging;
-- `release-rehearsal`, including clean schema-10 installation and the published rc.3 → v9 → v10 upgrade path.
-
-The implementation PR merged as `2658a6f72d585c3c68f5958f154e1192a8a80729`.
+After the merge, `publish-release.yml` must create/verify tag `v0.1.0-rc.5`, create the GitHub prerelease, and verify the rc.5 ZIP, manifest, and SHA256 assets. Publication success must be observed before downstream adoption is represented as complete.
 
 ## Consequence boundary
 
-The accepted development merge does not authorize installed-site adoption, production deployment, credential changes, public release publication, tag/version movement, private-data import, or destructive recovery on a live adopter.
+This milestone authorizes the rc.5 public release because the Principal explicitly requested publication. It does not itself authorize deployment or migration of any adopter site. Downstream adoption, including the requested update of the production proving-ground repository, remains a separate governed repository/deployment step after publication succeeds.
 
 ## Next action
 
-No implementation milestone is active. Continue with observation and fresh proving-ground parity when new reusable behavior appears. A later public release/version increment remains a separate Principal decision.
+Finish exact-head rc.5 assurance, merge the release-preparation PR when green, observe the publisher succeed, then update the production proving-ground repository to reflect/adopt the published rc.5 core while retaining its site-specific extensions and host adapter behavior.

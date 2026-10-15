@@ -44,7 +44,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y php-mysql mysql-client
           php -m | grep -qi pdo_mysql
-      - name: Clean rc.4 schema-v10 candidate rehearsal
+      - name: Clean rc.5 schema-v10 candidate rehearsal
         run: bash tests/release_rehearsal.sh "${{ github.event.pull_request.head.sha || github.sha }}"
       - name: Published rc.3 schema-v8 to v9 composition rehearsal
         run: bash tests/schema_v9_rehearsal.sh
@@ -54,7 +54,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ai-native-cms-rc4-release-rehearsal-evidence
+          name: ai-native-cms-rc5-release-rehearsal-evidence
           path: |
             /tmp/aincms-build-a.json
             /tmp/aincms-build-b.json

@@ -6,7 +6,7 @@ MySQL owns accepted authored and mutable application state. Git owns application
 
 ## Public release candidate
 
-The current candidate is **`0.1.0-rc.4`**, schema **10**, with required tag **`v0.1.0-rc.4`**. The published `0.1.0-rc.3` release remains a frozen schema-8 predecessor with an explicit 8→9→10 upgrade path.
+The current candidate is **`0.1.0-rc.5`**, schema **10**, with required tag **`v0.1.0-rc.5`**. The published `0.1.0-rc.4` release remains the immediate schema-10 predecessor, while `0.1.0-rc.3` remains the frozen schema-8 upgrade fixture for the explicit 8→9→10 path.
 
 This remains a public prerelease for evaluation, site builds, and governed production trials. Keep tested backups and review migrations, deployment, and provider changes before consequential use.
 
@@ -72,11 +72,11 @@ Mail credentials are not canonical database content. They stay in private runtim
 
 ### Generated public projection
 
-HTML, JSON/XML/text discovery files, clean route directories, writing indexes, and redirect maps are deterministic outputs. Fix their owning repository/canonical source rather than editing generated symptoms.
+HTML, JSON/XML/text discovery files, clean route directories, writing indexes, redirect maps, and Markdown alternates are deterministic outputs. Fix their owning repository/canonical source rather than editing generated symptoms.
 
 ### Host/provider state
 
-Credentials, web-server rewrites, caching, document roots, deployment mechanisms, and host-specific diagnostics remain operator/deployment concerns behind bounded adapters.
+Credentials, web-server rewrites, caching, document roots, deployment mechanisms, immutable serving generations, and host-specific diagnostics remain operator/deployment concerns behind bounded adapters.
 
 ## Core capabilities
 
@@ -94,6 +94,7 @@ The reusable core includes:
 - cPanel-oriented email-provider onboarding without making cPanel list authority;
 - deterministic SEO/social/schema enhancement and redirect graph validation;
 - site-neutral public discovery: `site-index.json`, XML/text sitemaps, public Markdown alternates, compact `llms.txt`, optional expanded `llms-full.txt`, and idempotent discovery metadata derived only from public state;
+- publication coordination that distinguishes canonical persistence from successful public projection, records bounded pending recovery when publication fails after a save, and blocks follow-on public writers until recovery is resolved;
 - CLI-only fresh-schema bootstrap plus explicit 7→8→9→10 migrations;
 - authenticated/CLI readiness and provider adapter seams;
 - deterministic release packaging with exact source provenance and residue scanning.
@@ -120,11 +121,15 @@ After clean routes materialize, core discovery scans indexable same-origin publi
 
 `llms-full.txt` remains optional. When supplied, it must contain a blank-line-delimited `---` corpus separator: the compact prefix is refreshed while the public corpus below it remains verbatim. A present file that cannot be safely synchronized fails the rebuild. See [the discovery contract](docs/ARCHITECTURE.md#8-public-discovery) for ownership, exclusions, and recovery.
 
+## Publication outcomes
+
+Public-content mutations use a shared private publication boundary. A canonical MySQL commit and a successful public projection are separate outcomes. When projection fails after canonical persistence, the request reports the save truthfully and installs bounded private pending state so another writer cannot compound the inconsistency before recovery. See `docs/PUBLICATION-OUTCOMES.md` for the portable core/adapter contract.
+
 ## Requirements and migration
 
 Requirements: PHP 8.1+, PDO MySQL, and MySQL 5.7+ / 8.x with `utf8mb4`. Python 3.10+ and Node are validation-only.
 
-Fresh rc.4 installs bootstrap directly to schema 10. Existing rc.3/schema-8 sites use:
+Fresh rc.5 installs bootstrap directly to schema 10. Existing rc.4/schema-10 sites require no schema migration. Existing rc.3/schema-8 sites use:
 
 ```bash
 php database/migrations/8-to-9.php --apply
@@ -135,7 +140,7 @@ Schema 7 first applies `database/migrations/7-to-8.php --apply`. `database/boots
 
 ## Release assurance
 
-Rc.4 requires exact-head cumulative validation plus a deterministic packaged-candidate rehearsal. The rehearsal proves a clean schema-10 install, authenticated onboarding/readiness, public discovery, canonical mutation/projection, paired recovery, the actual published rc.3 schema-8 → v9 upgrade, and v9 → v10 Audience/mail behavior.
+Rc.5 requires exact-head cumulative validation plus the dedicated publication-outcome suite and a deterministic packaged-candidate rehearsal. The rehearsal proves a clean schema-10 install, authenticated onboarding/readiness, public discovery, canonical mutation/projection, paired recovery, the actual published rc.3 schema-8 → v9 upgrade, and v9 → v10 Audience/mail behavior.
 
 Build an exact-revision candidate with:
 
@@ -149,6 +154,7 @@ See `docs/RELEASE.md` for the publication contract. Technical readiness does not
 
 - `docs/ARCHITECTURE.md` — authority and projection model
 - `docs/INSTALLATION.md` — fresh install, upgrades, backup, rollback
+- `docs/PUBLICATION-OUTCOMES.md` — canonical-save versus publication/recovery contract
 - `docs/REPOSITORY-OPERATIONS.md` — GitHub and hosting operations
 - `docs/LLM-COLLABORATION.md` — governed agent-assisted iteration
 - `docs/CPANEL-EMAIL.md` — transactional mail setup using cPanel-provided connection details

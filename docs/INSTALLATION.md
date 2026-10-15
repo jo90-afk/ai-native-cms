@@ -2,7 +2,7 @@
 
 This document describes the portable AI Native CMS installation path and canonical database-state handling. It deliberately does not prescribe a hosting provider, repository updater, control panel, or production deployment mechanism.
 
-The current release candidate is `0.1.0-rc.4` with **schema 10**. The published predecessor `0.1.0-rc.3` remains a frozen schema-8 artifact.
+The current release candidate is `0.1.0-rc.5` with **schema 10**. The published `0.1.0-rc.4` release is the immediate schema-10 predecessor; published `0.1.0-rc.3` remains the frozen schema-8 upgrade fixture.
 
 ## Runtime requirements
 
@@ -10,6 +10,7 @@ The current release candidate is `0.1.0-rc.4` with **schema 10**. The published 
 - PDO MySQL (`pdo_mysql`)
 - MySQL 5.7+ or MySQL 8.x using `utf8mb4`
 - a writable public site tree for files the configured CMS projects or uploads
+- a private writable state directory outside the public root for publication coordination/recovery
 - Python 3.10+ only for repository/release validation
 
 Production CMS access requires HTTPS. A non-local MySQL connection requires verified TLS by default unless the operator deliberately configures the explicit insecure private-network exception.
@@ -30,6 +31,8 @@ This writes `config/site.php` from the shipped example. It does not ask for, rea
 
 Configure required `AINCMS_*` values through environment variables or an INI file outside the public root. Do not commit populated credentials. See `database/private-config.example.ini` and `SECURITY.md`.
 
+For publication coordination, `AINCMS_PUBLICATION_STATE_ROOT` may name an absolute private directory outside the public site. If omitted, core uses a private sibling state directory. The directory must be writable by the CMS process and must never be web-served.
+
 Mail-provider configuration is optional unless the site uses Audience confirmation mail. See `docs/CPANEL-EMAIL.md` for the cPanel path; use the exact provider settings shown by the account rather than guessing the SMTP hostname.
 
 ### 3. Bootstrap a dedicated empty database
@@ -38,7 +41,7 @@ Mail-provider configuration is optional unless the site uses Audience confirmati
 php database/bootstrap.php
 ```
 
-For rc.4 this installs the current schema **10** directly, including `block_presets` and the generic Audience tables. Bootstrap is CLI-only and idempotent. `--repair` only completes interrupted installs already stamped with the current schema; it is never a migration engine.
+For rc.5 this installs the current schema **10** directly, including `block_presets` and the generic Audience tables. Bootstrap is CLI-only and idempotent. `--repair` only completes interrupted installs already stamped with the current schema; it is never a migration engine.
 
 ### 4. Initialize canonical repository content
 
@@ -60,9 +63,15 @@ Onboarding guides the adopter through public identity/configuration, database/ow
 php database/readiness.php
 ```
 
-Resolve blocking failures before production use. A normal public rebuild projects canonical content plus SEO, navigation, branding, redirects, clean managed routes, `site-index.json`, XML/text sitemaps, and `llms.txt`. These files are generated delivery/discovery state, not a second authoring authority.
+Resolve blocking failures before production use. A normal public rebuild projects canonical content plus SEO, navigation, branding, redirects, clean managed routes, `site-index.json`, XML/text sitemaps, adjacent Markdown alternates, and `llms.txt`. These files are generated delivery/discovery state, not a second authoring authority.
 
 When practical, remove the bootstrap password hash from private configuration after persisted-owner login has been verified.
+
+## Publication outcome boundary
+
+Rc.5 distinguishes a successful canonical save from successful public publication. Public-content writers acquire a shared private publication lock before mutation. If canonical MySQL state commits and a later projection fails, the request reports that the save succeeded while publication did not, records bounded private `cms-publication` pending state, and blocks follow-on public writers until recovery is resolved.
+
+Successful complete finalization clears request-local saved state. Host-specific immutable snapshots, selector switching, serving generations, and rollback remain deployment-adapter concerns. See `docs/PUBLICATION-OUTCOMES.md`.
 
 ## Back up before changing an existing database
 
@@ -101,9 +110,13 @@ php database/migrations/9-to-10.php --apply
 
 This creates `audience_lists` and `audience_subscriptions` and advances schema 9 → 10. If the earlier optional `subscribers` primitive exists, valid list membership is copied into generic Audience authority, imported lists start **disabled**, and the old table is archived. This preserves historical consent state without silently enabling new public collection.
 
+### Upgrading from rc.4
+
+`0.1.0-rc.4` is already schema 10. No database migration is required for rc.5. Preserve and prove a backup, update repository/package code through the adopter's governed deployment path, and run readiness plus the adopter's normal reconciliation/publication verification before reopening consequential writes.
+
 ### Upgrading directly from rc.3
 
-`0.1.0-rc.3` is schema 8, so its supported rc.4 path is deliberately sequential:
+`0.1.0-rc.3` is schema 8, so its supported rc.5 path is deliberately sequential:
 
 ```bash
 php database/migrations/8-to-9.php --apply
@@ -132,7 +145,7 @@ This sequence keeps migration, credentials, public activation, and deployment as
 
 Canonical redirects project to `__redirect-map.php`; `__redirect.php` consumes only that map and never opens MySQL. A deployment explicitly routes unresolved paths to this runtime or supplies equivalent adapter behavior.
 
-Public discovery is also static. `site-index.json`, `sitemap.xml`, `sitemap.txt`, `llms.txt`, and optional `llms-full.txt` are regenerated from accepted public projections after clean routes are materialized. They may be deleted and rebuilt without loss of canonical state.
+Public discovery is also static. `site-index.json`, `sitemap.xml`, `sitemap.txt`, adjacent generated `.md` alternates, `llms.txt`, and optional `llms-full.txt` are regenerated from accepted public projections after clean routes are materialized. They may be deleted and rebuilt without loss of canonical state.
 
 ## Repository, hosting, and LLM workflow
 
@@ -165,4 +178,4 @@ For a failed fresh installation with no accepted content, discard the dedicated 
 
 ## Deployment boundary
 
-FTP/SFTP, SSH/Git checkout, CI deployment, control-panel upload, containers, rewrite policy, and provider-specific repository updaters remain deployment adapters outside portable core. A successful rc.4 build or readiness report is evidence about the candidate; it is not authorization to migrate an installed site, add real provider credentials, deploy, or publish a GitHub release.
+FTP/SFTP, SSH/Git checkout, CI deployment, control-panel upload, containers, rewrite policy, immutable serving generations, and provider-specific repository updaters remain deployment adapters outside portable core. A successful rc.5 build or readiness report is evidence about the candidate; it is not authorization to migrate an installed site, add real provider credentials, deploy, or publish a GitHub release.

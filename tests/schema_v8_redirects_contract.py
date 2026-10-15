@@ -30,6 +30,6 @@ order=[rebuild.index(x) for x in ["$context['core']['seo']=seoProjectAll","conte
 for path in ['api/cms-media.php','api/cms-navigation.php','api/cms-branding.php','api/cms-writing.php','api/cms-seo.php']: need(path,'dbRequireSchemaVersion(8)')
 need('api/cms-composer.php','dbRequireSchemaVersion(9)','previewItem','expectedSourceHash');need('api/cms-blocks.php','dbRequireSchemaVersion(9)');need('api/audience.php','dbRequireSchemaVersion(10)')
 need('config/site.example.php',"'redirects' =>",'system_aliases','after_seo',"'clean_managed_routes' => true")
-metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'));version=(ROOT/'VERSION').read_text().strip();assert version=='0.1.0-rc.4';assert metadata['version']==version and metadata['schemaVersion']==10 and metadata['distribution']['tag']==f'v{version}'
-for path in ['cms/redirects.php','cms/blocks.php','cms/composer-live.css','cms/block-composer-embed.js','cms/audience.php','api/discovery-projection.php','api/llms-projection.php']: assert (ROOT/path).is_file(),f'missing {path}'
-print('PASS: rc.4 schema-v10 fresh install plus schema-v8 upgrade compatibility')
+metadata=json.loads((ROOT/'release/release.json').read_text(encoding='utf-8'));version=(ROOT/'VERSION').read_text().strip();assert version=='0.1.0-rc.5';assert metadata['version']==version and metadata['schemaVersion']==10 and metadata['distribution']['tag']==f'v{version}'
+for path in ['cms/redirects.php','cms/blocks.php','cms/composer-live.css','cms/block-composer-embed.js','cms/audience.php','api/discovery-projection.php','api/markdown-projection.php','api/llms-projection.php','api/publication-lock.php']: assert (ROOT/path).is_file(),f'missing {path}'
+print('PASS: rc.5 schema-v10 fresh install plus schema-v8 upgrade compatibility')

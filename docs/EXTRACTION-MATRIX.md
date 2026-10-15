@@ -1,85 +1,71 @@
 # Extraction and release matrix
 
-This file distinguishes the frozen published `0.1.0-rc.3` artifact from integrated development and the current `0.1.0-rc.4` release-preparation milestone.
+This file distinguishes frozen published predecessors, integrated reusable development, and the current `0.1.0-rc.5` release-preparation milestone.
 
 | Capability | Public destination | Classification | Status | Product rule |
 | --- | --- | --- | --- | --- |
 | MySQL transport + private secret loading | `api/database.php` | core | released | Generic `AINCMS_*`; secrets stay outside public root |
 | Auth/origin/CSRF/session/rate limits/audit | `api/runtime.php` | core | released | Fail closed in production |
-| Published predecessor schema | rc.3 `database/schema.sql` | compatibility truth | frozen — schema 8 | Tag/artifact remain unchanged and are the rc.4 upgrade fixture |
-| Current fresh-install schema | `database/schema.sql` | core | rc.4 candidate — schema 10 | Fresh rc.4 installs current authority directly |
-| Explicit upgrades | `database/migrations/` | compatibility core | rc.4 candidate — 7→8→9→10 | Bootstrap repair/browser requests are never migration |
+| Published schema-8 upgrade fixture | rc.3 `database/schema.sql` | compatibility truth | frozen | Tag/artifact remain unchanged and are the 8→9→10 fixture |
+| Published schema-10 predecessor | rc.4 artifact/tag | release truth | frozen | Immediate predecessor to rc.5; no schema migration needed to rc.5 |
+| Current fresh-install schema | `database/schema.sql` | core | rc.5 candidate — schema 10 | Fresh installs create current authority directly |
+| Explicit upgrades | `database/migrations/` | compatibility core | rc.5 candidate — 7→8→9→10 | Bootstrap repair/browser requests are never migration |
 | Canonical reconciliation | content authority/sync + CLI | core | released/evolved | Three-way source/canonical reconciliation; browser never silently promotes repository source |
-| Reusable block presets | schema-9+ `block_presets` | core | integrated M-015 | Browser never submits arbitrary structural HTML/CSS |
-| Page Composer + source adoption | composition store/CMS | core UX/authority | integrated M-016 | Typed/server-owned structure; stale first adoption fails closed |
-| Save edited block as new preset | Page Composer | core UX | integrated M-017 | New independent recipe without mutating source/page instance |
-| Clean managed routes | page route/projection core | projection core | integrated M-018 | Stable internal keys project to reader-facing `/slug/` routes |
-| Canonical redirects + static router | redirect APIs + `__redirect*` | core | released | Graph safety in SQL; anonymous routing database-free |
-| Audience lists/subscriptions | schema-10 tables | core canonical state | integrated M-019; rc.4 candidate | Generic SQL authority; migrated legacy lists start disabled |
-| Audience CMS + CSV | `/cms/audience.php` + APIs | core UX | integrated M-019; rc.4 candidate | Bounded operations; no token hashes/internal IDs/bulk sending |
-| Governed Signup block | generated Audience preset | composition UX | integrated M-019; rc.4 candidate | Server owns form/list structure |
-| Public double opt-in | `/api/audience-subscribe.php` | public core | integrated M-019; rc.4 candidate | Scanner-safe GET review + explicit POST confirmation |
-| Transactional mail | `api/mail-transport.php` | provider adapter | integrated M-019; rc.4 candidate | SMTP/mail/log replaceable; credentials remain private |
-| cPanel mail onboarding | docs/private-config/onboarding | provider docs/UX | integrated M-019; rc.4 candidate | Exact Connect Devices settings + explicit test + deliverability review |
-| Deterministic public discovery | `api/discovery-projection.php` | projection core | M-020 candidate | Derived only from indexable same-site public HTML after clean routes |
-| Compact LLM discovery | `api/llms-projection.php` | projection core | M-020 candidate | `llms.txt` routes to public state; optional expanded context; private state excluded |
-| Public discovery relation | projected public HTML | projection metadata | M-020 candidate | Idempotent `rel="describedby"` to `/llms.txt` |
-| Deterministic release package | release metadata + builder | release engineering | rc.4 candidate | Exact source provenance, reproducible ZIP, manifest/SHA256 |
-| Version-driven GitHub publisher | publish workflow | release engineering | M-020 candidate | Exact version/tag/notes/assets; existing tag never silently repointed |
+| Reusable block presets | schema-9+ `block_presets` | core | released | Browser never submits arbitrary structural HTML/CSS |
+| Page Composer + source adoption | composition store/CMS | core UX/authority | released | Typed/server-owned structure; stale first adoption fails closed |
+| Save edited block as new preset | Page Composer | core UX | released | New independent recipe without mutating source/page instance |
+| Clean managed routes | page route/projection core | projection core | released | Stable internal keys project to reader-facing `/slug/` routes |
+| Canonical redirects + static router | redirect APIs + `__redirect*` | core | released/evolved | Graph safety in SQL; anonymous routing database-free; CMS writes finalize through shared publication boundary |
+| Audience lists/subscriptions | schema-10 tables | core canonical state | released | Generic SQL authority; migrated legacy lists start disabled |
+| Audience CMS + CSV | `/cms/audience.php` + APIs | core UX | released | Bounded operations; no token hashes/internal IDs/bulk sending |
+| Governed Signup block | generated Audience preset | composition UX | released | Server owns form/list structure |
+| Public double opt-in | `/api/audience-subscribe.php` | public core | released | Scanner-safe GET review + explicit POST confirmation |
+| Transactional mail | `api/mail-transport.php` | provider adapter | released | SMTP/mail/log replaceable; credentials remain private |
+| Deterministic public index/sitemaps | `api/discovery-projection.php` | projection core | released | Derived only from indexable same-site public HTML after clean routes |
+| Public Markdown alternates | `api/markdown-projection.php` | projection core | rc.5 candidate / M-021 | Verified adjacent `.md` output; authored collisions and unsafe paths fail closed |
+| Compact LLM discovery | `api/llms-projection.php` | projection core | rc.5 candidate / M-021 | `llms.txt` prefers verified Markdown; optional expanded context; private state excluded |
+| Publication locking/outcomes | `api/publication-lock.php` | core runtime | rc.5 candidate / M-022 | Save truth and publication truth are separate; pending recovery blocks follow-on writers |
+| Publication adapter contract | `docs/PUBLICATION-OUTCOMES.md` | core/adapter seam | rc.5 candidate / M-022 | Host generations/selectors stay adapter-specific |
+| Deterministic release package | release metadata + builder | release engineering | rc.5 candidate | Exact source provenance, reproducible ZIP, manifest/SHA256 |
+| Version-driven GitHub publisher | publish workflow | release engineering | released/evolved | Exact version/tag/notes/assets; existing tag never silently repointed |
 | License and attribution | license files | distribution governance | unchanged | Apache 2.0 + Commons Clause v1.0; source-available |
 | Site identity/content/private host mechanics | adopter/proving-ground repo | site-only/adapter | excluded | Reusable mechanism may upstream; identity/private operations do not |
 
-## Frozen predecessor
+## Frozen predecessors
 
-`0.1.0-rc.3` remains the published schema-v8 release. Its tag, package, notes, schema, and provenance are historical truth. Rc.4 uses the actual `v0.1.0-rc.3:database/schema.sql` file in release rehearsal to prove the supported upgrade rather than reconstructing v8 from current source.
+`0.1.0-rc.3` remains the published schema-v8 upgrade origin. Its tag, package, notes, schema, and provenance are historical truth. Release rehearsal uses the actual `v0.1.0-rc.3:database/schema.sql` fixture to prove the supported migration chain.
 
-## Integrated post-release milestones
+`0.1.0-rc.4` remains the immediate schema-10 predecessor. Rc.5 does not redefine or repoint its tag/artifacts. Because rc.5 remains schema 10, existing rc.4 installations do not need a database migration solely for the version change.
 
-- **M-015 / PR #20** — schema-v9 governed presets, Block Composer, typed composition.
-- **M-016 / PR #21** — unified live Page Composer, source adoption/convergence, retired separate Pages mutation concept.
-- **M-017 / PR #22** — save edited instance as a new independent preset.
-- **M-018 / PR #23** — clean managed public routes and conditional legacy-route adapter behavior.
-- **M-019 / PR #24** — schema-v10 Audience authority, double opt-in, CMS operations/export, transactional mail boundary, cPanel onboarding; merged to development `main` as `53ebe3960e87a4f7732392a1bf2689569bc31412` after exact-head validate #377 and release-rehearsal #91.
+## Accepted post-rc.4 development
 
-None of those repository integrations by themselves authorize installed-site migration, provider credentials, public activation, deployment, or a new public release.
+- **M-021 / PR #26** — adjacent public Markdown alternates, strict public-source validation, and compact LLM routing that prefers verified Markdown.
+- **M-022 / PR #27** — shared private publication locking, canonical-save versus publication outcome semantics, bounded `cms-publication` pending recovery, follow-on writer blocking, and redirect convergence on complete finalization.
 
-## M-020 — reusable discovery parity + rc.4
+These mechanisms are the material reusable-core delta published by rc.5.
 
-PR #25 is the bounded release-preparation surface.
+## Rc.5 release contract
 
-### Reusable proving-ground extraction
-
-The last material proving-ground reusable delta was merged PR #68: deterministic LLM-oriented discovery. The public-core implementation deliberately generalizes the mechanism instead of copying site identity/taxonomy:
-
-- discovery starts from indexable same-site **public HTML** and canonical URLs;
-- legacy and clean-route files collapse onto the same public canonical;
-- `site-index.json`, `sitemap.xml`, and `sitemap.txt` are deterministic projections;
-- compact `llms.txt` is generated from that public index;
-- an optional existing `llms-full.txt` may retain an expanded public-context body below the synchronized compact index;
-- public HTML receives one idempotent `rel="describedby"` relation;
-- CMS state, subscriber data, credentials, drafts, private APIs, and host-only operational markers are excluded.
-
-Proving-ground PR #67 is classified as host-specific implementation at the marker/path layer. Its reusable rule is documented: failure to observe deployment provenance is an unknown state, not evidence that canonical SQL is stale.
-
-### Fresh parity result
-
-A fresh proving-ground commit sweep on 2026-08-27 found **no commits after merged PR #68 (`e1b1d5eb99edd3da4f909ada19def9ab6b7bc12d`)**. Therefore M-020 has no unresolved later proving-ground reusable-core delta at this handoff stage.
-
-### Rc.4 release contract
-
-Rc.4 is `0.1.0-rc.4`, schema 10, tag `v0.1.0-rc.4`.
+Rc.5 is `0.1.0-rc.5`, schema 10, tag `v0.1.0-rc.5`.
 
 Fresh installation bootstraps schema 10. Upgrade rehearsal resets the database to the exact published rc.3 schema-v8 tag, then proves 8→9 composition conversion and 9→10 Audience/legacy-preservation/double-opt-in/mail behavior. The package includes all historical migrations 7→8→9→10.
 
-The publisher resolves version/tag/release-note/asset names dynamically. The release-preparation PR merge is intentionally the Principal publication boundary because release metadata reaching `main` triggers the publisher.
+The publisher resolves version/tag/release-note/asset names dynamically. The authorized release-preparation PR merge is the public publication boundary because release metadata reaching `main` triggers the publisher.
+
+## Proving-ground parity
+
+The private production proving ground is an implementation source, not copy authority. The parity sweep immediately preceding rc.5 identified publication correctness as the material reusable delta and upstreamed it in M-022. Site identity, authored corpus, private host paths, immutable serving-generation implementation, selector policy, and shared-host executable discovery remain adopter/deployment-adapter state.
+
+No unresolved reusable-core delta is intentionally carried into rc.5.
 
 ## Assurance boundary
 
-M-020 is ready only when the **exact final PR #25 head** has:
+Rc.5 is publishable only when the **exact final release head** has:
 
-1. cumulative `validate` green, including public sanitization, discovery, Audience, schema evolution, behavior/syntax, and reproducible candidate build;
+1. cumulative `validate` green, including public sanitization, schema evolution, publication outcomes, discovery, Audience/mail, behavior/syntax, and reproducible candidate build;
 2. `release-rehearsal` green, including clean schema-10 package install plus the actual published rc.3 upgrade chain;
-3. no unresolved review thread;
-4. no unresolved proving-ground reusable-core delta.
+3. the dedicated publication-outcome contract/behavior green;
+4. no unresolved review thread;
+5. no unresolved proving-ground reusable-core delta.
 
-Technical satisfaction authorizes only the pre-publication candidate. Merge/publication, installed-site migrations, production credentials, public collection activation, and deployment remain explicit Principal/operator consequences.
+The Principal explicitly authorized this rc.5 publication. Installed-site adoption, production credentials, private-data migration, and adopter deployment remain separate consequences.

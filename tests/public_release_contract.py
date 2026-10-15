@@ -69,7 +69,7 @@ def check_distribution_contract() -> None:
     version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
     metadata = json.loads((ROOT / "release/release.json").read_text(encoding="utf-8"))
     distribution = metadata.get("distribution", {})
-    if version != "0.1.0-rc.4" or metadata.get("version") != version:
+    if version != "0.1.0-rc.5" or metadata.get("version") != version:
         fail("unexpected public release version")
     if metadata.get("channel") != "public-release-candidate" or metadata.get("schemaVersion") != 10:
         fail("release metadata is not the schema-v10 public release candidate")
@@ -140,7 +140,7 @@ def check_lattice_capsule() -> None:
 
 def main() -> None:
     check_required_files(); check_sanitization(); check_distribution_contract(); check_license_contract(); check_environment_contract(); check_schema_contract(); check_lattice_capsule()
-    print("PASS: rc.4 public-release repository contract")
+    print("PASS: rc.5 public-release repository contract")
 
 
 if __name__ == "__main__":

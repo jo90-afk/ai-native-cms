@@ -1,6 +1,6 @@
 {
   "product": "ai-native-cms",
-  "version": "0.1.0-rc.4",
+  "version": "0.1.0-rc.5",
   "channel": "public-release-candidate",
   "schemaVersion": 10,
   "runtime": {
@@ -8,12 +8,12 @@
     "mysql": ">=5.7",
     "pythonValidation": ">=3.10"
   },
-  "packageRoot": "ai-native-cms-0.1.0-rc.4",
+  "packageRoot": "ai-native-cms-0.1.0-rc.5",
   "distribution": {
     "public": true,
     "licenseSelected": true,
     "tagRequired": true,
-    "tag": "v0.1.0-rc.4",
+    "tag": "v0.1.0-rc.5",
     "license": {
       "base": "Apache-2.0",
       "condition": "Commons Clause License Condition v1.0",

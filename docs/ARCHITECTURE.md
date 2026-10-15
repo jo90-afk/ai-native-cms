@@ -4,7 +4,7 @@
 
 Accepted authored and mutable application state has one authority before publication. Public files are projections, not competing masters.
 
-The published `0.1.0-rc.3` artifact remains schema 8. The `0.1.0-rc.4` candidate promotes fresh installations to **schema 10** while preserving explicit 8→9→10 upgrades.
+The published `0.1.0-rc.3` artifact remains schema 8. The `0.1.0-rc.5` candidate uses **schema 10** while preserving explicit 8→9→10 upgrades. Published `0.1.0-rc.4` is the immediate schema-10 predecessor.
 
 ## Layers
 
@@ -18,9 +18,11 @@ Repository pages are portable reviewed source proposals. Page Composer can delib
 
 `api/database.php` and `api/runtime.php` own private configuration loading, database transport, HTTPS/origin checks, sessions, authentication, CSRF, request/rate limits, and audit records. Human UI and agent-facing operations share these boundaries. Older installed schemas fail closed for mutation surfaces requiring newer authority.
 
+`api/publication-lock.php` owns the portable publication coordination boundary. Public-content writers acquire one private lock before mutation; canonical persistence and successful public projection are tracked as separate outcomes. The private state root may be configured with `AINCMS_PUBLICATION_STATE_ROOT` and must resolve outside the public site.
+
 ### 3. Canonical schema-10 state
 
-Fresh rc.4 installs contain:
+Fresh rc.5 installs contain:
 
 - `page_blocks` and `content_documents` for accepted editable leaves and repository lineage;
 - `block_presets` for converted repository structures, governed semantic primitives, and server-generated trusted presets;
@@ -56,7 +58,7 @@ Reconciliation is CLI/deployment-adapter-only through `database/reconcile.php`. 
 
 ### 6. Schema evolution
 
-`database/bootstrap.php` initializes the **current fresh schema** only. In rc.4 that is schema 10. `--repair` completes interrupted current-schema installs; it does not upgrade older databases.
+`database/bootstrap.php` initializes the **current fresh schema** only. In rc.5 that is schema 10. `--repair` completes interrupted current-schema installs; it does not upgrade older databases.
 
 Versioned migrations preserve historical upgrade boundaries:
 
@@ -72,13 +74,15 @@ Rollback restores the paired pre-migration database and code revision rather tha
 
 `api/redirects.php` owns canonical redirect semantics. Redirects are bounded to same-site safe paths, reject reserved/control/ambiguous/cyclic states, use optimistic revisions, and project to deterministic `__redirect-map.php`. `__redirect.php` is database-free.
 
+Redirect CMS mutations converge on `contentFinalizePublicProjections()` so redirect saves/deletes share the same publication outcome boundary as other public-content writers rather than claiming success after only a redirect-map update.
+
 Managed pages retain stable internal `.html` identity while `api/page-routes.php` and `api/page-projection.php` may materialize reader-facing `/slug/` directories. Relocated HTML references, managed links, canonical/social URL metadata, and known discovery outputs are rewritten deterministically. JavaScript-created runtime URLs are outside HTML parsing and should be root-relative when pages may relocate.
 
 Request interception remains a deployment-adapter concern.
 
 ### 8. Public discovery
 
-Rc.4 adds site-neutral core discovery rather than requiring every adopter to hand-maintain indexes.
+Rc.5 includes site-neutral core discovery rather than requiring every adopter to hand-maintain indexes.
 
 After public HTML, SEO, navigation, branding, redirects, and clean routes converge:
 
@@ -116,11 +120,26 @@ An absent `llms-full.txt` needs no setup and creates no expanded-context link. P
 11. core public discovery index/sitemaps;
 12. Markdown alternates, `llms.txt`, optional full-context synchronization, and public discovery-link injection.
 
+Only successful completion of this finalization clears request-local `PublicationOutcome` saved state.
+
 Hooks remain available for adopter-specific derived surfaces; they may not replace canonical authority. Anonymous delivery remains static-first/database-free.
+
+### 10. Publication outcomes and recovery
+
+A public-content request follows four states:
+
+1. acquire the shared private publication lock before canonical mutation;
+2. commit accepted canonical state;
+3. mark the request-local outcome as saved;
+4. complete public projection/finalization and clear that state only on success.
+
+If step 4 throws after step 2, `runtimePublicationError()` reports `saved=true`, `published=false` and attempts to install a private `public-update-pending` directory of kind `cms-publication` with bounded diagnostic context. While pending state exists, `PublicationLock` fails subsequent public writers before they save anything.
+
+The core deliberately does not encode immutable serving generations, Apache selector switching, host Git movement, shared-host executable discovery, or rollback policy. Those remain deployment-adapter responsibilities, but an adapter must preserve the core truth that unresolved canonical publication state blocks unsafe follow-on publication. See `docs/PUBLICATION-OUTCOMES.md`.
 
 ## Core versus adopter code
 
-- `api/` — reusable runtime, authority, and projection operations;
+- `api/` — reusable runtime, authority, publication coordination, and projection operations;
 - `cms/` — reusable administration UI;
 - `database/` — current schema, migrations, bootstrap, reconciliation;
 - `tests/` — product/security/release contracts;
@@ -134,6 +153,6 @@ AI-native operation does not give an LLM special authority. Automation names a d
 
 ## Deployment boundary
 
-The core remains deployable on ordinary PHP/MySQL hosting without encoding credentials, a host vendor, Git provider, or private filesystem layout. Deployment adapters may perform repository synchronization, unresolved-route interception, cache/compression policy, or host-specific operational provenance. Missing host provenance should be represented as unknown/unobserved—not fabricated evidence that canonical SQL is stale.
+The core remains deployable on ordinary PHP/MySQL hosting without encoding credentials, a host vendor, Git provider, or private filesystem layout. Deployment adapters may perform repository synchronization, unresolved-route interception, cache/compression policy, immutable serving-generation publication, or host-specific operational provenance. Missing host provenance should be represented as unknown/unobserved—not fabricated evidence that canonical SQL is stale.
 
 Repository visibility, installed-site migration, provider credentials, production deployment, and public release publication remain explicit operator consequences.
